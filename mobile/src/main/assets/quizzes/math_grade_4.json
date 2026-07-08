@@ -1,0 +1,22 @@
+{
+  "quizzes": [
+    {
+      "type": "QUIZ",
+      "id": "q1",
+      "name": "Math Quiz: Grade 4",
+      "category": "Math",
+      "questions": [
+        { "question": "What is 1/2 + 1/4?", "options": ["1/4", "3/4", "1/2", "1"], "answer": "1" },
+        { "question": "What is 15 x 6?", "options": ["75", "80", "90", "100"], "answer": "2" },
+        { "question": "Square root of 144?", "options": ["10", "12", "14", "16"], "answer": "1" },
+        { "question": "What is 100 - 37?", "options": ["53", "63", "73", "83"], "answer": "1" },
+        { "question": "What is 9 x 9?", "options": ["72", "81", "90", "99"], "answer": "1" },
+        { "question": "25% of 200?", "options": ["25", "50", "75", "100"], "answer": "1" },
+        { "question": "What is 1000 / 25?", "options": ["20", "30", "40", "50"], "answer": "2" },
+        { "question": "Next number: 2, 4, 8, 16, ...", "options": ["24", "30", "32", "40"], "answer": "2" },
+        { "question": "What is 7 + 8 x 2?", "options": ["23", "30", "17", "25"], "answer": "0" },
+        { "question": "Angle of a straight line?", "options": ["90", "180", "270", "360"], "answer": "1" }
+      ]
+    }
+  ]
+}

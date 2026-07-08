@@ -1,0 +1,1294 @@
+[
+  {
+    "questionText": "Choose the correct degree of comparison: 'Mount Everest is the ______ mountain in the world.'",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "tall",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "taller",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "tallest",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "more tall",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "When comparing more than two things, we use the superlative degree. 'Tallest' is the superlative form of 'tall'. Mount Everest is the tallest mountain, so we use 'tallest'.",
+    "points": 1,
+    "difficulty": "HARD",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q01"
+  },
+  {
+    "questionText": "Choose the correct pronoun: '______ is my best friend.'",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "She",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Her",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Them",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Us",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "'She' is a subject pronoun and fits as the subject of the sentence. 'Her', 'Them', and 'Us' are object pronouns.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q02"
+  },
+  {
+    "questionText": "Which sentence uses the past tense correctly?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "I walk to school yesterday.",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "I walked to school yesterday.",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "I walking to school yesterday.",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "I will walk to school yesterday.",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "For past tense actions, we add '-ed' to regular verbs. 'I walked to school yesterday' is correct.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q03"
+  },
+  {
+    "questionText": "Select all the adjectives in this sentence: 'The tall boy wore a red cap.'",
+    "questionImageUrl": null,
+    "questionType": "MULTIPLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "tall",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "boy",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "red",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "cap",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a",
+      "c"
+    ],
+    "explanation": "Adjectives describe nouns. 'Tall' describes the boy and 'red' describes the cap.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q04"
+  },
+  {
+    "questionText": "Which preposition correctly completes the sentence? 'The cat is sleeping ______ the sofa.'",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "under",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "on",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "into",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "across",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "'On' shows the position of the cat resting on top of the sofa. Cats sleep on sofas.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q05"
+  },
+  {
+    "questionText": "Choose the correct conjunction: 'I like apples ______ I do not like oranges.'",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "but",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "and",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "so",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "or",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "'But' is used to show contrast between two ideas. The speaker likes apples but not oranges, which is contrasting.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q06"
+  },
+  {
+    "questionText": "What punctuation mark should go at the end of this sentence? 'What time does the bus arrive___'",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Full stop (.)",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Question mark (?)",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Comma (,)",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Exclamation mark (!)",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "The sentence asks a question, so it must end with a question mark (?).",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q07"
+  },
+  {
+    "questionText": "What is the value of the digit 7 in the number 4,782?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "7",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "70",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "700",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "7,000",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "In 4,782, the digit 7 is in the hundreds place, so its value is 700.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q08"
+  },
+  {
+    "questionText": "A farmer has 3,456 apples. He sells 1,278 apples. How many apples are left with him?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "2,178",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "2,188",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "2,278",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "2,168",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "3,456 − 1,278 = 2,178. Subtract: 6 − 8 needs regrouping, so 16 − 8 = 8, then 4 − 7 (after regrouping) = 13 − 7 = 6, then 3 − 1 = 1, then 2 − 0 = 2.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q09"
+  },
+  {
+    "questionText": "What is 312 × 4?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "1,248",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "1,208",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "1,348",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "1,228",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "300 × 4 = 1,200, 12 × 4 = 48, so 1,200 + 48 = 1,248.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q10"
+  },
+  {
+    "questionText": "Divide 185 by 6. What is the quotient and remainder?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Quotient 30, Remainder 5",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Quotient 31, Remainder 0",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Quotient 30, Remainder 6",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Quotient 30, Remainder 4",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "6 × 30 = 180, and 185 − 180 = 5, so quotient is 30 and remainder is 5.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q11"
+  },
+  {
+    "questionText": "Which fraction is the largest?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "1/4",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "1/2",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "1/3",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "1/6",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "When numerators are the same, the fraction with the smallest denominator is the largest. So 1/2 is the largest.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q12"
+  },
+  {
+    "questionText": "How many vertices (corners) does a cube have?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "4",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "6",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "8",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "12",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "A cube has 8 vertices (corners), 6 faces, and 12 edges.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q13"
+  },
+  {
+    "questionText": "A square has each side measuring 6 cm. What is its perimeter?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "12 cm",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "24 cm",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "36 cm",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "18 cm",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Perimeter of a square = 4 × side = 4 × 6 = 24 cm.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q14"
+  },
+  {
+    "questionText": "Which of these is not a living thing?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Mango tree",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Rock",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Crow",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Rose plant",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Living things grow, breathe, need food, and reproduce. A rock does not do any of these things, so it is non-living.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Science"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q15"
+  },
+  {
+    "questionText": "Which part of a plant absorbs water and minerals from the soil?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Stem",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Leaf",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Root",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Flower",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "Roots absorb water and minerals from the soil and also anchor the plant to the ground.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Science"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q16"
+  },
+  {
+    "questionText": "A cow eats only plants and grass. What type of animal is it?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Herbivore",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Carnivore",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Omnivore",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Insectivore",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "Animals that eat only plants are called herbivores. Cows, deer, and goats are herbivores.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Science"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q17"
+  },
+  {
+    "questionText": "Which organ pumps blood throughout your body?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Brain",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Lungs",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Heart",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Stomach",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "The heart is a muscular organ that pumps blood through blood vessels to all parts of the body.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Science"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q18"
+  },
+  {
+    "questionText": "Ice is a solid. When it melts, it turns into water. What is water called in this state?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Solid",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Liquid",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Gas",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Vapour",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Water is a liquid. It has no fixed shape and takes the shape of its container. Ice is the solid form and water vapour is the gas form.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Science"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q19"
+  },
+  {
+    "questionText": "The Sun rises in the east. Based on this, where does it set?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "North",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "South",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "West",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "East",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "The Sun rises in the east and sets in the west. This happens because the Earth rotates from west to east.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Science"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q20"
+  },
+  {
+    "questionText": "Which two countries share a land border with India on its north?",
+    "questionImageUrl": null,
+    "questionType": "MULTIPLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "China",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Sri Lanka",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Nepal",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Maldives",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a",
+      "c"
+    ],
+    "explanation": "China and Nepal share land borders with India on its northern side. Sri Lanka and Maldives are island neighbours to the south, separated by water.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Social Studies"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q21"
+  },
+  {
+    "questionText": "A globe is a small model of the ______.",
+    "questionImageUrl": null,
+    "questionType": "FITB",
+    "options": [],
+    "correctAnswers": [
+      "Earth",
+      "earth"
+    ],
+    "explanation": "A globe is a spherical model of the Earth that shows continents, countries, and oceans.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Social Studies"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q22"
+  },
+  {
+    "questionText": "The Taj Mahal is located in which city?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Delhi",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Mumbai",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Agra",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Jaipur",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "The Taj Mahal is a UNESCO World Heritage Site located in Agra, Uttar Pradesh. It was built by Emperor Shah Jahan.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Social Studies"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q23"
+  },
+  {
+    "questionText": "Early humans lived in caves and hunted animals for food.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "Early humans were hunter-gatherers. They lived in caves, hunted animals, and gathered fruits and nuts for food.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Social Studies"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q24"
+  },
+  {
+    "questionText": "Which mode of transport is the fastest for travelling long distances?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Bus",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Train",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Aeroplane",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Ship",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "Aeroplanes travel the fastest among these modes of transport and can cover long distances in a few hours.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Social Studies"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q25"
+  },
+  {
+    "questionText": "The planet ______ is the closest to the Sun.",
+    "questionImageUrl": null,
+    "questionType": "FITB",
+    "options": [],
+    "correctAnswers": [
+      "Mercury",
+      "mercury"
+    ],
+    "explanation": "Mercury is the closest planet to the Sun and also the smallest planet in our solar system.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q26"
+  },
+  {
+    "questionText": "How many players are there in a cricket team on the field?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "9",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "10",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "11",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "12",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "A cricket team has 11 players on the field. The same applies to football and hockey.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q27"
+  },
+  {
+    "questionText": "Asia is the largest continent on Earth.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "Asia is the largest continent both in area (about 44.5 million sq km) and population. India is a country in Asia.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q28"
+  },
+  {
+    "questionText": "Which famous children's book author wrote 'Charlie and the Chocolate Factory'?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Enid Blyton",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Ruskin Bond",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Roald Dahl",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Sudha Murty",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "Roald Dahl wrote many beloved children's books including 'Charlie and the Chocolate Factory', 'Matilda', and 'The BFG'.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q29"
+  },
+  {
+    "questionText": "A water bottle has 2 liters of water. How many milliliters is that?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "200 mL",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "2,000 mL",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "20 mL",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "20,000 mL",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "1 liter = 1,000 milliliters, so 2 liters = 2 × 1,000 = 2,000 milliliters.",
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "3"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c03_q30"
+  }
+]

@@ -1,0 +1,1384 @@
+[
+  {
+    "questionText": "Which word is a naming word for a person?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "table",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "doctor",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "dog",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "tree",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Nouns"
+    ],
+    "resourceId": "c01_q01"
+  },
+  {
+    "questionText": "Which word can we use for a girl?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "he",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "it",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "she",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "they",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Pronouns"
+    ],
+    "resourceId": "c01_q02"
+  },
+  {
+    "questionText": "We say \"_____ orange.\" Which word fits?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "a",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "an",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "the",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "two",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Articles"
+    ],
+    "resourceId": "c01_q03"
+  },
+  {
+    "questionText": "One bus, two _____.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "bus",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "buss",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "buses",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "busies",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "SingularPlural"
+    ],
+    "resourceId": "c01_q04"
+  },
+  {
+    "questionText": "The opposite of \"happy\" is _____.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "tall",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "fast",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "sad",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "big",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Opposites"
+    ],
+    "resourceId": "c01_q05"
+  },
+  {
+    "questionText": "Read: \"The bird can fly high.\" What can the bird do?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "swim",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "run",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "fly",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "jump",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Comprehension"
+    ],
+    "resourceId": "c01_q06"
+  },
+  {
+    "questionText": "\"She sings a song.\" The word 'sings' is an action word.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Verbs"
+    ],
+    "resourceId": "c01_q07"
+  },
+  {
+    "questionText": "Arrange the letters: c-a-t",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "tac",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "act",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "cat",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "tca",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Spelling"
+    ],
+    "resourceId": "c01_q08"
+  },
+  {
+    "questionText": "What is 7 + 6?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "12",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "13",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "14",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "11",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Addition"
+    ],
+    "resourceId": "c01_q09"
+  },
+  {
+    "questionText": "What is 15 - 7?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "6",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "7",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "8",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "9",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Subtraction"
+    ],
+    "resourceId": "c01_q10"
+  },
+  {
+    "questionText": "The number \"30\" is written as _____.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "thirteen",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "thirty",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "three",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "thirty-one",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "NumberNames"
+    ],
+    "resourceId": "c01_q11"
+  },
+  {
+    "questionText": "What number comes just after 49?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "48",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "50",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "40",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "51",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "BeforeAfterBetween"
+    ],
+    "resourceId": "c01_q12"
+  },
+  {
+    "questionText": "Which sign makes this true? 12 ___ 8",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": ">",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "<",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "=",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "+",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Comparison"
+    ],
+    "resourceId": "c01_q13"
+  },
+  {
+    "questionText": "In the number 53, how many ones are there?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "5",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "3",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "53",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "50",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "PlaceValue"
+    ],
+    "resourceId": "c01_q14"
+  },
+  {
+    "questionText": "A triangle has 4 sides.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Shapes"
+    ],
+    "resourceId": "c01_q15"
+  },
+  {
+    "questionText": "Sam has 8 marbles. He finds 5 more. How many marbles does he have in all?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "11",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "12",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "13",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "14",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "WordProblems"
+    ],
+    "resourceId": "c01_q16"
+  },
+  {
+    "questionText": "How many ₹1 coins make ₹5?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "2",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "3",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "4",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "5",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "d"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Money"
+    ],
+    "resourceId": "c01_q17"
+  },
+  {
+    "questionText": "Your father's mother is your _____.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "mother",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "grandmother",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "aunt",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "sister",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Family"
+    ],
+    "resourceId": "c01_q18"
+  },
+  {
+    "questionText": "Which sense organ helps us to hear?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "eyes",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "nose",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "ears",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "tongue",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "SenseOrgans"
+    ],
+    "resourceId": "c01_q19"
+  },
+  {
+    "questionText": "Which of these are healthy foods?",
+    "questionImageUrl": null,
+    "questionType": "MULTIPLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "apple",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "chips",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "milk",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "candy",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a",
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Food"
+    ],
+    "resourceId": "c01_q20"
+  },
+  {
+    "questionText": "What do we wear when it rains to stay dry?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "sweater",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "raincoat",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "shorts",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "woollen cap",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Clothes"
+    ],
+    "resourceId": "c01_q21"
+  },
+  {
+    "questionText": "Which animal is a wild animal?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "cow",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "goat",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "tiger",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "dog",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Animals"
+    ],
+    "resourceId": "c01_q22"
+  },
+  {
+    "questionText": "Which part of a plant is usually underground?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "leaf",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "flower",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "root",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "stem",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Plants"
+    ],
+    "resourceId": "c01_q23"
+  },
+  {
+    "questionText": "Where do we get water from?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "rain",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "sand",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "stones",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "bricks",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Water"
+    ],
+    "resourceId": "c01_q24"
+  },
+  {
+    "questionText": "What is the capital of India?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Mumbai",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "New Delhi",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Chennai",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Kolkata",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "India"
+    ],
+    "resourceId": "c01_q25"
+  },
+  {
+    "questionText": "The national animal of India is the _____.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "lion",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "tiger",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "elephant",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "peacock",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "NationalSymbols"
+    ],
+    "resourceId": "c01_q26"
+  },
+  {
+    "questionText": "Which festival is known as the festival of lights?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Holi",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Diwali",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Eid",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Christmas",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Festivals"
+    ],
+    "resourceId": "c01_q27"
+  },
+  {
+    "questionText": "Mahatma Gandhi is also called _____.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Chacha Nehru",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Bapu",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Netaji",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Sardar",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Personalities"
+    ],
+    "resourceId": "c01_q28"
+  },
+  {
+    "questionText": "Which of these people help us in our daily life?",
+    "questionImageUrl": null,
+    "questionType": "MULTIPLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "doctor",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "thief",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "farmer",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "robber",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a",
+      "c"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "Helpers"
+    ],
+    "resourceId": "c01_q29"
+  },
+  {
+    "questionText": "The Moon gives off its own light.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": null,
+    "points": 1,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "1"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [
+      "SolarSystem"
+    ],
+    "resourceId": "c01_q30"
+  }
+]

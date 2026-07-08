@@ -1,0 +1,22 @@
+{
+  "quizzes": [
+    {
+      "type": "QUIZ",
+      "id": "q3",
+      "name": "Science: Fun Facts",
+      "category": "Science",
+      "questions": [
+        { "question": "Symbol for Water?", "options": ["H2O", "CO2", "O2", "NaCl"], "answer": "0" },
+        { "question": "Planet closest to the Sun?", "options": ["Venus", "Earth", "Mercury", "Mars"], "answer": "2" },
+        { "question": "Gas we breathe in?", "options": ["Nitrogen", "Oxygen", "Carbon Dioxide", "Hydrogen"], "answer": "1" },
+        { "question": "Part of plant that makes food?", "options": ["Root", "Stem", "Leaf", "Flower"], "answer": "2" },
+        { "question": "Freezing point of water (\u00b0C)?", "options": ["-10", "0", "10", "100"], "answer": "1" },
+        { "question": "Hardest natural substance?", "options": ["Gold", "Iron", "Diamond", "Stone"], "answer": "2" },
+        { "question": "Human body has how many lungs?", "options": ["1", "2", "3", "4"], "answer": "1" },
+        { "question": "Study of stars is called?", "options": ["Astrology", "Astronomy", "Biology", "Geology"], "answer": "1" },
+        { "question": "Center of an atom?", "options": ["Electron", "Proton", "Nucleus", "Neutron"], "answer": "2" },
+        { "question": "Force that pulls things to Earth?", "options": ["Friction", "Magnetism", "Gravity", "Electricity"], "answer": "2" }
+      ]
+    }
+  ]
+}

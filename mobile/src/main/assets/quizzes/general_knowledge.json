@@ -1,0 +1,22 @@
+{
+  "quizzes": [
+    {
+      "type": "QUIZ",
+      "id": "q2",
+      "name": "General Knowledge: Junior",
+      "category": "GK",
+      "questions": [
+        { "question": "Capital of France?", "options": ["London", "Paris", "Berlin", "Rome"], "answer": "1" },
+        { "question": "Largest planet?", "options": ["Mars", "Venus", "Jupiter", "Saturn"], "answer": "2" },
+        { "question": "Who painted Mona Lisa?", "options": ["Da Vinci", "Picasso", "Van Gogh", "Monet"], "answer": "0" },
+        { "question": "Continent with Sahara Desert?", "options": ["Asia", "Africa", "Australia", "Europe"], "answer": "1" },
+        { "question": "Fastest land animal?", "options": ["Lion", "Cheetah", "Tiger", "Horse"], "answer": "1" },
+        { "question": "Number of colors in rainbow?", "options": ["5", "6", "7", "8"], "answer": "2" },
+        { "question": "Largest ocean?", "options": ["Atlantic", "Indian", "Arctic", "Pacific"], "answer": "3" },
+        { "question": "Currency of Japan?", "options": ["Yuan", "Yen", "Won", "Dollar"], "answer": "1" },
+        { "question": "Tallest mountain?", "options": ["K2", "Mt. Everest", "Makalu", "Lhotse"], "answer": "1" },
+        { "question": "Smallest continent?", "options": ["Europe", "Antarctica", "Australia", "South America"], "answer": "2" }
+      ]
+    }
+  ]
+}

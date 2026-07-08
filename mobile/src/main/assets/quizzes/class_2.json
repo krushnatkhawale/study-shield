@@ -1,0 +1,1282 @@
+[
+  {
+    "questionText": "Which word is a proper noun?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "city",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Delhi",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "school",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "river",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Delhi is a proper noun because it is the name of a specific place.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q01"
+  },
+  {
+    "questionText": "Which word is an action word (verb)?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "beautiful",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "jump",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "blue",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "slowly",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "'Jump' is an action word or verb that tells what someone does.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q02"
+  },
+  {
+    "questionText": "Choose the correct describing word: An elephant is ___.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "small",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "big",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "tiny",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "thin",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "'Big' is an adjective that describes the elephant.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q03"
+  },
+  {
+    "questionText": "Choose the correct pronoun: ___ is my best friend. (Riya)",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "He",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "It",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "She",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "They",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "We use 'She' for a girl. Riya is a girl, so we say 'She is my best friend.'",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q04"
+  },
+  {
+    "questionText": "She ___ (jump) over the rope. Fill in the blank with the correct past tense word.",
+    "questionImageUrl": null,
+    "questionType": "FITB",
+    "options": [],
+    "correctAnswers": [
+      "jumped"
+    ],
+    "explanation": "For simple past tense, we add -ed to 'jump' to make 'jumped'.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q05"
+  },
+  {
+    "questionText": "The rabbit is hiding ___ the bush.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "in",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "on",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "under",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "behind",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "d"
+    ],
+    "explanation": "'Behind' means at the back of something. The rabbit is at the back of the bush.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q06"
+  },
+  {
+    "questionText": "Read: 'Ravi has a red ball. He plays with it every day.'\nRavi plays with his red ball every day.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "The sentence tells us that Ravi plays with his red ball every day.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q07"
+  },
+  {
+    "questionText": "Which words mean the same as 'big'?",
+    "questionImageUrl": null,
+    "questionType": "MULTIPLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "large",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "small",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "huge",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "tiny",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a",
+      "c"
+    ],
+    "explanation": "'Large' and 'huge' mean the same as 'big'. They are synonyms.",
+    "points": 2,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "English"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q08"
+  },
+  {
+    "questionText": "What is the place value of 7 in 679?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "7",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "70",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "700",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "7,000",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "In 679, the digit 7 is in the tens place, so its value is 70.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q09"
+  },
+  {
+    "questionText": "45 + 28 = ?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "63",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "73",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "83",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "93",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "45 + 28 = 73. Add 45 and 28 by carrying over.",
+    "points": 2,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q10"
+  },
+  {
+    "questionText": "6 × 4 = ?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "20",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "22",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "24",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "26",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "6 × 4 = 24. Six times four equals twenty-four.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q11"
+  },
+  {
+    "questionText": "15 ÷ 3 = 5",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "15 divided into 3 equal groups gives 5 in each group. 15 ÷ 3 = 5 is correct.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q12"
+  },
+  {
+    "questionText": "Which fraction means one-half?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "1/2",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "1/4",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "3/4",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "1/3",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "1/2 means one-half — one part out of two equal parts.",
+    "points": 2,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q13"
+  },
+  {
+    "questionText": "Which is longer — 1 meter or 1 centimeter?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "1 meter",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "1 centimeter",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Both are equal",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Cannot say",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "1 meter is much longer than 1 centimeter. 1 meter = 100 centimeters.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q14"
+  },
+  {
+    "questionText": "What time is it when the hour hand is at 4 and the minute hand is at 12?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "4 o'clock",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Half past 4",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "3 o'clock",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Quarter past 4",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "When the minute hand is at 12, it is exactly that hour. So it is 4 o'clock.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q15"
+  },
+  {
+    "questionText": "How many days are there in a week?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "5",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "6",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "7",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "8",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "There are 7 days in a week: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q16"
+  },
+  {
+    "questionText": "Riya has ₹50. She buys a notebook for ₹25. How much money is left?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "₹15",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "₹20",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "₹25",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "₹30",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "₹50 − ₹25 = ₹25. So Riya has ₹25 left.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "Math"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q17"
+  },
+  {
+    "questionText": "Which house is made of bricks and cement?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Kutcha house",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Pucca house",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Tent",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Hut",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "A Pucca house is made of strong materials like bricks and cement.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q18"
+  },
+  {
+    "questionText": "Which food gives us energy to run and play?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Milk",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Apple",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Rice",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Fish",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "Rice is an energy-giving food. Milk and fish are body-building foods, and fruits are protective foods.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q19"
+  },
+  {
+    "questionText": "Fish can live without water.",
+    "questionImageUrl": null,
+    "questionType": "TRUE_FALSE",
+    "options": [
+      {
+        "id": "a",
+        "text": "True",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "False",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Fish cannot live without water. They breathe through gills that take oxygen from water.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q20"
+  },
+  {
+    "questionText": "Which animal lives with us at home?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Lion",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Tiger",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Dog",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Elephant",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "A dog is a domestic animal that lives with us at home. Lions, tigers, and elephants are wild animals.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q21"
+  },
+  {
+    "questionText": "Which part of a plant grows under the ground?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Leaf",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Stem",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Root",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Flower",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "Roots grow under the ground. They fix the plant in the soil and absorb water.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q22"
+  },
+  {
+    "questionText": "We need air to ___.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "eat",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "breathe",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "sleep",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "walk",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "We need air to breathe. We breathe in oxygen from the air to live.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q23"
+  },
+  {
+    "questionText": "The sun rises in the ___.",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "North",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "South",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "East",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "West",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "c"
+    ],
+    "explanation": "The sun rises in the East and sets in the West.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "EVS"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q24"
+  },
+  {
+    "questionText": "Which of these are capital cities of Indian states?",
+    "questionImageUrl": null,
+    "questionType": "MULTIPLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Mumbai",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Chennai",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Delhi",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Pune",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a",
+      "b"
+    ],
+    "explanation": "Mumbai is the capital of Maharashtra and Chennai is the capital of Tamil Nadu. Delhi is a Union Territory and Pune is a city in Maharashtra.",
+    "points": 2,
+    "difficulty": "MEDIUM",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q25"
+  },
+  {
+    "questionText": "Which is our national bird?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Peacock",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Parrot",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Pigeon",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Crow",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "a"
+    ],
+    "explanation": "The peacock is India's national bird. It is known for its colorful feathers.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q26"
+  },
+  {
+    "questionText": "Who was the first Prime Minister of India?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Mahatma Gandhi",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Jawaharlal Nehru",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Dr. Rajendra Prasad",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Sardar Patel",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Jawaharlal Nehru was the first Prime Minister of India. Dr. Rajendra Prasad was the first President.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q27"
+  },
+  {
+    "questionText": "Which is the highest mountain in the world?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "K2",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Mount Everest",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Mount Fuji",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Alps",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "b"
+    ],
+    "explanation": "Mount Everest is the highest mountain in the world, located in Nepal.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q28"
+  },
+  {
+    "questionText": "Which is the fastest means of transport?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      {
+        "id": "a",
+        "text": "Bicycle",
+        "imageUrl": null
+      },
+      {
+        "id": "b",
+        "text": "Car",
+        "imageUrl": null
+      },
+      {
+        "id": "c",
+        "text": "Train",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "Aeroplane",
+        "imageUrl": null
+      }
+    ],
+    "correctAnswers": [
+      "d"
+    ],
+    "explanation": "The aeroplane is the fastest means of transport. It can travel very long distances in a short time.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q29"
+  },
+  {
+    "questionText": "The Taj Mahal is in the city of ___.",
+    "questionImageUrl": null,
+    "questionType": "FITB",
+    "options": [],
+    "correctAnswers": [
+      "Agra"
+    ],
+    "explanation": "The Taj Mahal is a famous monument located in Agra, Uttar Pradesh.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": [
+      "2"
+    ],
+    "subjects": [
+      "General Knowledge"
+    ],
+    "languages": [
+      "English"
+    ],
+    "tags": [],
+    "resourceId": "c02_q30"
+  }
+]

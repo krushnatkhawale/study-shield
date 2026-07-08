@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_light"
+    tools:context=".MainActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="StudyShield Control 🛡️"
+            app:titleCentered="true"
+            app:titleTextColor="@color/text_dark" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:id="@+id/main"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16.dp">
+
+            <!-- Start Study Now Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/startStudyButton"
+                android:layout_width="match_parent"
+                android:layout_height="72.dp"
+                android:layout_marginBottom="24.dp"
+                android:text="🎓 START STUDY NOW"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="#FF6B00"
+                app:cornerRadius="16.dp"
+                app:elevation="4.dp" />
+
+            <!-- Connection Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16.dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="16.dp"
+                app:cardElevation="2.dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16.dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📡 TV CONNECTION"
+                        android:textColor="@color/primary_blue"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8.dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="0.dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="TV IP Address"
+                            app:startIconDrawable="@android:drawable/ic_menu_info_details">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/ipAddressEditText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"
+                                android:text="192.168.1."
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <ImageButton
+                            android:id="@+id/scanButton"
+                            android:layout_width="48.dp"
+                            android:layout_height="48.dp"
+                            android:layout_marginStart="8.dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Scan for TVs"
+                            android:src="@android:drawable/ic_menu_search"
+                            app:tint="@color/primary_blue" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/discoveryStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4.dp"
+                        android:text="Searching for TVs..."
+                        android:textSize="11sp"
+                        android:textColor="@color/primary_blue"
+                        android:visibility="gone" />
+
+                    <Spinner
+                        android:id="@+id/discoveredTvsSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="48.dp"
+                        android:layout_marginTop="8.dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Configuration Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="16.dp"
+                app:cardElevation="2.dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16.dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚙️ INTERRUPTION SETUP"
+                        android:textColor="@color/primary_blue"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16.dp"
+                        android:text="Select Mode"
+                        android:textColor="@color/text_dark"
+                        android:textSize="14sp" />
+
+                    <Spinner
+                        android:id="@+id/modeSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="48.dp"
+                        android:layout_marginTop="4.dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16.dp"
+                        android:hint="Main Message or Question"
+                        app:boxCornerRadiusBottomEnd="12.dp"
+                        app:boxCornerRadiusBottomStart="12.dp"
+                        app:boxCornerRadiusTopEnd="12.dp"
+                        app:boxCornerRadiusTopStart="12.dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/messageEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Dynamic Mode Containers -->
+                    <FrameLayout
+                        android:id="@+id/modeContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16.dp">
+
+                        <!-- Timer Section -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/timerSection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="@color/timer_bg"
+                            app:cardCornerRadius="12.dp"
+                            app:strokeWidth="0dp"
+                            android:visibility="visible">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="12.dp">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0.dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="Duration">
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/durationEditText"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:text="10" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <Spinner
+                                    android:id="@+id/unitSpinner"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8.dp" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- MCQ Section -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/mcqSection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="@color/mcq_bg"
+                            app:cardCornerRadius="12.dp"
+                            app:strokeWidth="0dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12.dp">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Select the correct answer option:"
+                                    android:textColor="@color/mcq_accent"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <RadioGroup
+                                    android:id="@+id/mcqRadioGroup"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8.dp">
+
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                                        <RadioButton android:id="@+id/radio1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true"/>
+                                        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8.dp" android:hint="Option 1"><com.google.android.material.textfield.TextInputEditText android:id="@+id/option1EditText" android:layout_width="match_parent" android:layout_height="wrap_content" /></com.google.android.material.textfield.TextInputLayout>
+                                    </LinearLayout>
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8.dp">
+                                        <RadioButton android:id="@+id/radio2" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8.dp" android:hint="Option 2"><com.google.android.material.textfield.TextInputEditText android:id="@+id/option2EditText" android:layout_width="match_parent" android:layout_height="wrap_content" /></com.google.android.material.textfield.TextInputLayout>
+                                    </LinearLayout>
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8.dp">
+                                        <RadioButton android:id="@+id/radio3" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8.dp" android:hint="Option 3"><com.google.android.material.textfield.TextInputEditText android:id="@+id/option3EditText" android:layout_width="match_parent" android:layout_height="wrap_content" /></com.google.android.material.textfield.TextInputLayout>
+                                    </LinearLayout>
+                                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="8.dp">
+                                        <RadioButton android:id="@+id/radio4" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                        <com.google.android.material.textfield.TextInputLayout style="@style/Widget.Material3.TextInputLayout.OutlinedBox" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8.dp" android:hint="Option 4"><com.google.android.material.textfield.TextInputEditText android:id="@+id/option4EditText" android:layout_width="match_parent" android:layout_height="wrap_content" /></com.google.android.material.textfield.TextInputLayout>
+                                    </LinearLayout>
+                                </RadioGroup>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- FITB Section -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/fitbSection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="@color/fitb_bg"
+                            app:cardCornerRadius="12.dp"
+                            app:strokeWidth="0dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12.dp">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Correct Answer (Solution)"
+                                    android:textColor="@color/fitb_accent"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8.dp"
+                                    android:hint="Type solution here">
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/fitbAnswerEditText"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="text" />
+                                </com.google.android.material.textfield.TextInputLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </FrameLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Actions -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/lockButton"
+                android:layout_width="match_parent"
+                android:layout_height="64.dp"
+                android:layout_marginTop="24.dp"
+                android:text="🚀 ACTIVATE INTERRUPTER"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="16.dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/unlockButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="56.dp"
+                android:layout_marginTop="12.dp"
+                android:text="🔓 EMERGENCY UNLOCK"
+                app:backgroundTint="@color/unlock_red"
+                android:textColor="@color/white"
+                app:cornerRadius="16.dp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

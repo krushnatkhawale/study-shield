@@ -1,0 +1,26 @@
+# Built application files
+*.apk
+*.ap_ 
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Pre-build
+*.class
+
+# Local builds
+build/
+captures/
+
+# Gradle files
+.gradle/
+*.gradle
+
+# IDE
+.idea/
+*.iml
+*.iws
+
+# Mac
+.DS_Store

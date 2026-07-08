@@ -1,0 +1,272 @@
+package com.kaushalya.interrupter.data
+
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+@Serializable
+data class QuizQuestion(
+    val question: String,
+    val options: List<String>,
+    val answer: String
+)
+
+@Serializable
+data class InterruptionCommand(
+    val type: String,
+    val message: String? = null,
+    val duration: Long? = null,
+    val contentName: String? = null,
+    val category: String? = null,
+    val questions: List<QuizQuestion>? = null,
+    val question: String? = null,
+    val options: List<String>? = null,
+    val answer: String? = null
+)
+
+@Serializable
+@Entity(tableName = "study_sessions")
+data class StudySession(
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val durationMinutes: Int,
+    val startTime: Long, // timestamp
+    val recurrence: Recurrence = Recurrence.ONE_TIME,
+    val content: StudyContent,
+    val isActive: Boolean = true
+)
+
+enum class Recurrence {
+    ONE_TIME, DAILY, WEEKLY
+}
+
+@Serializable
+data class StudyContent(
+    val type: ContentType,
+    val id: String? = null,
+    val name: String,
+    val category: String? = null,
+    val question: String? = null,
+    val options: List<String>? = null,
+    val answer: String? = null,
+    val questions: List<QuizQuestion>? = null
+)
+
+@Serializable
+enum class ContentType {
+    QUIZ, SUBJECT, RANDOM
+}
+
+// --- Kid Profile Models ---
+
+@Serializable
+@Entity(tableName = "kid_profiles")
+data class KidProfile(
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val name: String,
+    val gender: String, // "Boy", "Girl", "Other"
+    val birthYear: Int,
+    val dateOfBirth: Long? = null, // Optional timestamp
+    val grade: String, // "class"
+    val syllabus: String? = null,
+    val lastModified: Long = System.currentTimeMillis(),
+    val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: Modified
+    val remoteId: String? = null
+)
+
+// --- Smart TV Connection History Models ---
+
+@Serializable
+@Entity(
+    tableName = "wifi_networks",
+    indices = [Index(value = ["ssid"], unique = true)]
+)
+data class WifiNetwork(
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val ssid: String,
+    val bssid: String? = null,
+    val lastConnected: Long = System.currentTimeMillis(),
+    val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: Modified
+    val remoteId: String? = null
+)
+
+@Serializable
+@Entity(
+    tableName = "connected_tvs",
+    foreignKeys = [
+        ForeignKey(
+            entity = WifiNetwork::class,
+            parentColumns = ["id"],
+            childColumns = ["networkId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["networkId"])]
+)
+data class ConnectedTV(
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val networkId: String,
+    val name: String,
+    val ipAddress: String,
+    val macAddress: String? = null,
+    val deviceInfo: String? = null,
+    val lastConnected: Long = System.currentTimeMillis(),
+    val isFavorite: Boolean = false,
+    val syncStatus: Int = 0,
+    val remoteId: String? = null
+)
+
+// --- API DTOs ---
+
+@Serializable
+data class SignUpRequest(
+    val loginId: String,
+    val password: String,
+    val name: String? = null
+)
+
+@Serializable
+data class SignInRequest(
+    val loginId: String,
+    val password: String,
+    val parentId: String? = null
+)
+
+@Serializable
+data class SignOutRequest(
+    val sessionId: String? = null
+)
+
+@Serializable
+data class AuthResponse(
+    val accountId: String? = null,
+    val loginId: String? = null,
+    val sessionId: String? = null,
+    val parentId: String? = null,
+    val parentName: String? = null,
+    val requiresParentSelection: Boolean? = null,
+    val parents: List<ParentSummary>? = null,
+    val message: String? = null,
+    val errorCode: String? = null,
+    val timestamp: Long? = null
+)
+
+@Serializable
+data class ParentSummary(
+    val parentId: String,
+    val parentName: String
+)
+
+@Serializable
+data class ValidationResponse(
+    val accountId: String? = null,
+    val loginId: String? = null,
+    val parentId: String? = null,
+    val parentName: String? = null,
+    val message: String? = null,
+    val errorCode: String? = null,
+    val timestamp: Long? = null,
+    val valid: Boolean? = null
+)
+
+@Serializable
+data class ParentResponse(
+    val parentId: String,
+    val name: String
+)
+
+@Serializable
+data class ParentRequest(
+    val name: String,
+    val gender: String? = null,
+    val relation: String? = null,
+    val type: String? = "ACCOUNT_HOLDER"
+)
+
+@Serializable
+data class StudentRequest(
+    val name: String,
+    val gender: String? = null,
+    val birthYear: Int? = null,
+    val studentClass: String? = null
+)
+
+@Serializable
+data class StudentResponse(
+    val studentId: String? = null,
+    val accountId: String? = null,
+    val name: String? = null,
+    val gender: String? = null,
+    val birthYear: Int? = null,
+    val studentClass: String? = null
+)
+
+// --- Offline Student Cache ---
+
+@Entity(tableName = "pending_students")
+data class StudentEntity(
+    @PrimaryKey
+    val localId: String = java.util.UUID.randomUUID().toString(),
+    val remoteId: String? = null,
+    val name: String,
+    val gender: String? = null,
+    val birthYear: Int? = null,
+    val studentClass: String? = null,
+    val syncPending: Boolean = false,
+    val deleted: Boolean = false,
+    val lastModified: Long = System.currentTimeMillis()
+)
+
+// --- Application Profile ---
+
+@Serializable
+data class ProfileData(
+    val account: String? = null,
+    val parents: List<ProfileParent> = emptyList(),
+    val kids: List<ProfileKid> = emptyList(),
+    val tvHistory: List<ProfileTv> = emptyList(),
+    val defaultParentId: String? = null,
+    val defaultParentName: String? = null
+)
+
+@Serializable
+data class ProfileParent(
+    val parentId: String,
+    val parentName: String,
+    val gender: String? = null,
+    val relation: String? = null
+)
+
+@Serializable
+data class ProfileKid(
+    val id: String,
+    val name: String,
+    val gender: String? = null
+)
+
+@Serializable
+data class ProfileTv(
+    val id: String,
+    val name: String,
+    val ipAddress: String
+)
+
+class Converters {
+    @TypeConverter
+    fun fromContent(content: StudyContent): String = Json.encodeToString(content)
+    @TypeConverter
+    fun toContent(content: String): StudyContent = Json.decodeFromString(content)
+
+    @TypeConverter
+    fun fromRecurrence(recurrence: Recurrence): String = recurrence.name
+    @TypeConverter
+    fun toRecurrence(recurrence: String): Recurrence = Recurrence.valueOf(recurrence)
+}

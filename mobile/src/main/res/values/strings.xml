@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">StudyShield</string>
+    <string name="start_study_now">Start Study Now</string>
+    <string name="start_study_hindi">अभी पढ़ाई शुरू करें</string>
+    <string name="study_session_scheduler">Study Session Scheduler</string>
+    <string name="duration">Duration</string>
+    <string name="minutes">minutes</string>
+    <string name="start_time">Start Time</string>
+    <string name="immediate">Immediate</string>
+    <string name="scheduled">Scheduled</string>
+    <string name="recurrence">Recurrence</string>
+    <string name="one_time">One-time</string>
+    <string name="daily">Daily</string>
+    <string name="weekly">Weekly</string>
+    <string name="select_content">Select Content</string>
+    <string name="choose_quiz">Choose a specific quiz</string>
+    <string name="choose_subject">Choose a subject</string>
+    <string name="random_packs">Random from selected packs</string>
+    <string name="start_session">Start Session</string>
+    <string name="connecting_to_tv">Connecting to TV…</string>
+    <string name="session_started">Study session started on TV</string>
+    <string name="error_starting">Failed to start session</string>
+    <string name="no_tv_connected">No TV connected</string>
+    <string name="connect_now">Connect Now</string>
+</resources>

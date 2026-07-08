@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary_blue">#3182CE</color>
+    <color name="bg_light">#F7F9FC</color>
+    <color name="text_dark">#2D3748</color>
+    <color name="timer_bg">#EBF8FF</color>
+    <color name="mcq_bg">#F0FFF4</color>
+    <color name="mcq_accent">#38A169</color>
+    <color name="fitb_bg">#FFF5F5</color>
+    <color name="fitb_accent">#E53E3E</color>
+    <color name="unlock_red">#FF6B6B</color>
+</resources>
