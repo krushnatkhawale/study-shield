@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.kaushalya.interrupter.data.AppDatabase
+import com.kaushalya.interrupter.data.KidProfileRepository
 import com.kaushalya.interrupter.data.KidProfile
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,9 +17,9 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class KidProfileViewModel(application: Application) : AndroidViewModel(application) {
-    private val kidProfileDao = AppDatabase.getDatabase(application).kidProfileDao()
+    private val repository = KidProfileRepository.getInstance(application)
 
-    val kidProfiles: StateFlow<List<KidProfile>> = kidProfileDao.getAllKids()
+    val kidProfiles: StateFlow<List<KidProfile>> = repository.getAllKids()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     var showAddDialog by mutableStateOf(false)
@@ -46,7 +46,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
                 syncStatus = 0 // New local record
             )
             
-            kidProfileDao.insertKid(kid)
+            repository.saveKid(kid)
             Log.d("KidProfile", "Saved Kid (JSON): ${Json.encodeToString(kid)}")
             
             showAddDialog = false
@@ -56,7 +56,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
 
     fun deleteKid(kid: KidProfile) {
         viewModelScope.launch {
-            kidProfileDao.deleteKid(kid)
+            repository.deleteKid(kid)
             Log.d("KidProfile", "Deleted Kid (JSON): ${Json.encodeToString(kid)}")
         }
     }

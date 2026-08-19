@@ -19,4 +19,13 @@ interface KidProfileDao {
 
     @Query("SELECT * FROM kid_profiles WHERE id = :id LIMIT 1")
     suspend fun getKidById(id: String): KidProfile?
+
+    @Query("UPDATE kid_profiles SET syncStatus = :status, remoteId = :remoteId WHERE id = :id")
+    suspend fun updateSyncStatus(id: String, status: Int, remoteId: String?)
+
+    @Query("SELECT * FROM kid_profiles WHERE syncStatus != 1")
+    suspend fun getUnsyncedKids(): List<KidProfile>
+
+    @Query("SELECT * FROM kid_profiles WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getByRemoteId(remoteId: String): KidProfile?
 }
