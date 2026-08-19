@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.Inet4Address
 import java.net.NetworkInterface
+import java.net.Socket
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
@@ -70,6 +71,8 @@ class MainActivity : ComponentActivity() {
     
     private var contentName by mutableStateOf<String?>(null)
     private var category by mutableStateOf<String?>(null)
+    private var mobileIp by mutableStateOf<String?>(null)
+    private var resultCallbackPort by mutableIntStateOf(0)
 
     private var ipAddress by mutableStateOf("Fetching...")
     // Renamed to avoid clashing with the function fetchTVName()
@@ -162,6 +165,7 @@ class MainActivity : ComponentActivity() {
                                 targetType, message, ipAddress, tvDisplayName, countdown,
                                 questionsList,
                                 contentName, category, duration,
+                                mobileIp, resultCallbackPort,
                                 onWrongAnswer = {
                                     toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP2, 200)
                                 },
@@ -232,6 +236,8 @@ class MainActivity : ComponentActivity() {
             duration = intent.getLongExtra("DURATION", 10L)
             contentName = intent.getStringExtra("CONTENT_NAME")
             category = intent.getStringExtra("CATEGORY")
+            mobileIp = intent.getStringExtra("MOBILE_IP")
+            resultCallbackPort = intent.getIntExtra("RESULT_CALLBACK_PORT", 0)
             
             // Priority 1: Full list from QUESTIONS_JSON
             val questionsJson = intent.getStringExtra("QUESTIONS_JSON")
@@ -335,6 +341,7 @@ fun MainContent(
     type: String?, message: String?, ip: String, deviceName: String, countdown: Long,
     questionsList: List<QuizQuestion>,
     contentName: String?, category: String?, duration: Long,
+    mobileIp: String?, resultCallbackPort: Int,
     onWrongAnswer: () -> Unit,
     onExitQuiz: () -> Unit,
     isPaused: Boolean,
@@ -379,8 +386,8 @@ fun MainContent(
                     Text(text = message ?: "Time to play!", color = Color.White, fontSize = 90.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, lineHeight = 100.sp)
                 }
             }
-            "MCQ" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm)
-            "FITB" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm)
+            "MCQ" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm, contentName, category, mobileIp, resultCallbackPort)
+            "FITB" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm, contentName, category, mobileIp, resultCallbackPort)
             "STUDY_SESSION" -> StudySessionUI(contentName, category, duration)
             else -> {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -403,7 +410,11 @@ fun QuizSession(
     onExit: () -> Unit,
     isPaused: Boolean,
     onTogglePause: () -> Unit,
-    showExitConfirm: Boolean = false
+    showExitConfirm: Boolean = false,
+    contentName: String? = null,
+    category: String? = null,
+    mobileIp: String? = null,
+    resultCallbackPort: Int = 0
 ) {
     var currentIndex by remember(questions) { mutableIntStateOf(0) }
     var score by remember(questions) { mutableIntStateOf(0) }
@@ -425,7 +436,7 @@ fun QuizSession(
             }
         }
     } else if (completed) {
-        QuizResultsScreen(score, questions.size, onExit)
+        QuizResultsScreen(score, questions.size, contentName, category, mobileIp, resultCallbackPort, onExit)
     } else if (currentIndex < questions.size) {
         val q = questions[currentIndex]
         Box(modifier = Modifier.fillMaxSize()) {
@@ -927,7 +938,7 @@ fun CelebrationOverlay(onStart: () -> Unit, onFinished: () -> Unit) {
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun QuizResultsScreen(score: Int, total: Int, onExit: () -> Unit) {
+fun QuizResultsScreen(score: Int, total: Int, contentName: String?, category: String?, mobileIp: String?, callbackPort: Int, onExit: () -> Unit) {
     val percentage = if (total > 0) (score * 100 / total) else 0
     val isGoodScore = percentage >= 50
 
@@ -952,6 +963,31 @@ fun QuizResultsScreen(score: Int, total: Int, onExit: () -> Unit) {
     val message = remember(score, total) {
         if (isGoodScore) goodMessages.random()
         else tryAgainMessages.random()
+    }
+
+    val sendResultAndExit = remember {
+        {
+            if (mobileIp != null && callbackPort > 0) {
+                try {
+                    val resultMessage = QuizResultMessage(
+                        score = score,
+                        totalQuestions = total,
+                        contentName = contentName,
+                        category = category,
+                        timeSpentSeconds = 0,
+                        completedAt = System.currentTimeMillis()
+                    )
+                    val socket = java.net.Socket(mobileIp, callbackPort)
+                    val out = java.io.PrintWriter(socket.getOutputStream(), true)
+                    out.println(Json.encodeToString(QuizResultMessage.serializer(), resultMessage))
+                    socket.close()
+                    Log.d("InterrupterTV", "Quiz result sent to mobile: $score/$total")
+                } catch (e: Exception) {
+                    Log.e("InterrupterTV", "Failed to send result to mobile", e)
+                }
+            }
+            onExit()
+        }
     }
 
     Column(
@@ -987,7 +1023,7 @@ fun QuizResultsScreen(score: Int, total: Int, onExit: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(64.dp))
         Button(
-            onClick = onExit,
+            onClick = sendResultAndExit,
             modifier = Modifier.size(width = 360.dp, height = 100.dp),
             shape = ButtonDefaults.shape(RoundedCornerShape(40.dp)),
             colors = ButtonDefaults.colors(

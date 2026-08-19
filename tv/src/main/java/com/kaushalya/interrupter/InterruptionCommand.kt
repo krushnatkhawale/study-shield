@@ -20,5 +20,17 @@ data class InterruptionCommand(
     // Keep old fields for direct manual commands from older app versions or simple triggers
     val question: String? = null,
     val options: List<String>? = null,
-    val answer: String? = null
+    val answer: String? = null,
+    val mobileIp: String? = null,
+    val resultCallbackPort: Int? = null
+)
+
+@Serializable
+data class QuizResultMessage(
+    val score: Int,
+    val totalQuestions: Int,
+    val contentName: String? = null,
+    val category: String? = null,
+    val timeSpentSeconds: Long = 0,
+    val completedAt: Long = System.currentTimeMillis()
 )

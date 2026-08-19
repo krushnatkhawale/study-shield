@@ -26,7 +26,19 @@ data class InterruptionCommand(
     val questions: List<QuizQuestion>? = null,
     val question: String? = null,
     val options: List<String>? = null,
-    val answer: String? = null
+    val answer: String? = null,
+    val mobileIp: String? = null,
+    val resultCallbackPort: Int? = null
+)
+
+@Serializable
+data class QuizResultMessage(
+    val score: Int,
+    val totalQuestions: Int,
+    val contentName: String? = null,
+    val category: String? = null,
+    val timeSpentSeconds: Long = 0,
+    val completedAt: Long = System.currentTimeMillis()
 )
 
 @Serializable
@@ -192,7 +204,7 @@ data class ParentRequest(
 )
 
 @Serializable
-data class StudentRequest(
+data class KidRequest(
     val name: String,
     val gender: String? = null,
     val birthYear: Int? = null,
@@ -200,7 +212,7 @@ data class StudentRequest(
 )
 
 @Serializable
-data class StudentResponse(
+data class KidResponse(
     val studentId: String? = null,
     val accountId: String? = null,
     val name: String? = null,
@@ -242,6 +254,19 @@ data class QuizResultResponse(
     val resultId: String? = null,
     val message: String? = null,
     val errorCode: String? = null
+)
+
+@Serializable
+data class QuizResultListItem(
+    val id: Long? = null,
+    val childName: String? = null,
+    val score: Int? = null,
+    val totalQuestions: Int? = null,
+    val timeSpentSeconds: Long? = null,
+    val contentName: String? = null,
+    val category: String? = null,
+    val completedAt: String? = null,
+    val createdAt: String? = null
 )
 
 // --- Application Profile ---

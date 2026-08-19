@@ -35,13 +35,13 @@ interface ApiService {
 
     // Students
     @POST("/api/students")
-    suspend fun addStudent(@Body request: StudentRequest): Response<StudentResponse>
+    suspend fun addKid(@Body request: KidRequest): Response<KidResponse>
 
     @PUT("/api/students/{id}")
-    suspend fun updateStudent(
+    suspend fun updateKid(
         @Path("id") id: String,
-        @Body request: StudentRequest
-    ): Response<StudentResponse>
+        @Body request: KidRequest
+    ): Response<KidResponse>
 
     // Config
     @GET("/api/config/classes")
@@ -52,5 +52,5 @@ interface ApiService {
     suspend fun saveQuizResult(@Body request: QuizResultRequest): Response<QuizResultResponse>
 
     @GET("/api/quiz-results")
-    suspend fun listQuizResults(): Response<List<QuizResultResponse>>
+    suspend fun listQuizResults(): Response<List<QuizResultListItem>>
 }

@@ -184,6 +184,8 @@ class TvServerService : Service() {
             putExtra("DURATION", command.duration ?: 0L)
             putExtra("CONTENT_NAME", command.contentName)
             putExtra("CATEGORY", command.category)
+            putExtra("MOBILE_IP", command.mobileIp)
+            putExtra("RESULT_CALLBACK_PORT", command.resultCallbackPort ?: 0)
             
             // Pass all questions as JSON for multi-question support
             val questions = command.questions

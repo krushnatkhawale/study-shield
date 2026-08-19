@@ -25,7 +25,7 @@ class KidProfileRepository private constructor(context: Context) {
     private suspend fun syncKidToBackend(kid: KidProfile) = withContext(Dispatchers.IO) {
         try {
             val api = RetrofitClient.getApiService()
-            val request = StudentRequest(
+            val request = KidRequest(
                 name = kid.name,
                 gender = kid.gender,
                 birthYear = kid.birthYear,
@@ -33,9 +33,9 @@ class KidProfileRepository private constructor(context: Context) {
             )
 
             val response = if (kid.remoteId != null) {
-                api.updateStudent(kid.remoteId, request)
+                api.updateKid(kid.remoteId, request)
             } else {
-                api.addStudent(request)
+                api.addKid(request)
             }
 
             if (response.isSuccessful) {

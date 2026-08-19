@@ -8,10 +8,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.io.PrintWriter
+import java.net.InetAddress
+import java.net.ServerSocket
 import java.net.Socket
 
 class StudyRepository private constructor(context: Context) {
@@ -27,6 +32,9 @@ class StudyRepository private constructor(context: Context) {
 
     private var isResolving = false
     private val resolveQueue = mutableListOf<NsdServiceInfo>()
+
+    private val quizResultRepository = QuizResultRepository.getInstance(context)
+    private var resultCallbackSocket: ServerSocket? = null
 
     fun startDiscovery() {
         Log.d("StudyRepository", "Starting NSD discovery for '_interrupter._tcp'...")
@@ -112,14 +120,69 @@ class StudyRepository private constructor(context: Context) {
 
     suspend fun sendCommand(ip: String, command: InterruptionCommand): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val isQuiz = command.type == "MCQ" || command.type == "FITB"
+            val finalCommand = if (isQuiz) {
+                try {
+                    val callbackSocket = ServerSocket(0)
+                    resultCallbackSocket = callbackSocket
+                    val mobileIp = InetAddress.getLocalHost().hostAddress ?: "10.0.2.2"
+                    Log.d("StudyRepository", "Quiz callback listener on $mobileIp:${callbackSocket.localPort}")
+                    listenForQuizResult(callbackSocket, command.contentName, command.category)
+                    command.copy(mobileIp = mobileIp, resultCallbackPort = callbackSocket.localPort)
+                } catch (e: Exception) {
+                    Log.e("StudyRepository", "Failed to start result listener", e)
+                    command
+                }
+            } else {
+                command
+            }
+
             val socket = Socket(ip, 8888)
             val out = PrintWriter(socket.getOutputStream(), true)
-            out.println(json.encodeToString(command))
+            out.println(json.encodeToString(finalCommand))
             socket.close()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun listenForQuizResult(serverSocket: ServerSocket, contentName: String?, category: String?) {
+        Thread {
+            try {
+                Log.d("StudyRepository", "Waiting for quiz result on port ${serverSocket.localPort}...")
+                val client = serverSocket.accept()
+                val reader = BufferedReader(InputStreamReader(client.getInputStream()))
+                val data = reader.readLine()
+                client.close()
+                serverSocket.close()
+                resultCallbackSocket = null
+
+                if (data != null) {
+                    try {
+                        val message = json.decodeFromString<QuizResultMessage>(data)
+                        val childName = "Quiz" // Will be set from context if available
+                        val result = QuizResult(
+                            childName = childName,
+                            score = message.score,
+                            totalQuestions = message.totalQuestions,
+                            timeSpentSeconds = message.timeSpentSeconds,
+                            contentName = message.contentName ?: contentName,
+                            category = message.category ?: category,
+                            completedAt = message.completedAt
+                        )
+                        runBlocking { quizResultRepository.saveResult(result) }
+                        Log.d("StudyRepository", "Quiz result saved: ${message.score}/${message.totalQuestions}")
+                    } catch (e: Exception) {
+                        Log.e("StudyRepository", "Failed to parse quiz result", e)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("StudyRepository", "Result listener error", e)
+                try { serverSocket.close() } catch (_: Exception) {}
+                resultCallbackSocket = null
+            }
+        }.start()
     }
 
     fun getActiveSessions(): Flow<List<StudySession>> = studySessionDao.getAllActiveSessions()
