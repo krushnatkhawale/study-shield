@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
     private var currentQuestionIndex by mutableIntStateOf(0)
     private var score by mutableIntStateOf(0)
     private var quizCompleted by mutableStateOf(false)
+    private var quizPaused by mutableStateOf(false)
     
     private var contentName by mutableStateOf<String?>(null)
     private var category by mutableStateOf<String?>(null)
@@ -130,6 +132,13 @@ class MainActivity : ComponentActivity() {
                         } else if (commandType == "STUDY_SESSION") {
                             delay(duration * 60 * 1000)
                             exitApp()
+                        } else if (commandType == "MCQ" || commandType == "FITB") {
+                            while (true) {
+                                delay(1000)
+                                if (!quizPaused) {
+                                    // For quizzes, we don't have a fixed duration; just keep the app alive
+                                }
+                            }
                         }
                     }
 
@@ -154,7 +163,9 @@ class MainActivity : ComponentActivity() {
                                 onWrongAnswer = {
                                     toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP2, 200)
                                 },
-                                onExitQuiz = { exitApp() }
+                                onExitQuiz = { exitApp() },
+                                isPaused = quizPaused,
+                                onTogglePause = { quizPaused = !quizPaused }
                             )
                         }
                     }
@@ -176,6 +187,7 @@ class MainActivity : ComponentActivity() {
         currentQuestionIndex = 0
         score = 0
         quizCompleted = false
+        quizPaused = false
         contentName = null
         category = null
     }
@@ -279,7 +291,13 @@ class MainActivity : ComponentActivity() {
             ?: Build.MODEL
     }
 
-    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (commandType == "MCQ" || commandType == "FITB") {
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_SPACE) {
+                quizPaused = !quizPaused
+                return true
+            }
+        }
         if (commandType != null && commandType != "UNLOCK") return true 
         return super.onKeyDown(keyCode, event)
     }
@@ -299,7 +317,9 @@ fun MainContent(
     questionsList: List<QuizQuestion>,
     contentName: String?, category: String?, duration: Long,
     onWrongAnswer: () -> Unit,
-    onExitQuiz: () -> Unit
+    onExitQuiz: () -> Unit,
+    isPaused: Boolean,
+    onTogglePause: () -> Unit
 ) {
     if (type != null && type != "UNLOCK") {
         BackHandler(enabled = true) { }
@@ -339,8 +359,8 @@ fun MainContent(
                     Text(text = message ?: "Time to play!", color = Color.White, fontSize = 90.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, lineHeight = 100.sp)
                 }
             }
-            "MCQ" -> QuizSession(type, questionsList, onWrongAnswer, onExitQuiz)
-            "FITB" -> QuizSession(type, questionsList, onWrongAnswer, onExitQuiz)
+            "MCQ" -> QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause)
+            "FITB" -> QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause)
             "STUDY_SESSION" -> StudySessionUI(contentName, category, duration)
             else -> {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -354,12 +374,15 @@ fun MainContent(
     }
 }
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun QuizSession(
     type: String,
     questions: List<QuizQuestion>,
     onWrong: () -> Unit,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    isPaused: Boolean,
+    onTogglePause: () -> Unit
 ) {
     var currentIndex by remember(questions) { mutableIntStateOf(0) }
     var score by remember(questions) { mutableIntStateOf(0) }
@@ -369,70 +392,137 @@ fun QuizSession(
         QuizResultsScreen(score, questions.size, onExit)
     } else if (currentIndex < questions.size) {
         val q = questions[currentIndex]
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 80.dp, vertical = 40.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Box {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxSize().padding(horizontal = 80.dp, vertical = 40.dp),
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "Question ${currentIndex + 1} of ${questions.size}",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "${(100 * (currentIndex + 1) / questions.size)}%",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Question ${currentIndex + 1} of ${questions.size}",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${(100 * (currentIndex + 1) / questions.size)}%",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth((currentIndex.toFloat() + 1f) / questions.size)
+                        .fillMaxWidth()
                         .height(8.dp)
-                        .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth((currentIndex.toFloat() + 1f) / questions.size)
+                            .height(8.dp)
+                            .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                    )
+                }
+                Spacer(modifier = Modifier.height(48.dp))
+
+                if (type == "MCQ") {
+                    if (q.options.size == 2 && (q.options.contains("True") || q.options.contains("False"))) {
+                        TrueFalseUI(
+                            question = q.question,
+                            options = q.options,
+                            correctAnswer = q.answer,
+                            onCorrect = {
+                                score++
+                                if (currentIndex < questions.size - 1) currentIndex++
+                                else completed = true
+                            },
+                            onWrongAnswer = onWrong
+                        )
+                    } else {
+                        QuizUI(
+                            question = q.question,
+                            options = q.options,
+                            correctAnswer = q.answer,
+                            onCorrect = {
+                                score++
+                                if (currentIndex < questions.size - 1) currentIndex++
+                                else completed = true
+                            },
+                            onWrongAnswer = onWrong
+                        )
+                    }
+                } else {
+                    FitbUI(
+                        question = q.question,
+                        answer = q.answer,
+                        onCorrect = {
+                            score++
+                            if (currentIndex < questions.size - 1) currentIndex++
+                            else completed = true
+                        },
+                        onWrongAnswer = onWrong
+                    )
+                }
+            }
+            Button(
+                onClick = onTogglePause,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 24.dp, top = 120.dp)
+                    .size(width = 200.dp, height = 70.dp),
+                shape = ButtonDefaults.shape(RoundedCornerShape(32.dp)),
+                colors = ButtonDefaults.colors(
+                    containerColor = if (isPaused) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.2f),
+                    focusedContainerColor = Color.White,
+                    focusedContentColor = Color.Black
+                )
+            ) {
+                Text(
+                    text = if (isPaused) "RESUME" else "PAUSE",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
-            Spacer(modifier = Modifier.height(48.dp))
-
-            if (type == "MCQ") {
-                QuizUI(
-                    question = q.question,
-                    options = q.options,
-                    correctAnswer = q.answer,
-                    onCorrect = {
-                        score++
-                        if (currentIndex < questions.size - 1) currentIndex++
-                        else completed = true
-                    },
-                    onWrongAnswer = onWrong
-                )
-            } else {
-                FitbUI(
-                    question = q.question,
-                    answer = q.answer,
-                    onCorrect = {
-                        score++
-                        if (currentIndex < questions.size - 1) currentIndex++
-                        else completed = true
-                    },
-                    onWrongAnswer = onWrong
-                )
+            if (isPaused) {
+                PauseOverlay(onResume = onTogglePause)
             }
         }
+    }
+}
+
+@Composable
+fun PauseOverlay(onResume: () -> Unit) {
+    val focusRequester = remember { FocusRequester() }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.85f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = "PAUSED", color = Color.White, fontSize = 96.sp, fontWeight = FontWeight.Black)
+            Spacer(modifier = Modifier.height(48.dp))
+            Button(
+                onClick = onResume,
+                modifier = Modifier
+                    .size(width = 400.dp, height = 120.dp)
+                    .focusRequester(focusRequester),
+                shape = ButtonDefaults.shape(RoundedCornerShape(40.dp)),
+                colors = ButtonDefaults.colors(containerColor = Color(0xFF4CAF50), focusedContainerColor = Color.White, focusedContentColor = Color.Black)
+            ) {
+                Text(text = "TAP TO RESUME", fontSize = 36.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
+        try { focusRequester.requestFocus() } catch (_: Exception) {}
     }
 }
 
@@ -510,7 +600,10 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
                 modifier = Modifier.padding(bottom = 48.dp)
             )
             options.chunked(2).forEachIndexed { rowIndex, rowOptions ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally)
+                ) {
                     rowOptions.forEachIndexed { colIndex, option ->
                         val index = rowIndex * 2 + colIndex
                         var isFocused by remember { mutableStateOf(false) }
@@ -532,8 +625,7 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
                                 }
                             },
                             modifier = Modifier
-                                .padding(16.dp)
-                                .width(460.dp)
+                                .weight(1f)
                                 .heightIn(min = 120.dp, max = 200.dp)
                                 .scale(scale)
                                 .onFocusChanged { isFocused = it.isFocused }
@@ -550,6 +642,90 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
                                 textAlign = TextAlign.Center
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+}
+
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, onCorrect: () -> Unit, onWrongAnswer: () -> Unit) {
+    val focusRequester = remember { FocusRequester() }
+    var wrongAnswerTrigger by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+
+    val shakeOffset by animateDpAsState(
+        targetValue = if (wrongAnswerTrigger % 2 == 1) 25.dp else 0.dp,
+        animationSpec = spring(Spring.DampingRatioHighBouncy, Spring.StiffnessHigh),
+        label = "shake"
+    )
+
+    val flashColor by animateColorAsState(
+        targetValue = if (wrongAnswerTrigger > 0) Color.Red.copy(alpha = 0.5f) else Color.Transparent,
+        animationSpec = tween(100), label = "flash"
+    )
+
+    val questionFontSize = when {
+        question.length <= 30 -> 72.sp
+        question.length <= 60 -> 54.sp
+        question.length <= 100 -> 40.sp
+        else -> 32.sp
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(flashColor)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize().padding(40.dp).offset(x = shakeOffset),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = question,
+                fontSize = questionFontSize,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(bottom = 80.dp)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                options.forEachIndexed { index, option ->
+                    var isFocused by remember { mutableStateOf(false) }
+                    val scale by animateFloatAsState(if (isFocused) 1.15f else 1f, label = "scale")
+                    Button(
+                        onClick = {
+                            if (option == correctAnswer) onCorrect()
+                            else {
+                                onWrongAnswer()
+                                scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; wrongAnswerTrigger = 0 }
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                            .heightIn(min = 160.dp, max = 240.dp)
+                            .scale(scale)
+                            .onFocusChanged { isFocused = it.isFocused }
+                            .then(if (index == 0) Modifier.focusRequester(focusRequester) else Modifier),
+                        shape = ButtonDefaults.shape(RoundedCornerShape(60.dp)),
+                        colors = ButtonDefaults.colors(
+                            containerColor = if (option == "True") Color(0xFF4CAF50).copy(alpha = 0.3f) else Color(0xFFF44336).copy(alpha = 0.3f),
+                            focusedContainerColor = if (option == "True") Color(0xFF4CAF50) else Color(0xFFF44336),
+                            focusedContentColor = Color.White
+                        )
+                    ) {
+                        Text(
+                            text = option,
+                            fontSize = 64.sp,
+                            fontWeight = FontWeight.Black,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
