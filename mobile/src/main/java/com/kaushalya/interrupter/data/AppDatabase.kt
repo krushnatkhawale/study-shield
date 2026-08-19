@@ -12,9 +12,9 @@ import androidx.room.TypeConverters
         WifiNetwork::class,
         ConnectedTV::class,
         KidProfile::class,
-        StudentEntity::class
+        QuizResult::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun studySessionDao(): StudySessionDao
     abstract fun historyDao(): HistoryDao
     abstract fun kidProfileDao(): KidProfileDao
-    abstract fun studentDao(): StudentDao
+    abstract fun quizResultDao(): QuizResultDao
 
     companion object {
         @Volatile

@@ -209,20 +209,39 @@ data class StudentResponse(
     val studentClass: String? = null
 )
 
-// --- Offline Student Cache ---
+// --- Quiz Result Models ---
 
-@Entity(tableName = "pending_students")
-data class StudentEntity(
+@Serializable
+@Entity(tableName = "quiz_results")
+data class QuizResult(
     @PrimaryKey
-    val localId: String = java.util.UUID.randomUUID().toString(),
-    val remoteId: String? = null,
-    val name: String,
-    val gender: String? = null,
-    val birthYear: Int? = null,
-    val studentClass: String? = null,
-    val syncPending: Boolean = false,
-    val deleted: Boolean = false,
-    val lastModified: Long = System.currentTimeMillis()
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val childName: String,
+    val score: Int,
+    val totalQuestions: Int,
+    val timeSpentSeconds: Long,
+    val contentName: String? = null,
+    val category: String? = null,
+    val completedAt: Long = System.currentTimeMillis(),
+    val syncStatus: Int = 0 // 0: Local, 1: Synced, 2: SyncFailed
+)
+
+@Serializable
+data class QuizResultRequest(
+    val childName: String,
+    val score: Int,
+    val totalQuestions: Int,
+    val timeSpentSeconds: Long,
+    val contentName: String? = null,
+    val category: String? = null,
+    val completedAt: Long
+)
+
+@Serializable
+data class QuizResultResponse(
+    val resultId: String? = null,
+    val message: String? = null,
+    val errorCode: String? = null
 )
 
 // --- Application Profile ---

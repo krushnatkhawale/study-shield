@@ -32,7 +32,6 @@ import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.*
 import com.kaushalya.interrupter.ui.parents.ParentManagementScreen
 import com.kaushalya.interrupter.ui.quiz.QuizSetupScreen
-import com.kaushalya.interrupter.ui.students.StudentManagementScreen
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -42,10 +41,10 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object Option1 : Screen("control", "Library", Icons.AutoMirrored.Filled.LibraryBooks)
     object ConnectedTvs : Screen("connected_tvs", "Connected TVs", Icons.Default.Tv)
     object Kids : Screen("kids", "Kids", Icons.Default.ChildCare)
-    object Students : Screen("students", "Students", Icons.Default.School)
     object QuizSetup : Screen("quiz_setup", "Quiz Setup", Icons.Default.Quiz)
     object Parents : Screen("parents", "Parents", Icons.Default.People)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    object SessionResults : Screen("session_results", "Results", Icons.Default.Assessment)
 
     // Dev / Debug (not in drawer by default)
     object ProfData : Screen("profdata", "ProfData", Icons.Default.Info)
@@ -79,8 +78,8 @@ fun MainScreen(
         add(Screen.Option1)
         add(Screen.ConnectedTvs)
         add(Screen.Kids)
+        add(Screen.SessionResults)
         if (!isGuest) {
-            add(Screen.Students)
             add(Screen.QuizSetup)
             add(Screen.Parents)
         }
@@ -149,6 +148,15 @@ fun MainScreen(
                     ControlScreen(studyViewModel, onStartStudy = { navController.navigate(Screen.StudyStart.route) })
                 }
                 composable(Screen.ConnectedTvs.route) { TvManagementScreen() }
+                composable(Screen.SessionResults.route) {
+                    val resultViewModel: SessionResultViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
+                    SessionResultScreen(
+                        viewModel = resultViewModel,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
                 composable(Screen.Kids.route) {
                     val kidViewModel: KidProfileViewModel = viewModel(
                         viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
@@ -172,7 +180,6 @@ fun MainScreen(
                     )
                 }
                 if (!isGuest) {
-                    composable(Screen.Students.route) { StudentManagementScreen(onBack = { navController.popBackStack() }) }
                     composable(Screen.QuizSetup.route) { QuizSetupScreen(onBack = { navController.popBackStack() }) }
                     composable(Screen.Parents.route) { ParentManagementScreen(sessionManager = sessionManager, onBack = { navController.popBackStack() }) }
                 }
@@ -308,6 +315,17 @@ fun DrawerHeader(sessionManager: SessionManager) {
 
 @Composable
 fun StatsDashboardScreen() {
+    val context = LocalContext.current
+    val resultViewModel: SessionResultViewModel = viewModel(
+        viewModelStoreOwner = context as androidx.activity.ComponentActivity
+    )
+    val recentResults by resultViewModel.recentResults.collectAsState()
+    val totalSessions = recentResults.size
+    val totalCorrect = recentResults.sumOf { it.score }
+    val totalQuestions = recentResults.sumOf { it.totalQuestions }
+    val avgPercentage = if (totalQuestions > 0) (totalCorrect * 100 / totalQuestions) else 0
+    val totalTimeMinutes = recentResults.sumOf { it.timeSpentSeconds } / 60
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -317,20 +335,30 @@ fun StatsDashboardScreen() {
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                StatCard("Study Minutes", "120", Icons.Default.Timer, Modifier.weight(1f), Color(0xFF1E88E5))
-                StatCard("Sessions", "8", Icons.Default.CheckCircle, Modifier.weight(1f), Color(0xFF43A047))
+                StatCard("Study Minutes", "$totalTimeMinutes", Icons.Default.Timer, Modifier.weight(1f), Color(0xFF1E88E5))
+                StatCard("Sessions", "$totalSessions", Icons.Default.CheckCircle, Modifier.weight(1f), Color(0xFF43A047))
             }
         }
         item {
-            StatCard("Correct Answers", "85%", Icons.AutoMirrored.Filled.TrendingUp, Modifier.fillMaxWidth(), Color(0xFFFF6B00))
+            StatCard("Correct Answers", "$avgPercentage%", Icons.AutoMirrored.Filled.TrendingUp, Modifier.fillMaxWidth(), Color(0xFFFF6B00))
         }
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Recent Activity", fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("• Fractions Quiz completed (15 mins ago)", style = MaterialTheme.typography.bodySmall)
-                    Text("• Science Subject started (1 hour ago)", style = MaterialTheme.typography.bodySmall)
+                    if (recentResults.isEmpty()) {
+                        Text("No quiz sessions yet. Start a study session to see results here.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    } else {
+                        recentResults.take(5).forEach { result ->
+                            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+                            val percentage = if (result.totalQuestions > 0) (result.score * 100 / result.totalQuestions) else 0
+                            Text(
+                                "• ${result.childName} - ${result.score}/${result.totalQuestions} ($percentage%) at ${sdf.format(Date(result.completedAt))}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -34,9 +34,6 @@ interface ApiService {
     suspend fun deleteParent(@Path("id") id: String): Response<Unit>
 
     // Students
-    @GET("/api/students")
-    suspend fun listStudents(): Response<List<StudentResponse>>
-
     @POST("/api/students")
     suspend fun addStudent(@Body request: StudentRequest): Response<StudentResponse>
 
@@ -46,10 +43,14 @@ interface ApiService {
         @Body request: StudentRequest
     ): Response<StudentResponse>
 
-    @DELETE("/api/students/{id}")
-    suspend fun deleteStudent(@Path("id") id: String): Response<Unit>
-
     // Config
     @GET("/api/config/classes")
     suspend fun getClassConfig(): Response<JsonObject>
+
+    // Quiz Results
+    @POST("/api/quiz-results")
+    suspend fun saveQuizResult(@Body request: QuizResultRequest): Response<QuizResultResponse>
+
+    @GET("/api/quiz-results")
+    suspend fun listQuizResults(): Response<List<QuizResultResponse>>
 }
