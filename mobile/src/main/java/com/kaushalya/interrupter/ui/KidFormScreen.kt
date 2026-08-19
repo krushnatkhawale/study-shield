@@ -34,9 +34,9 @@ fun KidFormScreen(
     val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val genders = listOf("Boy", "Girl", "Other")
 
-    fun navigateBack() {
+    fun handleSaveAndBack() {
         viewModel.editingKid = null
-        navigateBack()
+        onBack()
     }
 
     Scaffold(
@@ -56,7 +56,7 @@ fun KidFormScreen(
                     val year = birthYear.toIntOrNull()
                     if (name.isNotBlank() && year != null && grade.isNotBlank()) {
                         viewModel.saveKid(name, gender, year, dob, grade, selectedSyllabus.takeIf { it.isNotBlank() })
-                        navigateBack()
+                        handleSaveAndBack()
                     }
                 },
                 enabled = name.isNotBlank() && birthYear.isNotBlank() && grade.isNotBlank()
