@@ -392,45 +392,46 @@ fun QuizSession(
         QuizResultsScreen(score, questions.size, onExit)
     } else if (currentIndex < questions.size) {
         val q = questions[currentIndex]
-        Box {
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 80.dp, vertical = 40.dp),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxSize().padding(horizontal = 60.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Question ${currentIndex + 1} of ${questions.size}",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "${(100 * (currentIndex + 1) / questions.size)}%",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Question ${currentIndex + 1} of ${questions.size}",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "${(100 * (currentIndex + 1) / questions.size)}%",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth((currentIndex.toFloat() + 1f) / questions.size)
-                            .height(8.dp)
-                            .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                    )
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(3.dp))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth((currentIndex.toFloat() + 1f) / questions.size)
+                                .height(6.dp)
+                                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(3.dp))
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(48.dp))
 
                 if (type == "MCQ") {
                     if (q.options.size == 2 && (q.options.contains("True") || q.options.contains("False"))) {
@@ -470,25 +471,6 @@ fun QuizSession(
                         onWrongAnswer = onWrong
                     )
                 }
-            }
-            Button(
-                onClick = onTogglePause,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 24.dp, top = 120.dp)
-                    .size(width = 200.dp, height = 70.dp),
-                shape = ButtonDefaults.shape(RoundedCornerShape(32.dp)),
-                colors = ButtonDefaults.colors(
-                    containerColor = if (isPaused) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.2f),
-                    focusedContainerColor = Color.White,
-                    focusedContentColor = Color.Black
-                )
-            ) {
-                Text(
-                    text = if (isPaused) "RESUME" else "PAUSE",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
             if (isPaused) {
                 PauseOverlay(onResume = onTogglePause)
@@ -577,17 +559,17 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
     )
 
     val questionFontSize = when {
-        question.length <= 30 -> 72.sp
-        question.length <= 60 -> 54.sp
-        question.length <= 100 -> 40.sp
-        else -> 32.sp
+        question.length <= 20 -> 48.sp
+        question.length <= 40 -> 38.sp
+        question.length <= 80 -> 30.sp
+        else -> 24.sp
     }
 
     Box(modifier = Modifier.fillMaxSize().background(flashColor)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().padding(40.dp).offset(x = shakeOffset),
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp).offset(x = shakeOffset),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = question,
@@ -595,52 +577,57 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                maxLines = 4,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(bottom = 48.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
-            options.chunked(2).forEachIndexed { rowIndex, rowOptions ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally)
-                ) {
-                    rowOptions.forEachIndexed { colIndex, option ->
-                        val index = rowIndex * 2 + colIndex
-                        var isFocused by remember { mutableStateOf(false) }
-                        val scale by animateFloatAsState(if (isFocused) 1.15f else 1f, label = "scale")
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                options.chunked(2).forEachIndexed { rowIndex, rowOptions ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        rowOptions.forEachIndexed { colIndex, option ->
+                            val index = rowIndex * 2 + colIndex
+                            var isFocused by remember { mutableStateOf(false) }
+                            val scale by animateFloatAsState(if (isFocused) 1.08f else 1f, label = "scale")
 
-                        val optionFont = when {
-                            option.length <= 15 -> 42.sp
-                            option.length <= 30 -> 34.sp
-                            option.length <= 50 -> 28.sp
-                            else -> 24.sp
-                        }
+                            val optionFont = when {
+                                option.length <= 12 -> 32.sp
+                                option.length <= 24 -> 26.sp
+                                option.length <= 40 -> 22.sp
+                                else -> 18.sp
+                            }
 
-                        Button(
-                            onClick = {
-                                if (index == correctIndex) onCorrect()
-                                else {
-                                    onWrongAnswer()
-                                    scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; wrongAnswerTrigger = 0 }
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 120.dp, max = 200.dp)
-                                .scale(scale)
-                                .onFocusChanged { isFocused = it.isFocused }
-                                .then(if (index == 0) Modifier.focusRequester(focusRequester) else Modifier),
-                            shape = ButtonDefaults.shape(RoundedCornerShape(40.dp)),
-                            colors = ButtonDefaults.colors(containerColor = Color.White.copy(alpha = 0.2f), focusedContainerColor = Color.White, focusedContentColor = Color.Black)
-                        ) {
-                            Text(
-                                text = option,
-                                fontSize = optionFont,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
-                            )
+                            Button(
+                                onClick = {
+                                    if (index == correctIndex) onCorrect()
+                                    else {
+                                        onWrongAnswer()
+                                        scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; wrongAnswerTrigger = 0 }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(100.dp)
+                                    .scale(scale)
+                                    .onFocusChanged { isFocused = it.isFocused }
+                                    .then(if (index == 0) Modifier.focusRequester(focusRequester) else Modifier),
+                                shape = ButtonDefaults.shape(RoundedCornerShape(24.dp)),
+                                colors = ButtonDefaults.colors(containerColor = Color.White.copy(alpha = 0.2f), focusedContainerColor = Color.White, focusedContentColor = Color.Black)
+                            ) {
+                                Text(
+                                    text = option,
+                                    fontSize = optionFont,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                 }
@@ -669,17 +656,17 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
     )
 
     val questionFontSize = when {
-        question.length <= 30 -> 72.sp
-        question.length <= 60 -> 54.sp
-        question.length <= 100 -> 40.sp
-        else -> 32.sp
+        question.length <= 20 -> 48.sp
+        question.length <= 40 -> 38.sp
+        question.length <= 80 -> 30.sp
+        else -> 24.sp
     }
 
     Box(modifier = Modifier.fillMaxSize().background(flashColor)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().padding(40.dp).offset(x = shakeOffset),
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp).offset(x = shakeOffset),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = question,
@@ -687,17 +674,17 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                maxLines = 4,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(bottom = 80.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 options.forEachIndexed { index, option ->
                     var isFocused by remember { mutableStateOf(false) }
-                    val scale by animateFloatAsState(if (isFocused) 1.15f else 1f, label = "scale")
+                    val scale by animateFloatAsState(if (isFocused) 1.08f else 1f, label = "scale")
                     Button(
                         onClick = {
                             if (option == correctAnswer) onCorrect()
@@ -708,12 +695,11 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = 16.dp)
-                            .heightIn(min = 160.dp, max = 240.dp)
+                            .height(140.dp)
                             .scale(scale)
                             .onFocusChanged { isFocused = it.isFocused }
                             .then(if (index == 0) Modifier.focusRequester(focusRequester) else Modifier),
-                        shape = ButtonDefaults.shape(RoundedCornerShape(60.dp)),
+                        shape = ButtonDefaults.shape(RoundedCornerShape(32.dp)),
                         colors = ButtonDefaults.colors(
                             containerColor = if (option == "True") Color(0xFF4CAF50).copy(alpha = 0.3f) else Color(0xFFF44336).copy(alpha = 0.3f),
                             focusedContainerColor = if (option == "True") Color(0xFF4CAF50) else Color(0xFFF44336),
@@ -722,7 +708,7 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
                     ) {
                         Text(
                             text = option,
-                            fontSize = 64.sp,
+                            fontSize = 48.sp,
                             fontWeight = FontWeight.Black,
                             textAlign = TextAlign.Center
                         )
@@ -750,16 +736,16 @@ fun FitbUI(question: String, answer: String, onCorrect: () -> Unit, onWrongAnswe
     )
 
     val questionFontSize = when {
-        question.length <= 30 -> 72.sp
-        question.length <= 60 -> 54.sp
-        question.length <= 100 -> 40.sp
-        else -> 32.sp
+        question.length <= 20 -> 48.sp
+        question.length <= 40 -> 38.sp
+        question.length <= 80 -> 30.sp
+        else -> 24.sp
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize().padding(40.dp).offset(x = shakeOffset),
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 16.dp).offset(x = shakeOffset),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = question,
@@ -767,26 +753,33 @@ fun FitbUI(question: String, answer: String, onCorrect: () -> Unit, onWrongAnswe
             color = Color.White,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
         )
         Text(
             text = currentInput.ifEmpty { "______" },
             fontSize = when {
-                currentInput.length <= 8 -> 80.sp
-                currentInput.length <= 15 -> 64.sp
-                else -> 48.sp
+                currentInput.length <= 8 -> 56.sp
+                currentInput.length <= 15 -> 44.sp
+                else -> 36.sp
             },
             color = Color.Yellow,
-            modifier = Modifier.padding(vertical = 40.dp).background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(32.dp)).padding(horizontal = 60.dp, vertical = 12.dp),
+            modifier = Modifier
+                .padding(vertical = 16.dp)
+                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+                .padding(horizontal = 48.dp, vertical = 8.dp),
             fontWeight = FontWeight.Black,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        LazyVerticalGrid(columns = GridCells.Fixed(9), modifier = Modifier.width(1000.dp).height(450.dp)) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(9),
+            modifier = Modifier.fillMaxWidth().height(360.dp)
+        ) {
             items(characters) { char ->
                 var isFocused by remember { mutableStateOf(false) }
-                val scale by animateFloatAsState(if (isFocused) 1.2f else 1f, label = "scale")
+                val scale by animateFloatAsState(if (isFocused) 1.15f else 1f, label = "scale")
                 Button(
                     onClick = {
                         currentInput += char
@@ -796,14 +789,26 @@ fun FitbUI(question: String, answer: String, onCorrect: () -> Unit, onWrongAnswe
                             scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; currentInput = ""; wrongAnswerTrigger = 0 }
                         }
                     },
-                    modifier = Modifier.padding(8.dp).aspectRatio(1f).scale(scale).onFocusChanged { isFocused = it.isFocused }.then(if (char == 'A') Modifier.focusRequester(focusRequester) else Modifier),
-                    shape = ButtonDefaults.shape(RoundedCornerShape(20.dp)),
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .aspectRatio(1f)
+                        .scale(scale)
+                        .onFocusChanged { isFocused = it.isFocused }
+                        .then(if (char == 'A') Modifier.focusRequester(focusRequester) else Modifier),
+                    shape = ButtonDefaults.shape(RoundedCornerShape(16.dp)),
                     colors = ButtonDefaults.colors(containerColor = Color.White.copy(alpha = 0.15f), focusedContainerColor = Color.White, focusedContentColor = Color.Black)
-                ) { Text(text = char.toString(), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold) }
+                ) {
+                    Text(text = char.toString(), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                }
             }
         }
-        Button(onClick = { currentInput = "" }, modifier = Modifier.padding(top = 40.dp).size(320.dp, 100.dp), shape = ButtonDefaults.shape(RoundedCornerShape(32.dp)), colors = ButtonDefaults.colors(containerColor = Color(0xFFFF5722))) {
-            Text("CLEAR", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Button(
+            onClick = { currentInput = "" },
+            modifier = Modifier.padding(top = 12.dp).size(280.dp, 70.dp),
+            shape = ButtonDefaults.shape(RoundedCornerShape(24.dp)),
+            colors = ButtonDefaults.colors(containerColor = Color(0xFFFF5722))
+        ) {
+            Text("CLEAR", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
