@@ -235,7 +235,8 @@ data class QuizResult(
     val contentName: String? = null,
     val category: String? = null,
     val completedAt: Long = System.currentTimeMillis(),
-    val syncStatus: Int = 0 // 0: Local, 1: Synced, 2: SyncFailed
+    val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: SyncFailed
+    val backendId: Long? = null // Backend-assigned ID for dedup on fetch
 )
 
 @Serializable

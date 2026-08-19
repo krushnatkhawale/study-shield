@@ -14,7 +14,7 @@ import androidx.room.TypeConverters
         KidProfile::class,
         QuizResult::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

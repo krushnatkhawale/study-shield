@@ -38,8 +38,8 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
                     val backendResults = response.body() ?: emptyList()
                     Log.d("SessionResultVM", "Fetched ${backendResults.size} results from backend")
                     backendResults.forEach { item ->
-                        val remoteId = item.id?.toString() ?: return@forEach
-                        val existing = repository.getResultById(remoteId)
+                        val backendId = item.id ?: return@forEach
+                        val existing = repository.getByBackendId(backendId)
                         if (existing == null) {
                             val completedAt = try {
                                 LocalDateTime.parse(item.completedAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
@@ -47,7 +47,6 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
                             } catch (_: Exception) { System.currentTimeMillis() }
 
                             repository.saveResult(QuizResult(
-                                id = remoteId,
                                 childName = item.childName ?: "Quiz",
                                 score = item.score ?: 0,
                                 totalQuestions = item.totalQuestions ?: 0,
@@ -55,7 +54,8 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
                                 contentName = item.contentName,
                                 category = item.category,
                                 completedAt = completedAt,
-                                syncStatus = 1
+                                syncStatus = 1,
+                                backendId = backendId
                             ))
                         }
                     }

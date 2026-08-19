@@ -15,11 +15,12 @@ import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
-import java.net.InetAddress
+import java.net.Inet4Address
+import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
 
-class StudyRepository private constructor(context: Context) {
+class StudyRepository private constructor(private val context: Context) {
     private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val database = AppDatabase.getDatabase(context)
     private val studySessionDao = database.studySessionDao()
@@ -125,7 +126,7 @@ class StudyRepository private constructor(context: Context) {
                 try {
                     val callbackSocket = ServerSocket(0)
                     resultCallbackSocket = callbackSocket
-                    val mobileIp = InetAddress.getLocalHost().hostAddress ?: "10.0.2.2"
+                    val mobileIp = getWifiIpAddress()
                     Log.d("StudyRepository", "Quiz callback listener on $mobileIp:${callbackSocket.localPort}")
                     listenForQuizResult(callbackSocket, command.contentName, command.category)
                     command.copy(mobileIp = mobileIp, resultCallbackPort = callbackSocket.localPort)
@@ -183,6 +184,25 @@ class StudyRepository private constructor(context: Context) {
                 resultCallbackSocket = null
             }
         }.start()
+    }
+
+    private fun getWifiIpAddress(): String {
+        try {
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+                val addresses = networkInterface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val address = addresses.nextElement()
+                    if (!address.isLoopbackAddress && address is Inet4Address) {
+                        return address.hostAddress ?: "0.0.0.0"
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("StudyRepository", "Failed to get WiFi IP", e)
+        }
+        return "0.0.0.0"
     }
 
     fun getActiveSessions(): Flow<List<StudySession>> = studySessionDao.getAllActiveSessions()
