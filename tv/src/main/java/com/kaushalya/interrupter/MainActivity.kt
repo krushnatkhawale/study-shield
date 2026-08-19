@@ -65,6 +65,8 @@ class MainActivity : ComponentActivity() {
     private var score by mutableIntStateOf(0)
     private var quizCompleted by mutableStateOf(false)
     private var quizPaused by mutableStateOf(false)
+    private var showExitConfirm by mutableStateOf(false)
+    private var exitConfirmTimestamp by mutableLongStateOf(0L)
     
     private var contentName by mutableStateOf<String?>(null)
     private var category by mutableStateOf<String?>(null)
@@ -165,7 +167,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onExitQuiz = { exitApp() },
                                 isPaused = quizPaused,
-                                onTogglePause = { quizPaused = !quizPaused }
+                                onTogglePause = { quizPaused = !quizPaused },
+                                showExitConfirm = showExitConfirm
                             )
                         }
                     }
@@ -188,6 +191,8 @@ class MainActivity : ComponentActivity() {
         score = 0
         quizCompleted = false
         quizPaused = false
+        showExitConfirm = false
+        exitConfirmTimestamp = 0L
         contentName = null
         category = null
     }
@@ -294,7 +299,21 @@ class MainActivity : ComponentActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (commandType == "MCQ" || commandType == "FITB") {
             if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_SPACE) {
+                val now = System.currentTimeMillis()
+                if (showExitConfirm && (now - exitConfirmTimestamp) < 3000) {
+                    exitApp()
+                    return true
+                }
+                if (quizPaused && showExitConfirm) {
+                    showExitConfirm = false
+                }
                 quizPaused = !quizPaused
+                if (quizPaused) {
+                    showExitConfirm = true
+                    exitConfirmTimestamp = now
+                } else {
+                    showExitConfirm = false
+                }
                 return true
             }
         }
@@ -319,7 +338,8 @@ fun MainContent(
     onWrongAnswer: () -> Unit,
     onExitQuiz: () -> Unit,
     isPaused: Boolean,
-    onTogglePause: () -> Unit
+    onTogglePause: () -> Unit,
+    showExitConfirm: Boolean = false
 ) {
     if (type != null && type != "UNLOCK") {
         BackHandler(enabled = true) { }
@@ -359,8 +379,8 @@ fun MainContent(
                     Text(text = message ?: "Time to play!", color = Color.White, fontSize = 90.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, lineHeight = 100.sp)
                 }
             }
-            "MCQ" -> QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause)
-            "FITB" -> QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause)
+            "MCQ" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm)
+            "FITB" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm)
             "STUDY_SESSION" -> StudySessionUI(contentName, category, duration)
             else -> {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -382,13 +402,29 @@ fun QuizSession(
     onWrong: () -> Unit,
     onExit: () -> Unit,
     isPaused: Boolean,
-    onTogglePause: () -> Unit
+    onTogglePause: () -> Unit,
+    showExitConfirm: Boolean = false
 ) {
     var currentIndex by remember(questions) { mutableIntStateOf(0) }
     var score by remember(questions) { mutableIntStateOf(0) }
     var completed by remember(questions) { mutableStateOf(questions.isEmpty()) }
 
-    if (completed) {
+    if (questions.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "No questions available", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = onExit,
+                    modifier = Modifier.size(width = 300.dp, height = 80.dp),
+                    shape = ButtonDefaults.shape(RoundedCornerShape(24.dp)),
+                    colors = ButtonDefaults.colors(containerColor = Color.White.copy(alpha = 0.2f), focusedContainerColor = Color.White, focusedContentColor = Color.Black)
+                ) {
+                    Text(text = "OK", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    } else if (completed) {
         QuizResultsScreen(score, questions.size, onExit)
     } else if (currentIndex < questions.size) {
         val q = questions[currentIndex]
@@ -475,6 +511,9 @@ fun QuizSession(
             if (isPaused) {
                 PauseOverlay(onResume = onTogglePause)
             }
+            if (showExitConfirm && isPaused) {
+                ExitConfirmOverlay()
+            }
         }
     }
 }
@@ -505,6 +544,38 @@ fun PauseOverlay(onResume: () -> Unit) {
     }
     LaunchedEffect(Unit) {
         try { focusRequester.requestFocus() } catch (_: Exception) {}
+    }
+}
+
+@Composable
+fun ExitConfirmOverlay() {
+    val scale = remember { Animatable(0.8f) }
+    LaunchedEffect(Unit) {
+        scale.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow))
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f)),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(top = 180.dp).scale(scale.value)
+        ) {
+            Text(
+                text = "Press PAUSE again to exit",
+                color = Color.White,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "or resume to continue",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 24.sp
+            )
+        }
     }
 }
 
