@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.kaushalya.interrupter.data.ConnectivityObserver
 import com.kaushalya.interrupter.data.SessionManager
+import com.kaushalya.interrupter.data.ToastHelper
 import com.kaushalya.interrupter.network.RetrofitClient
 import com.kaushalya.interrupter.ui.*
 import com.kaushalya.interrupter.ui.auth.AuthViewModel
@@ -55,6 +56,7 @@ class MainActivity : ComponentActivity() {
         }
 
         RetrofitClient.init(sessionManager)
+        ToastHelper.init(applicationContext)
         ConnectivityObserver.getInstance(applicationContext).start()
 
         setContent {

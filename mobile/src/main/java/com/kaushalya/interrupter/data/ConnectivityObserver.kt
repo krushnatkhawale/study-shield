@@ -16,6 +16,7 @@ class ConnectivityObserver private constructor(context: Context) {
     private val kidProfileRepository = KidProfileRepository.getInstance(context)
 
     private var callback: ConnectivityManager.NetworkCallback? = null
+    private var wasInOfflineMode = false
 
     fun start() {
         val request = NetworkRequest.Builder()
@@ -25,9 +26,11 @@ class ConnectivityObserver private constructor(context: Context) {
         callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 Log.d(TAG, "Network available — checking if we need to sync")
-                if (sessionManager.isOfflineMode) {
+                if (wasInOfflineMode || sessionManager.isOfflineMode) {
                     Log.d(TAG, "Was in offline mode, attempting to go online")
                     sessionManager.isOfflineMode = false
+                    wasInOfflineMode = false
+                    ToastHelper.show("Back online — syncing...")
                     retryPendingSyncs()
                 }
             }
@@ -35,6 +38,8 @@ class ConnectivityObserver private constructor(context: Context) {
             override fun onLost(network: Network) {
                 Log.d(TAG, "Network lost — entering offline mode")
                 sessionManager.isOfflineMode = true
+                wasInOfflineMode = true
+                ToastHelper.show("Offline — changes will sync when connected")
             }
         }
 
@@ -60,8 +65,10 @@ class ConnectivityObserver private constructor(context: Context) {
                 Log.d(TAG, "Retrying pending kid profile syncs...")
                 runBlocking { kidProfileRepository.retrySyncFailed() }
                 Log.d(TAG, "All pending syncs completed")
+                ToastHelper.show("Sync complete")
             } catch (e: Exception) {
                 Log.e(TAG, "Error during retry", e)
+                ToastHelper.show("Sync failed — will retry later")
             }
         }.start()
     }
