@@ -50,6 +50,7 @@ import androidx.tv.material3.*
 import com.kaushalya.interrupter.ui.theme.InterrupterTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.serialization.json.Json
 import java.net.Inet4Address
@@ -972,18 +973,20 @@ fun QuizResultsScreen(score: Int, total: Int, contentName: String?, category: St
         if (mobileIp != null && callbackPort > 0) {
             coroutineScope.launch {
                 try {
-                    val resultMessage = QuizResultMessage(
-                        score = score,
-                        totalQuestions = total,
-                        contentName = contentName,
-                        category = category,
-                        timeSpentSeconds = 0,
-                        completedAt = System.currentTimeMillis()
-                    )
-                    val socket = java.net.Socket(mobileIp, callbackPort)
-                    val out = java.io.PrintWriter(socket.getOutputStream(), true)
-                    out.println(Json.encodeToString(QuizResultMessage.serializer(), resultMessage))
-                    socket.close()
+                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        val resultMessage = QuizResultMessage(
+                            score = score,
+                            totalQuestions = total,
+                            contentName = contentName,
+                            category = category,
+                            timeSpentSeconds = 0,
+                            completedAt = System.currentTimeMillis()
+                        )
+                        val socket = java.net.Socket(mobileIp, callbackPort)
+                        val out = java.io.PrintWriter(socket.getOutputStream(), true)
+                        out.println(Json.encodeToString(QuizResultMessage.serializer(), resultMessage))
+                        socket.close()
+                    }
                     Log.d("InterrupterTV", "Quiz result sent to mobile: $score/$total")
                 } catch (e: Exception) {
                     Log.e("InterrupterTV", "Failed to send result to mobile", e)
