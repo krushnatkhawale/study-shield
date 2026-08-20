@@ -50,6 +50,7 @@ import androidx.tv.material3.*
 import com.kaushalya.interrupter.ui.theme.InterrupterTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.serialization.json.Json
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -965,9 +966,11 @@ fun QuizResultsScreen(score: Int, total: Int, contentName: String?, category: St
         else tryAgainMessages.random()
     }
 
-    val sendResultAndExit = remember {
-        {
-            if (mobileIp != null && callbackPort > 0) {
+    val coroutineScope = rememberCoroutineScope()
+
+    val sendResultAndExit = {
+        if (mobileIp != null && callbackPort > 0) {
+            coroutineScope.launch {
                 try {
                     val resultMessage = QuizResultMessage(
                         score = score,
@@ -986,8 +989,8 @@ fun QuizResultsScreen(score: Int, total: Int, contentName: String?, category: St
                     Log.e("InterrupterTV", "Failed to send result to mobile", e)
                 }
             }
-            onExit()
         }
+        onExit()
     }
 
     Column(
