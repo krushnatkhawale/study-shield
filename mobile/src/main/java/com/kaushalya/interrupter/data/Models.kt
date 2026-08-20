@@ -89,7 +89,8 @@ data class KidProfile(
     val syllabus: String? = null,
     val lastModified: Long = System.currentTimeMillis(),
     val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: Modified
-    val remoteId: String? = null
+    val remoteId: String? = null,
+    val mode: String = "online" // "online" or "offline"
 )
 
 // --- Smart TV Connection History Models ---
@@ -236,7 +237,8 @@ data class QuizResult(
     val category: String? = null,
     val completedAt: Long = System.currentTimeMillis(),
     val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: SyncFailed
-    val backendId: Long? = null // Backend-assigned ID for dedup on fetch
+    val backendId: Long? = null, // Backend-assigned ID for dedup on fetch
+    val mode: String = "online" // "online" or "offline"
 )
 
 @Serializable

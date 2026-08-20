@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 class QuizResultRepository private constructor(context: Context) {
     private val database = AppDatabase.getDatabase(context)
     private val quizResultDao = database.quizResultDao()
+    private val sessionManager = SessionManager(context)
 
     fun getRecentResults(limit: Int = 10): Flow<List<QuizResult>> =
         quizResultDao.getRecentResults(limit)
@@ -18,8 +19,9 @@ class QuizResultRepository private constructor(context: Context) {
         quizResultDao.getAllResults()
 
     suspend fun saveResult(result: QuizResult) {
-        quizResultDao.insertResult(result)
-        syncResult(result)
+        val finalResult = if (sessionManager.isOfflineMode) result.copy(mode = "offline") else result
+        quizResultDao.insertResult(finalResult)
+        syncResult(finalResult)
     }
 
     suspend fun getResultById(id: String): QuizResult? =

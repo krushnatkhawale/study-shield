@@ -10,12 +10,14 @@ import kotlinx.coroutines.withContext
 class KidProfileRepository private constructor(context: Context) {
     private val database = AppDatabase.getDatabase(context)
     private val kidProfileDao = database.kidProfileDao()
+    private val sessionManager = SessionManager(context)
 
     fun getAllKids(): Flow<List<KidProfile>> = kidProfileDao.getAllKids()
 
     suspend fun saveKid(kid: KidProfile) {
-        kidProfileDao.insertKid(kid)
-        syncKidToBackend(kid)
+        val finalKid = if (sessionManager.isOfflineMode) kid.copy(mode = "offline") else kid
+        kidProfileDao.insertKid(finalKid)
+        syncKidToBackend(finalKid)
     }
 
     suspend fun deleteKid(kid: KidProfile) {

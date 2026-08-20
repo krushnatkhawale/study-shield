@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.kaushalya.interrupter.data.ConnectivityObserver
 import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.network.RetrofitClient
 import com.kaushalya.interrupter.ui.*
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
         }
 
         RetrofitClient.init(sessionManager)
+        ConnectivityObserver.getInstance(applicationContext).start()
 
         setContent {
             InterrupterTheme {
@@ -94,6 +96,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ConnectivityObserver.getInstance(applicationContext).stop()
+        multicastLock?.release()
     }
 
     @Composable

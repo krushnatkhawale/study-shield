@@ -121,6 +121,13 @@ class SessionManager(context: Context) {
             prefs.edit().putBoolean(KEY_IS_GUEST, value).apply()
         }
 
+    var isOfflineMode: Boolean
+        get() = prefs.getBoolean(KEY_IS_OFFLINE, false)
+        set(value) {
+            Log.d(TAG, "set isOfflineMode -> $value")
+            prefs.edit().putBoolean(KEY_IS_OFFLINE, value).apply()
+        }
+
     var hasSeenCarousel: Boolean
         get() = prefs.getBoolean(KEY_SEEN_CAROUSEL, false)
         set(value) {
@@ -169,6 +176,7 @@ class SessionManager(context: Context) {
         private const val KEY_PARENT_ID = "parent_id"
         private const val KEY_PARENT_NAME = "parent_name"
         private const val KEY_IS_GUEST = "is_guest"
+        private const val KEY_IS_OFFLINE = "is_offline"
         private const val KEY_SEEN_CAROUSEL = "seen_carousel"
         private const val KEY_PROFILE = "app_profile"
     }

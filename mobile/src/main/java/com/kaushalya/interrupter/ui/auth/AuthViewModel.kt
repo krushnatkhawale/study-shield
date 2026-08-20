@@ -70,6 +70,7 @@ class AuthViewModel(
             } else {
                 val cause = result.exceptionOrNull()
                 Log.d(TAG, "checkExistingSession: validation failed (${cause?.javaClass?.simpleName}: ${cause?.message}), trusting local session")
+                sessionManager.isOfflineMode = true
                 _authState.value = AuthState.Success(sessionManager.sessionId!!)
             }
             _isCheckingSession.value = false
@@ -78,6 +79,7 @@ class AuthViewModel(
 
     fun skipSessionValidation() {
         Log.d(TAG, "skipSessionValidation: skipping due to no network, trusting local session")
+        sessionManager.isOfflineMode = true
         _isCheckingSession.value = false
         _authState.value = AuthState.Success(sessionManager.sessionId!!)
     }
@@ -173,6 +175,10 @@ class AuthViewModel(
             _authState.value = AuthState.Idle
             Log.d(TAG, "signOut: complete, session and profile cleared")
         }
+    }
+
+    fun goOnline() {
+        sessionManager.isOfflineMode = false
     }
 
     fun guestLogin() {
