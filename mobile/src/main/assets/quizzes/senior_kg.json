@@ -180,7 +180,7 @@
     "resourceId": "srk_q04"
   },
   {
-    "questionText": "Fill in the blank: I saw ___ apple on the table.",
+    "questionText": "I saw ___ apple on the table.",
     "questionImageUrl": null,
     "questionType": "SINGLE_CHOICE",
     "options": [
@@ -197,6 +197,11 @@
       {
         "id": "c",
         "text": "the",
+        "imageUrl": null
+      },
+      {
+        "id": "d",
+        "text": "of",
         "imageUrl": null
       }
     ],
