@@ -1206,7 +1206,8 @@ fun QuizPreviewDialog(
                                 Text(q.question, fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 q.options.forEachIndexed { index, option ->
-                                    val isCorrect = index.toString() == q.answer
+                                    val isCorrect = q.answer == index.toString() ||
+                                            q.answer.equals(option, ignoreCase = true)
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
                                             imageVector = if (isCorrect) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,

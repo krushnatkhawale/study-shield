@@ -629,7 +629,10 @@ fun StudySessionUI(contentName: String?, category: String?, durationMinutes: Lon
 @Composable
 fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCorrect: () -> Unit, onWrongAnswer: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
-    val correctIndex = correctAnswer.toIntOrNull() ?: 0
+    // Accept both legacy numeric-index answers ("2") and option-text answers ("Mango")
+    val correctIndex = correctAnswer.toIntOrNull()
+        ?.takeIf { it in options.indices }
+        ?: options.indexOfFirst { it.equals(correctAnswer, ignoreCase = true) }
     var wrongAnswerTrigger by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 

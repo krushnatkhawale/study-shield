@@ -63,7 +63,9 @@ class QuizLoader(private val context: Context) {
                 val optionTexts = q.options.mapNotNull { it.text }
                 if (optionTexts.isEmpty()) return@mapNotNull null
                 val correctId = q.correctAnswers.firstOrNull()
-                val answer = q.options.firstOrNull { it.id == correctId }?.text ?: optionTexts.first()
+                val answer = q.options.firstOrNull { it.id == correctId }?.text
+                    ?: correctId
+                    ?: ""
                 QuizQuestion(question = text, options = optionTexts, answer = answer)
             }
             if (questions.isEmpty()) return@mapNotNull null
@@ -129,12 +131,19 @@ class QuizLoader(private val context: Context) {
     private fun parseRichQuestion(element: kotlinx.serialization.json.JsonElement): StudyContent? {
         val obj = element as? JsonObject ?: return null
         val questionText = obj["questionText"]?.jsonPrimitive?.content ?: return null
-        val options = obj["options"]?.jsonArray?.map {
-            it.jsonObject["text"]?.jsonPrimitive?.content ?: ""
+        data class RawOption(val id: String?, val text: String)
+        val rawOptions = obj["options"]?.jsonArray?.mapNotNull {
+            val o = it.jsonObject
+            val text = o["text"]?.jsonPrimitive?.content ?: return@mapNotNull null
+            RawOption(o["id"]?.jsonPrimitive?.content, text)
         } ?: emptyList()
+        val options = rawOptions.map { it.text }
         val correctAnswers = obj["correctAnswers"]?.jsonArray?.map {
             it.jsonPrimitive.content
         } ?: emptyList()
+        // Answer must be the option TEXT (what the TV compares), not the option id
+        val correctId = correctAnswers.firstOrNull()
+        val answer = rawOptions.firstOrNull { it.id == correctId }?.text ?: correctId ?: ""
         val subjects = obj["subjects"]?.jsonArray?.map {
             it.jsonPrimitive.content
         } ?: emptyList()
@@ -152,7 +161,7 @@ class QuizLoader(private val context: Context) {
                 QuizQuestion(
                     question = questionText,
                     options = options,
-                    answer = correctAnswers.firstOrNull() ?: ""
+                    answer = answer
                 )
             ),
             grade = classes.firstOrNull()
