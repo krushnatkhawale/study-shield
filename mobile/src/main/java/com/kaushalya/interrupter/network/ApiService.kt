@@ -57,6 +57,10 @@ interface ApiService {
     @GET("/api/quiz-results")
     suspend fun listQuizResults(): Response<List<QuizResultListItem>>
 
+    // Class Grades (from content.class_grades)
+    @GET("/api/v1/class-grades")
+    suspend fun getClassGrades(): Response<List<ClassGradeDto>>
+
     // Quiz Bundles (server-issued quizzes)
     @POST("/api/v1/quiz-bundles")
     suspend fun issueQuizBundle(@Body request: QuizBundleRequestDto): Response<QuizBundleResponseDto>

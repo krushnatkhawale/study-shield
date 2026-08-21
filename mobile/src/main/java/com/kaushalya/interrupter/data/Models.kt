@@ -275,6 +275,15 @@ data class QuizResultListItem(
     val createdAt: String? = null
 )
 
+@Serializable
+data class ClassGradeDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val description: String? = null,
+    val boardId: Long? = null,
+    val boardName: String? = null
+)
+
 // --- Application Profile ---
 
 @Serializable

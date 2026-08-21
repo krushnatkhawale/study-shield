@@ -11,7 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaushalya.interrupter.data.ClassGradeDto
+import com.kaushalya.interrupter.network.RetrofitClient
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -31,6 +34,19 @@ fun KidFormScreen(
     var dob by remember { mutableStateOf(kid?.dateOfBirth) }
     var selectedSyllabus by remember { mutableStateOf(kid?.syllabus ?: "") }
     var expanded by remember { mutableStateOf(false) }
+    var gradeExpanded by remember { mutableStateOf(false) }
+
+    val api = remember { RetrofitClient.getApiService() }
+    var classGrades by remember { mutableStateOf<List<ClassGradeDto>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        try {
+            classGrades = api.getClassGrades().body().orEmpty()
+                .filter { !it.name.isNullOrBlank() }
+                .sortedBy { it.name!! }
+        } catch (e: Exception) {
+            Log.w("KidFormScreen", "Could not load class grades, falling back to free text", e)
+        }
+    }
 
     val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val genders = listOf("Boy", "Girl", "Other")
@@ -107,14 +123,46 @@ fun KidFormScreen(
                 singleLine = true
             )
 
-            OutlinedTextField(
-                value = grade,
-                onValueChange = { grade = it },
-                label = { Text("Grade / Class *") },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("e.g. Grade 4") },
-                singleLine = true
-            )
+            if (classGrades.isNotEmpty()) {
+                ExposedDropdownMenuBox(
+                    expanded = gradeExpanded,
+                    onExpandedChange = { gradeExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = grade,
+                        onValueChange = {},
+                        label = { Text("Grade / Class *") },
+                        readOnly = true,
+                        placeholder = { Text("Select class") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = gradeExpanded) },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = gradeExpanded,
+                        onDismissRequest = { gradeExpanded = false }
+                    ) {
+                        classGrades.forEach { cg ->
+                            DropdownMenuItem(
+                                text = { Text(cg.name!!) },
+                                onClick = {
+                                    grade = cg.name!!
+                                    gradeExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            } else {
+                OutlinedTextField(
+                    value = grade,
+                    onValueChange = { grade = it },
+                    label = { Text("Grade / Class *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g. Grade 4") },
+                    singleLine = true
+                )
+            }
 
             // Date Picker
             var showDatePicker by remember { mutableStateOf(false) }
