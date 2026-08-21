@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
     private val studyViewModel: StudyViewModel by viewModels()
     private val sessionManager: SessionManager by lazy { SessionManager(applicationContext) }
     private val authViewModel: AuthViewModel by viewModels {
-        AuthViewModel.Factory(sessionManager)
+        AuthViewModel.Factory(sessionManager, applicationContext)
     }
     private var multicastLock: WifiManager.MulticastLock? = null
 

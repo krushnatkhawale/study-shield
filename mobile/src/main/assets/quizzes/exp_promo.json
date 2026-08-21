@@ -1,0 +1,107 @@
+[
+  {
+    "questionText": "What does StudyShield turn your TV time into?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      { "id": "a", "text": "Learning time", "imageUrl": null },
+      { "id": "b", "text": "Sleeping time", "imageUrl": null },
+      { "id": "c", "text": "Arguing time", "imageUrl": null },
+      { "id": "d", "text": "Advertising time", "imageUrl": null }
+    ],
+    "correctAnswers": ["a"],
+    "explanation": "StudyShield turns TV ad breaks into fun learning breaks!",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": ["Exp"],
+    "subjects": ["Welcome"],
+    "languages": ["English"],
+    "tags": ["promo", "hello-world"],
+    "resourceId": "exp_q01"
+  },
+  {
+    "questionText": "Which profile setting unlocks tests for your own class?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      { "id": "a", "text": "The Wi-Fi password", "imageUrl": null },
+      { "id": "b", "text": "My kid profile (class and syllabus)", "imageUrl": null },
+      { "id": "c", "text": "The TV remote batteries", "imageUrl": null },
+      { "id": "d", "text": "Screen brightness", "imageUrl": null }
+    ],
+    "correctAnswers": ["b"],
+    "explanation": "Update the kid profile with the real class to get class-based tests.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": ["Exp"],
+    "subjects": ["Welcome"],
+    "languages": ["English"],
+    "tags": ["promo", "onboarding"],
+    "resourceId": "exp_q02"
+  },
+  {
+    "questionText": "Which one of these is a fruit?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      { "id": "a", "text": "Carrot", "imageUrl": null },
+      { "id": "b", "text": "Mango", "imageUrl": null },
+      { "id": "c", "text": "Potato", "imageUrl": null },
+      { "id": "d", "text": "Onion", "imageUrl": null }
+    ],
+    "correctAnswers": ["b"],
+    "explanation": "A mango is a fruit. Carrot, potato and onion are vegetables.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": ["Exp"],
+    "subjects": ["General Knowledge"],
+    "languages": ["English"],
+    "tags": ["warmup"],
+    "resourceId": "exp_q03"
+  },
+  {
+    "questionText": "Which number comes right after 4?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      { "id": "a", "text": "3", "imageUrl": null },
+      { "id": "b", "text": "5", "imageUrl": null },
+      { "id": "c", "text": "6", "imageUrl": null },
+      { "id": "d", "text": "40", "imageUrl": null }
+    ],
+    "correctAnswers": ["b"],
+    "explanation": "Counting up: 1, 2, 3, 4, 5...",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": ["Exp"],
+    "subjects": ["Math"],
+    "languages": ["English"],
+    "tags": ["warmup", "counting"],
+    "resourceId": "exp_q04"
+  },
+  {
+    "questionText": "What appears once your class profile is set?",
+    "questionImageUrl": null,
+    "questionType": "SINGLE_CHOICE",
+    "options": [
+      { "id": "a", "text": "The TV stops working", "imageUrl": null },
+      { "id": "b", "text": "Nothing changes", "imageUrl": null },
+      { "id": "c", "text": "Tests for my real class appear", "imageUrl": null },
+      { "id": "d", "text": "The app deletes itself", "imageUrl": null }
+    ],
+    "correctAnswers": ["c"],
+    "explanation": "Once the class is set, quizzes match the kid's real class and syllabus.",
+    "points": 1,
+    "difficulty": "EASY",
+    "board": "all",
+    "classes": ["Exp"],
+    "subjects": ["Welcome"],
+    "languages": ["English"],
+    "tags": ["promo", "onboarding"],
+    "resourceId": "exp_q05"
+  }
+]

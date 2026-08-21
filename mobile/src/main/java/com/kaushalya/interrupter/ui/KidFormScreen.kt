@@ -23,10 +23,11 @@ fun KidFormScreen(
 ) {
     val kid = viewModel.editingKid
 
+    // Default-kid placeholders (blank gender, birthYear 0) start as empty form fields.
     var name by remember { mutableStateOf(kid?.name ?: "") }
-    var gender by remember { mutableStateOf(kid?.gender ?: "Boy") }
-    var birthYear by remember { mutableStateOf(kid?.birthYear?.toString() ?: "") }
-    var grade by remember { mutableStateOf(kid?.grade ?: "") }
+    var gender by remember { mutableStateOf(kid?.gender?.takeIf { it.isNotBlank() } ?: "Boy") }
+    var birthYear by remember { mutableStateOf(kid?.birthYear?.takeIf { it > 0 }?.toString() ?: "") }
+    var grade by remember { mutableStateOf(kid?.grade?.takeIf { it.isNotBlank() && !it.equals("Exp", true) } ?: "") }
     var dob by remember { mutableStateOf(kid?.dateOfBirth) }
     var selectedSyllabus by remember { mutableStateOf(kid?.syllabus ?: "") }
     var expanded by remember { mutableStateOf(false) }

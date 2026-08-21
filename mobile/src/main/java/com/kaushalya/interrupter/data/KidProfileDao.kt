@@ -28,4 +28,10 @@ interface KidProfileDao {
 
     @Query("SELECT * FROM kid_profiles WHERE remoteId = :remoteId LIMIT 1")
     suspend fun getByRemoteId(remoteId: String): KidProfile?
+
+    @Query("SELECT * FROM kid_profiles ORDER BY lastModified ASC")
+    suspend fun getAllKidsOnce(): List<KidProfile>
+
+    @Query("DELETE FROM kid_profiles")
+    suspend fun deleteAll()
 }

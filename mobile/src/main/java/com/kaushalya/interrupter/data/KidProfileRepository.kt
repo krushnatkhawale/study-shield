@@ -25,6 +25,7 @@ class KidProfileRepository private constructor(context: Context) {
     }
 
     private suspend fun syncKidToBackend(kid: KidProfile) = withContext(Dispatchers.IO) {
+        if (sessionManager.isGuest) return@withContext
         try {
             val api = RetrofitClient.getApiService()
             val request = KidRequest(
@@ -61,7 +62,75 @@ class KidProfileRepository private constructor(context: Context) {
         }
     }
 
+    /**
+     * Pulls the account's students from the backend into the local Room cache.
+     * Local-only kids are kept; server kids missing locally are inserted (deduped by remoteId).
+     * Skipped in guest mode (no backend account).
+     */
+    suspend fun syncFromBackend() = withContext(Dispatchers.IO) {
+        if (sessionManager.isGuest) return@withContext
+        try {
+            val api = RetrofitClient.getApiService()
+            val response = api.getStudents()
+            if (!response.isSuccessful) {
+                Log.w(TAG, "Student sync failed: ${response.code()}")
+                return@withContext
+            }
+            response.body()?.forEach { student ->
+                val remoteId = student.studentId ?: return@forEach
+                if (kidProfileDao.getByRemoteId(remoteId) == null) {
+                    kidProfileDao.insertKid(
+                        KidProfile(
+                            name = student.name ?: DEFAULT_KID_NAME,
+                            gender = student.gender ?: "",
+                            birthYear = student.birthYear ?: 0,
+                            grade = student.studentClass ?: "",
+                            syncStatus = 1,
+                            remoteId = remoteId
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Student sync error: ${e.message}")
+        }
+    }
+
+    /**
+     * Guarantees at least one kid profile exists after auth: pulls server kids first,
+     * then creates the default "Kid1" (class "Exp") locally if the account still has none.
+     * The default kid maps to hello-world/promo content until real details are provided.
+     */
+    suspend fun ensureDefaultKid() = withContext(Dispatchers.IO) {
+        syncFromBackend()
+        if (kidProfileDao.getAllKidsOnce().isEmpty()) {
+            saveKid(defaultKid())
+            Log.d(TAG, "Created default kid profile (Kid1 / Exp)")
+        }
+        refreshProfileKids()
+    }
+
+    /** Mirrors Room kid profiles into [SessionManager.profile] so kid-aware UIs stay in sync. */
+    suspend fun refreshProfileKids() = withContext(Dispatchers.IO) {
+        val kids = kidProfileDao.getAllKidsOnce()
+        sessionManager.updateProfile {
+            copy(kids = kids.map { ProfileKid(id = it.id, name = it.name, gender = it.gender.ifBlank { null }) })
+        }
+    }
+
     companion object {
+        private const val TAG = "KidProfileRepository"
+        const val DEFAULT_KID_NAME = "Kid1"
+        const val DEFAULT_KID_GRADE = "Exp"
+
+        fun defaultKid(): KidProfile = KidProfile(
+            name = DEFAULT_KID_NAME,
+            gender = "",
+            birthYear = 0,
+            grade = DEFAULT_KID_GRADE,
+            syllabus = null
+        )
+
         @Volatile
         private var INSTANCE: KidProfileRepository? = null
 

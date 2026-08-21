@@ -18,26 +18,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kaushalya.interrupter.data.QuizLoader
+import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.data.StudyContent
+import com.kaushalya.interrupter.ui.KidProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizSetupScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    kidViewModel: KidProfileViewModel,
+    sessionManager: SessionManager
 ) {
     val context = LocalContext.current
+    val kidProfiles by kidViewModel.kidProfiles.collectAsState()
+    var selectedKidIndex by remember { mutableIntStateOf(0) }
     var availableQuizzes by remember { mutableStateOf<List<StudyContent>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        try {
-            val loader = QuizLoader(context)
-            availableQuizzes = loader.loadQuizzes()
-        } catch (e: Exception) {
-            error = e.message
+    LaunchedEffect(selectedKidIndex, kidProfiles) {
+        if (kidProfiles.isNotEmpty()) {
+            loading = true
+            error = null
+            try {
+                val loader = QuizLoader(context)
+                val selectedKid = kidProfiles[selectedKidIndex]
+                val quizzes = loader.loadQuizzesForGradeRemoteFirst(selectedKid.grade)
+                availableQuizzes = quizzes
+                sessionManager.selectedKidId = selectedKid.id
+            } catch (e: Exception) {
+                error = e.message
+            }
+            loading = false
         }
-        loading = false
     }
 
     Scaffold(
@@ -53,6 +66,19 @@ fun QuizSetupScreen(
         }
     ) { padding ->
         when {
+            kidProfiles.isEmpty() -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.ChildCare, null, modifier = Modifier.size(64.dp), tint = Color.Gray)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("No kid profiles found", fontSize = 18.sp, color = Color.Gray)
+                        Text("Add a kid profile first to set up quizzes", fontSize = 14.sp, color = Color.Gray)
+                    }
+                }
+            }
             loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(padding),
@@ -79,35 +105,54 @@ fun QuizSetupScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.Quiz, null, modifier = Modifier.size(64.dp), tint = Color.Gray)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("No quizzes found", fontSize = 18.sp, color = Color.Gray)
+                        Text("No quizzes found for ${kidProfiles[selectedKidIndex].grade}", fontSize = 18.sp, color = Color.Gray)
                     }
                 }
             }
             else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(availableQuizzes) { quiz ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                    // Kid tabs
+                    if (kidProfiles.size > 1) {
+                        ScrollableTabRow(
+                            selectedTabIndex = selectedKidIndex,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            kidProfiles.forEachIndexed { index, kid ->
+                                Tab(
+                                    selected = selectedKidIndex == index,
+                                    onClick = { selectedKidIndex = index },
+                                    text = { Text(kid.name) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Quiz list
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(availableQuizzes) { quiz ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
                             ) {
-                                Icon(Icons.Default.Quiz, null, tint = Color(0xFFFF6B00), modifier = Modifier.size(32.dp))
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(quiz.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                    val questionCount = quiz.questions?.size ?: 0
-                                    val cat = quiz.category ?: ""
-                                    Text("$cat \u2022 $questionCount questions", fontSize = 14.sp, color = Color.Gray)
-                                }
-                                TextButton(onClick = { /* TODO: schedule from quiz */ }) {
-                                    Text("Select")
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Quiz, null, tint = Color(0xFFFF6B00), modifier = Modifier.size(32.dp))
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(quiz.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                        val questionCount = quiz.questions?.size ?: 0
+                                        val cat = quiz.category ?: ""
+                                        Text("$cat \u2022 $questionCount questions", fontSize = 14.sp, color = Color.Gray)
+                                    }
+                                    TextButton(onClick = { /* TODO: schedule from quiz */ }) {
+                                        Text("Select")
+                                    }
                                 }
                             }
                         }

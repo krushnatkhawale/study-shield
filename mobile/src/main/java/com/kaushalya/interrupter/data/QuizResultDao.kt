@@ -34,4 +34,7 @@ interface QuizResultDao {
 
     @Query("SELECT * FROM quiz_results WHERE backendId = :backendId LIMIT 1")
     suspend fun getByBackendId(backendId: Long): QuizResult?
+
+    @Query("DELETE FROM quiz_results")
+    suspend fun deleteAll()
 }

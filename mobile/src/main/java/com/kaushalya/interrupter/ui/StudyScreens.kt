@@ -143,7 +143,18 @@ fun MainScreen(
                 startDestination = Screen.Home.route,
                 modifier = Modifier.padding(padding)
             ) {
-                composable(Screen.Home.route) { StatsDashboardScreen() }
+                composable(Screen.Home.route) {
+                    val kidViewModel: KidProfileViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
+                    StatsDashboardScreen(
+                        sessionManager = sessionManager,
+                        onEditKid = { kid ->
+                            kidViewModel.editingKid = kid
+                            navController.navigate(Screen.KidForm.route)
+                        }
+                    )
+                }
                 composable(Screen.Option1.route) {
                     ControlScreen(studyViewModel, onStartStudy = { navController.navigate(Screen.StudyStart.route) })
                 }
@@ -152,8 +163,17 @@ fun MainScreen(
                     val resultViewModel: SessionResultViewModel = viewModel(
                         viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
                     )
+                    val kidViewModel: KidProfileViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
                     SessionResultScreen(
                         viewModel = resultViewModel,
+                        kidViewModel = kidViewModel,
+                        sessionManager = sessionManager,
+                        onEditKid = { kid ->
+                            kidViewModel.editingKid = kid
+                            navController.navigate(Screen.KidForm.route)
+                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -180,7 +200,16 @@ fun MainScreen(
                     )
                 }
                 if (!isGuest) {
-                    composable(Screen.QuizSetup.route) { QuizSetupScreen(onBack = { navController.popBackStack() }) }
+                    composable(Screen.QuizSetup.route) {
+                        val kidViewModel: KidProfileViewModel = viewModel(
+                            viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                        )
+                        QuizSetupScreen(
+                            onBack = { navController.popBackStack() },
+                            kidViewModel = kidViewModel,
+                            sessionManager = sessionManager
+                        )
+                    }
                     composable(Screen.Parents.route) { ParentManagementScreen(sessionManager = sessionManager, onBack = { navController.popBackStack() }) }
                 }
                 composable(Screen.Settings.route) { SettingsScreen(studyViewModel) }
@@ -190,6 +219,7 @@ fun MainScreen(
                 composable(Screen.StudyStart.route) {
                     StartStudyScreen(
                         viewModel = studyViewModel,
+                        sessionManager = sessionManager,
                         onNavigateToScheduler = { navController.navigate(Screen.Scheduler.route) },
                         onBack = { navController.popBackStack() }
                     )
@@ -202,8 +232,13 @@ fun MainScreen(
                     )
                 }
                 composable(Screen.ContentSelection.route) {
+                    val kidViewModel: KidProfileViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
                     ContentSelectionScreen(
                         viewModel = studyViewModel,
+                        sessionManager = sessionManager,
+                        kidViewModel = kidViewModel,
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -314,17 +349,50 @@ fun DrawerHeader(sessionManager: SessionManager) {
 }
 
 @Composable
-fun StatsDashboardScreen() {
+fun StatsDashboardScreen(
+    sessionManager: SessionManager,
+    onEditKid: (KidProfile) -> Unit = {}
+) {
     val context = LocalContext.current
     val resultViewModel: SessionResultViewModel = viewModel(
         viewModelStoreOwner = context as androidx.activity.ComponentActivity
     )
     val recentResults by resultViewModel.recentResults.collectAsState()
-    val totalSessions = recentResults.size
-    val totalCorrect = recentResults.sumOf { it.score }
-    val totalQuestions = recentResults.sumOf { it.totalQuestions }
+
+    var selectedKidFilter by remember { mutableStateOf<String?>(null) }
+
+    val filteredResults = remember(recentResults, selectedKidFilter) {
+        if (selectedKidFilter == null) {
+            recentResults
+        } else {
+            recentResults.filter { it.childName == selectedKidFilter }
+        }
+    }
+
+    val totalSessions = filteredResults.size
+    val totalCorrect = filteredResults.sumOf { it.score }
+    val totalQuestions = filteredResults.sumOf { it.totalQuestions }
     val avgPercentage = if (totalQuestions > 0) (totalCorrect * 100 / totalQuestions) else 0
-    val totalTimeMinutes = recentResults.sumOf { it.timeSpentSeconds } / 60
+    val totalTimeMinutes = filteredResults.sumOf { it.timeSpentSeconds } / 60
+
+    val kids = sessionManager.profile.kids
+
+    // One-time offer: after the default Exp kid finishes a test, invite the parent
+    // to update the kid profile to unlock class-based tests.
+    val expUpgradeKid by resultViewModel.expUpgradeKid.collectAsState()
+    val expKid = expUpgradeKid
+    if (expKid != null) {
+        ExpUpgradePromptDialog(
+            kidName = expKid.name,
+            onUpdateKidInfo = {
+                resultViewModel.markExpPromptHandled(expKid)
+                onEditKid(expKid)
+            },
+            onDismiss = {
+                resultViewModel.markExpPromptHandled(expKid)
+            }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -333,6 +401,29 @@ fun StatsDashboardScreen() {
         item {
             Text("Home - Statistics", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
+
+        if (kids.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedKidFilter == null,
+                        onClick = { selectedKidFilter = null },
+                        label = { Text("All") }
+                    )
+                    kids.forEach { kid ->
+                        FilterChip(
+                            selected = selectedKidFilter == kid.name,
+                            onClick = { selectedKidFilter = kid.name },
+                            label = { Text(kid.name) }
+                        )
+                    }
+                }
+            }
+        }
+
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 StatCard("Study Minutes", "$totalTimeMinutes", Icons.Default.Timer, Modifier.weight(1f), Color(0xFF1E88E5))
@@ -347,10 +438,10 @@ fun StatsDashboardScreen() {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Recent Activity", fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (recentResults.isEmpty()) {
+                    if (filteredResults.isEmpty()) {
                         Text("No quiz sessions yet. Start a study session to see results here.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     } else {
-                        recentResults.take(5).forEach { result ->
+                        filteredResults.take(5).forEach { result ->
                             val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
                             val percentage = if (result.totalQuestions > 0) (result.score * 100 / result.totalQuestions) else 0
                             Text(
@@ -668,11 +759,13 @@ fun SettingsScreen(viewModel: StudyViewModel) {
 @Composable
 fun StartStudyScreen(
     viewModel: StudyViewModel,
+    sessionManager: SessionManager,
     onNavigateToScheduler: () -> Unit,
     onBack: () -> Unit
 ) {
     val discoveredTvs by viewModel.discoveredTvs.collectAsState()
     val scheduledSessions by viewModel.scheduledSessions.collectAsState(initial = emptyList())
+    val kids = sessionManager.profile.kids
     
     LaunchedEffect(Unit) {
         viewModel.startDiscovery()
@@ -709,9 +802,42 @@ fun StartStudyScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            // Kid Selection Section (only if multiple kids exist)
+            if (kids.size > 1) {
+                item {
+                    Text("Select Kid", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        kids.forEach { kid ->
+                            FilterChip(
+                                selected = sessionManager.selectedKidId == kid.id,
+                                onClick = {
+                                    sessionManager.selectedKidId = kid.id
+                                },
+                                label = { Text(kid.name) }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            } else if (kids.size == 1 && sessionManager.selectedKidId == null) {
+                item {
+                    LaunchedEffect(kids) {
+                        sessionManager.selectedKidId = kids.first().id
+                    }
+                }
+            }
+
             // TV Selection Section
             item {
-                Text("1. Select Target TV", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
+                Text(
+                    if (kids.size > 1) "2. Select Target TV" else "1. Select Target TV",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 if (discoveredTvs.isEmpty()) {
                     val statusText = if (viewModel.isDiscovering) "Searching..." else "No TV found"
@@ -875,57 +1001,39 @@ fun SchedulerScreen(
 @Composable
 fun ContentSelectionScreen(
     viewModel: StudyViewModel,
+    sessionManager: SessionManager,
+    kidViewModel: KidProfileViewModel,
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val previewContent = viewModel.previewContent
-    
-    val contents = listOf(
-        StudyContent(ContentType.QUIZ, "q1", "Math Quiz: Grade 4", "Math", 
-            questions = listOf(
-                QuizQuestion("What is 1/2 + 1/4?", listOf("1/4", "3/4", "1/2", "1"), "1"),
-                QuizQuestion("What is 15 x 6?", listOf("75", "80", "90", "100"), "2"),
-                QuizQuestion("Square root of 144?", listOf("10", "12", "14", "16"), "1"),
-                QuizQuestion("What is 100 - 37?", listOf("53", "63", "73", "83"), "1"),
-                QuizQuestion("What is 9 x 9?", listOf("72", "81", "90", "99"), "1"),
-                QuizQuestion("25% of 200?", listOf("25", "50", "75", "100"), "1"),
-                QuizQuestion("What is 1000 / 25?", listOf("20", "30", "40", "50"), "2"),
-                QuizQuestion("Next number: 2, 4, 8, 16, ...", listOf("24", "30", "32", "40"), "2"),
-                QuizQuestion("What is 7 + 8 x 2?", listOf("23", "30", "17", "25"), "0"),
-                QuizQuestion("Angle of a straight line?", listOf("90", "180", "270", "360"), "1")
-            )
-        ),
-        StudyContent(ContentType.QUIZ, "q2", "General Knowledge: Junior", "GK",
-            questions = listOf(
-                QuizQuestion("Capital of France?", listOf("London", "Paris", "Berlin", "Rome"), "1"),
-                QuizQuestion("Largest planet?", listOf("Mars", "Venus", "Jupiter", "Saturn"), "2"),
-                QuizQuestion("Who painted Mona Lisa?", listOf("Da Vinci", "Picasso", "Van Gogh", "Monet"), "0"),
-                QuizQuestion("Continent with Sahara Desert?", listOf("Asia", "Africa", "Australia", "Europe"), "1"),
-                QuizQuestion("Fastest land animal?", listOf("Lion", "Cheetah", "Tiger", "Horse"), "1"),
-                QuizQuestion("Number of colors in rainbow?", listOf("5", "6", "7", "8"), "2"),
-                QuizQuestion("Largest ocean?", listOf("Atlantic", "Indian", "Arctic", "Pacific"), "3"),
-                QuizQuestion("Currency of Japan?", listOf("Yuan", "Yen", "Won", "Dollar"), "1"),
-                QuizQuestion("Tallest mountain?", listOf("K2", "Mt. Everest", "Makalu", "Lhotse"), "1"),
-                QuizQuestion("Smallest continent?", listOf("Europe", "Antarctica", "Australia", "South America"), "2")
-            )
-        ),
-        StudyContent(ContentType.QUIZ, "q3", "Science: Fun Facts", "Science",
-            questions = listOf(
-                QuizQuestion("Symbol for Water?", listOf("H2O", "CO2", "O2", "NaCl"), "0"),
-                QuizQuestion("Planet closest to the Sun?", listOf("Venus", "Earth", "Mercury", "Mars"), "2"),
-                QuizQuestion("Gas we breathe in?", listOf("Nitrogen", "Oxygen", "Carbon Dioxide", "Hydrogen"), "1"),
-                QuizQuestion("Part of plant that makes food?", listOf("Root", "Stem", "Leaf", "Flower"), "2"),
-                QuizQuestion("Freezing point of water (°C)?", listOf("-10", "0", "10", "100"), "1"),
-                QuizQuestion("Hardest natural substance?", listOf("Gold", "Iron", "Diamond", "Stone"), "2"),
-                QuizQuestion("Human body has how many lungs?", listOf("1", "2", "3", "4"), "1"),
-                QuizQuestion("Study of stars is called?", listOf("Astrology", "Astronomy", "Biology", "Geology"), "1"),
-                QuizQuestion("Center of an atom?", listOf("Electron", "Proton", "Nucleus", "Neutron"), "2"),
-                QuizQuestion("Force that pulls things to Earth?", listOf("Friction", "Magnetism", "Gravity", "Electricity"), "2")
-            )
-        ),
-        StudyContent(ContentType.SUBJECT, null, "Science Exploration", "Science"),
-        StudyContent(ContentType.RANDOM, null, "Random Mix", "General")
-    )
+    val context = LocalContext.current
+
+    val kidProfiles by kidViewModel.kidProfiles.collectAsState()
+
+    // Content is always tied to a kid: use the selected kid, or the first profile
+    // when nothing is selected yet (single-kid accounts get their only kid).
+    val selectedKid = remember(kidProfiles, sessionManager.selectedKidId) {
+        kidProfiles.find { it.id == sessionManager.selectedKidId } ?: kidProfiles.firstOrNull()
+    }
+
+    var availableQuizzes by remember { mutableStateOf<List<StudyContent>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(selectedKid?.id) {
+        loading = true
+        availableQuizzes = if (selectedKid != null) {
+            try {
+                sessionManager.selectedKidId = selectedKid.id
+                QuizLoader(context).loadQuizzesForGradeRemoteFirst(selectedKid.grade)
+            } catch (_: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+        loading = false
+    }
 
     Scaffold(
         topBar = {
@@ -941,48 +1049,79 @@ fun ContentSelectionScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(contents) { content ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { viewModel.selectContent(content) },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (viewModel.selectedContent == content) Color(0xFFFFF3E0) else Color.White
-                            ),
-                            border = if (viewModel.selectedContent == content) 
-                                androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFF6B00)) else null
-                        ) {
-                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(content.name, fontWeight = FontWeight.Bold)
-                                    Text(content.category ?: "", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                                }
-                                
-                                if (content.type == ContentType.QUIZ && !content.questions.isNullOrEmpty()) {
-                                    IconButton(onClick = { viewModel.showPreview(content) }) {
-                                        Icon(Icons.Default.Visibility, contentDescription = "Preview Questions", tint = Color(0xFF1E88E5))
-                                    }
-                                }
+                when {
+                    kidProfiles.isEmpty() -> {
+                        EmptyContentState(
+                            icon = { Icon(Icons.Default.ChildCare, null, modifier = Modifier.size(64.dp), tint = Color.Gray) },
+                            title = "No kid profiles found",
+                            subtitle = "Add a kid profile first — content is picked based on the kid's class."
+                        )
+                    }
+                    loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    availableQuizzes.isEmpty() -> {
+                        EmptyContentState(
+                            icon = { Icon(Icons.Default.Quiz, null, modifier = Modifier.size(64.dp), tint = Color.Gray) },
+                            title = "No quizzes for ${selectedKid?.name ?: "this kid"} (class: ${selectedKid?.grade ?: "?"})",
+                            subtitle = "Update the kid's class info to get matching tests."
+                        )
+                    }
+                    else -> {
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            item {
+                                Text(
+                                    "Content for ${selectedKid!!.name} • Class: ${selectedKid.grade}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+                            items(availableQuizzes) { content ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { viewModel.selectContent(content) },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (viewModel.selectedContent == content) Color(0xFFFFF3E0) else Color.White
+                                    ),
+                                    border = if (viewModel.selectedContent == content)
+                                        androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFF6B00)) else null
+                                ) {
+                                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(content.name, fontWeight = FontWeight.Bold)
+                                            Text(content.category ?: "", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                        }
 
-                                if (viewModel.selectedContent == content) {
-                                    Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
+                                        if (content.type == ContentType.QUIZ && !content.questions.isNullOrEmpty()) {
+                                            IconButton(onClick = { viewModel.showPreview(content) }) {
+                                                Icon(Icons.Default.Visibility, contentDescription = "Preview Questions", tint = Color(0xFF1E88E5))
+                                            }
+                                        }
+
+                                        if (viewModel.selectedContent == content) {
+                                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
 
-                Button(
-                    onClick = { viewModel.startStudySession() },
-                    modifier = Modifier.fillMaxWidth().height(60.dp).padding(top = 16.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = viewModel.selectedContent != null && uiState !is StudyUiState.Loading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
-                ) {
-                    if (uiState is StudyUiState.Loading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        val text = if (viewModel.isScheduled) "Schedule Session" else stringResource(R.string.start_session)
-                        Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = { viewModel.startStudySession() },
+                            modifier = Modifier.fillMaxWidth().height(60.dp).padding(top = 16.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = viewModel.selectedContent != null && uiState !is StudyUiState.Loading,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+                        ) {
+                            if (uiState is StudyUiState.Loading) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                val text = if (viewModel.isScheduled) "Schedule Session" else stringResource(R.string.start_session)
+                                Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             }
@@ -1016,6 +1155,23 @@ fun ContentSelectionScreen(
                     onLaunchNow = { viewModel.startStudySession(previewContent) }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyContentState(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String
+) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            icon()
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(title, fontSize = 18.sp, color = Color.Gray, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(subtitle, fontSize = 14.sp, color = Color.Gray, textAlign = TextAlign.Center)
         }
     }
 }

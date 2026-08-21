@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://study-shield-user-service.onrender.com"
+    private const val BASE_URL = "https://study-shield-backend-komv.onrender.com"
 
     private val json = Json {
         ignoreUnknownKeys = true

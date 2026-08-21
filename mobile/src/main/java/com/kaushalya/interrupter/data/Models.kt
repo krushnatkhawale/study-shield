@@ -50,7 +50,9 @@ data class StudySession(
     val startTime: Long, // timestamp
     val recurrence: Recurrence = Recurrence.ONE_TIME,
     val content: StudyContent,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val kidId: String? = null,
+    val kidName: String? = null
 )
 
 enum class Recurrence {
@@ -66,7 +68,8 @@ data class StudyContent(
     val question: String? = null,
     val options: List<String>? = null,
     val answer: String? = null,
-    val questions: List<QuizQuestion>? = null
+    val questions: List<QuizQuestion>? = null,
+    val grade: String? = null
 )
 
 @Serializable
@@ -317,3 +320,54 @@ class Converters {
     @TypeConverter
     fun toRecurrence(recurrence: String): Recurrence = Recurrence.valueOf(recurrence)
 }
+
+// --- Quiz Bundle (server-issued quizzes) ---
+
+@Serializable
+data class QuizBundleRequestDto(
+    val className: String,
+    val boardCode: String? = null,
+    val language: String? = null,
+    val childId: Long? = null,
+    val deviceId: String? = null,
+    val userId: Long? = null,
+    val allowPartial: Boolean = true
+)
+
+@Serializable
+data class QuizBundleOptionDto(
+    val id: String? = null,
+    val text: String? = null,
+    val imageUrl: String? = null
+)
+
+@Serializable
+data class QuizBundleQuestionDto(
+    val id: Long? = null,
+    val resourceId: String? = null,
+    val questionText: String? = null,
+    val questionType: String? = null,
+    val options: List<QuizBundleOptionDto> = emptyList(),
+    val correctAnswers: List<String> = emptyList(),
+    val explanation: String? = null
+)
+
+@Serializable
+data class QuizBundleQuizDto(
+    val id: Long? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val contentPackName: String? = null,
+    val quizType: String? = null,
+    val contentTier: String? = null,
+    val questions: List<QuizBundleQuestionDto> = emptyList()
+)
+
+@Serializable
+data class QuizBundleResponseDto(
+    val id: Long? = null,
+    val className: String? = null,
+    val subjects: List<String> = emptyList(),
+    val quizCount: Int? = null,
+    val quizzes: List<QuizBundleQuizDto> = emptyList()
+)

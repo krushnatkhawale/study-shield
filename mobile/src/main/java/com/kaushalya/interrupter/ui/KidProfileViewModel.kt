@@ -47,8 +47,9 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
             )
             
             repository.saveKid(kid)
-            Log.d("KidProfile", "Saved Kid (JSON): ${Json.encodeToString(kid)}")
-            
+            Log.d(TAG, "Saved Kid (JSON): ${Json.encodeToString(kid)}")
+            repository.refreshProfileKids()
+
             showAddDialog = false
             editingKid = null
         }
@@ -57,7 +58,12 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
     fun deleteKid(kid: KidProfile) {
         viewModelScope.launch {
             repository.deleteKid(kid)
-            Log.d("KidProfile", "Deleted Kid (JSON): ${Json.encodeToString(kid)}")
+            Log.d(TAG, "Deleted Kid (JSON): ${Json.encodeToString(kid)}")
+            repository.refreshProfileKids()
         }
+    }
+
+    private companion object {
+        const val TAG = "KidProfile"
     }
 }

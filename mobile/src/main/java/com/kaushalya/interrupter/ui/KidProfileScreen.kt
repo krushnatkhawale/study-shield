@@ -108,19 +108,30 @@ fun KidItem(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(kid.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text(kid.gender, fontSize = 10.sp) },
-                        modifier = Modifier.height(24.dp)
-                    )
+                    if (kid.gender.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        SuggestionChip(
+                            onClick = { },
+                            label = { Text(kid.gender, fontSize = 10.sp) },
+                            modifier = Modifier.height(24.dp)
+                        )
+                    }
                 }
                 Text("Grade: ${kid.grade}", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    "Born: ${kid.birthYear}${kid.dateOfBirth?.let { " (${sdf.format(Date(it))})" } ?: ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
+                if (kid.birthYear > 0) {
+                    Text(
+                        "Born: ${kid.birthYear}${kid.dateOfBirth?.let { " (${sdf.format(Date(it))})" } ?: ""}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+                if (kid.grade.equals("Exp", ignoreCase = true)) {
+                    Text(
+                        "Starter profile — update info to unlock class-based tests",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFFF6B00)
+                    )
+                }
             }
             IconButton(onClick = onEdit) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray)

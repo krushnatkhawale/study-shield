@@ -34,6 +34,9 @@ interface ApiService {
     suspend fun deleteParent(@Path("id") id: String): Response<Unit>
 
     // Students
+    @GET("/api/students")
+    suspend fun getStudents(): Response<List<KidResponse>>
+
     @POST("/api/students")
     suspend fun addKid(@Body request: KidRequest): Response<KidResponse>
 
@@ -53,4 +56,8 @@ interface ApiService {
 
     @GET("/api/quiz-results")
     suspend fun listQuizResults(): Response<List<QuizResultListItem>>
+
+    // Quiz Bundles (server-issued quizzes)
+    @POST("/api/v1/quiz-bundles")
+    suspend fun issueQuizBundle(@Body request: QuizBundleRequestDto): Response<QuizBundleResponseDto>
 }

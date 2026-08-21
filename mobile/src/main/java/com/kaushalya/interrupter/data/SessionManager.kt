@@ -135,6 +135,29 @@ class SessionManager(context: Context) {
             prefs.edit().putBoolean(KEY_SEEN_CAROUSEL, value).apply()
         }
 
+    var selectedKidId: String?
+        get() = prefs.getString(KEY_SELECTED_KID, null)
+        set(value) {
+            Log.d(TAG, "set selectedKidId -> $value")
+            prefs.edit().putString(KEY_SELECTED_KID, value).apply()
+        }
+
+    /**
+     * Kid profile ids for which the "update kid info to unlock specialized tests"
+     * prompt has already been shown (one offer per kid until its profile is updated).
+     */
+    var expPromptHandledKidIds: Set<String>
+        get() = prefs.getStringSet(KEY_EXP_PROMPT_HANDLED, emptySet()) ?: emptySet()
+        set(value) {
+            prefs.edit().putStringSet(KEY_EXP_PROMPT_HANDLED, value).apply()
+        }
+
+    val selectedKidName: String?
+        get() {
+            val kidId = selectedKidId ?: return null
+            return profile.kids.find { it.id == kidId }?.name
+        }
+
     fun isLoggedIn(): Boolean {
         val loggedIn = sessionId != null
         Log.d(TAG, "isLoggedIn -> $loggedIn (sessionId=${sessionId})")
@@ -178,6 +201,8 @@ class SessionManager(context: Context) {
         private const val KEY_IS_GUEST = "is_guest"
         private const val KEY_IS_OFFLINE = "is_offline"
         private const val KEY_SEEN_CAROUSEL = "seen_carousel"
+        private const val KEY_SELECTED_KID = "selected_kid_id"
+        private const val KEY_EXP_PROMPT_HANDLED = "exp_prompt_handled_kids"
         private const val KEY_PROFILE = "app_profile"
     }
 }

@@ -1,11 +1,14 @@
 package com.kaushalya.interrupter.ui.auth
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.kaushalya.interrupter.data.AccountDataGuard
 import com.kaushalya.interrupter.data.AuthRepository
 import com.kaushalya.interrupter.data.AuthResponse
+import com.kaushalya.interrupter.data.KidProfileRepository
 import com.kaushalya.interrupter.data.ParentSummary
 import com.kaushalya.interrupter.data.ProfileData
 import com.kaushalya.interrupter.data.ProfileKid
@@ -30,6 +33,7 @@ sealed class AuthState {
 
 class AuthViewModel(
     private val sessionManager: SessionManager,
+    context: Context,
     private val authRepository: AuthRepository = AuthRepository()
 ) : ViewModel() {
 
@@ -38,6 +42,9 @@ class AuthViewModel(
 
     private val _isCheckingSession = MutableStateFlow(true)
     val isCheckingSession: StateFlow<Boolean> = _isCheckingSession
+
+    private val dataGuard = AccountDataGuard(context, sessionManager)
+    private val kidProfileRepository = KidProfileRepository.getInstance(context)
 
     fun checkExistingSession() {
         Log.d(TAG, "checkExistingSession: start")
@@ -66,12 +73,14 @@ class AuthViewModel(
                 } else {
                     Log.d(TAG, "checkExistingSession: session valid, navigating to home")
                     _authState.value = AuthState.Success(sessionManager.sessionId!!)
+                    kidProfileRepository.ensureDefaultKid()
                 }
             } else {
                 val cause = result.exceptionOrNull()
                 Log.d(TAG, "checkExistingSession: validation failed (${cause?.javaClass?.simpleName}: ${cause?.message}), trusting local session")
                 sessionManager.isOfflineMode = true
                 _authState.value = AuthState.Success(sessionManager.sessionId!!)
+                kidProfileRepository.ensureDefaultKid()
             }
             _isCheckingSession.value = false
         }
@@ -82,6 +91,7 @@ class AuthViewModel(
         sessionManager.isOfflineMode = true
         _isCheckingSession.value = false
         _authState.value = AuthState.Success(sessionManager.sessionId!!)
+        viewModelScope.launch { kidProfileRepository.ensureDefaultKid() }
     }
 
     fun signUp(loginId: String, password: String, name: String) {
@@ -131,6 +141,9 @@ class AuthViewModel(
             return
         }
         Log.d(TAG, "handleAuthResponse: saving session (sessionId=$sessionId, loginId=${response.loginId})")
+        // Capture the account that owned local data before it is cleared below,
+        // so an owner id can still be resolved when the response lacks one.
+        val priorAccount = sessionManager.profile.account
         sessionManager.clear()
         sessionManager.hasSeenCarousel = true
         sessionManager.sessionId = sessionId
@@ -142,8 +155,12 @@ class AuthViewModel(
         val account = response.accountId ?: response.loginId
         val parents = response.parents?.map { ProfileParent(it.parentId, it.parentName) } ?: emptyList()
         sessionManager.profile = ProfileData(account = account, parents = parents)
-        Log.d(TAG, "handleAuthResponse: session and profile saved, navigating to home")
-        _authState.value = AuthState.Success(sessionId)
+        viewModelScope.launch {
+            dataGuard.ensureOwner(response.accountId ?: response.loginId ?: priorAccount ?: OWNER_UNKNOWN)
+            Log.d(TAG, "handleAuthResponse: session and profile saved, navigating to home")
+            _authState.value = AuthState.Success(sessionId)
+            kidProfileRepository.ensureDefaultKid()
+        }
     }
 
     fun handleParentSelection(parentId: String, parentName: String) {
@@ -159,8 +176,12 @@ class AuthViewModel(
             sessionManager.parentName = parentName
             val parents = current.parents.map { ProfileParent(it.parentId, it.parentName) }
             sessionManager.profile = existing.copy(parents = parents)
-            Log.d(TAG, "handleParentSelection: session and profile updated, navigating to home")
-            _authState.value = AuthState.Success(current.sessionId)
+            viewModelScope.launch {
+                dataGuard.ensureOwner(existing.account ?: OWNER_UNKNOWN)
+                Log.d(TAG, "handleParentSelection: session and profile updated, navigating to home")
+                _authState.value = AuthState.Success(current.sessionId)
+                kidProfileRepository.ensureDefaultKid()
+            }
         } else {
             Log.w(TAG, "handleParentSelection: called but state is ${current::class.simpleName}, ignoring")
         }
@@ -183,11 +204,15 @@ class AuthViewModel(
 
     fun guestLogin() {
         Log.d(TAG, "guestLogin: setting guest mode")
-        sessionManager.isGuest = true
-        sessionManager.hasSeenCarousel = true
-        sessionManager.sessionId = "guest"
-        sessionManager.profile = ProfileData(account = "guest")
-        _authState.value = AuthState.Success("guest")
+        viewModelScope.launch {
+            sessionManager.isGuest = true
+            sessionManager.hasSeenCarousel = true
+            sessionManager.sessionId = "guest"
+            sessionManager.profile = ProfileData(account = "guest")
+            dataGuard.ensureOwner(OWNER_GUEST)
+            _authState.value = AuthState.Success("guest")
+            kidProfileRepository.ensureDefaultKid()
+        }
     }
 
     fun resetError() {
@@ -197,14 +222,19 @@ class AuthViewModel(
         }
     }
 
-    class Factory(private val sessionManager: SessionManager) : ViewModelProvider.Factory {
+    class Factory(
+        private val sessionManager: SessionManager,
+        private val context: Context
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return AuthViewModel(sessionManager) as T
+            return AuthViewModel(sessionManager, context) as T
         }
     }
 
     companion object {
         private const val TAG = "AuthViewModel"
+        private const val OWNER_GUEST = "guest"
+        private const val OWNER_UNKNOWN = "unknown"
     }
 }

@@ -19,4 +19,7 @@ interface StudySessionDao {
 
     @Query("UPDATE study_sessions SET isActive = 0 WHERE id = :sessionId")
     suspend fun deactivateSession(sessionId: String)
+
+    @Query("DELETE FROM study_sessions")
+    suspend fun deleteAll()
 }

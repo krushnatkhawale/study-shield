@@ -162,17 +162,19 @@ class StudyRepository private constructor(private val context: Context) {
                 if (data != null) {
                     try {
                         val message = json.decodeFromString<QuizResultMessage>(data)
-                        val childName = "Quiz" // Will be set from context if available
-                        val result = QuizResult(
-                            childName = childName,
-                            score = message.score,
-                            totalQuestions = message.totalQuestions,
-                            timeSpentSeconds = message.timeSpentSeconds,
-                            contentName = message.contentName ?: contentName,
-                            category = message.category ?: category,
-                            completedAt = message.completedAt
-                        )
-                        runBlocking { quizResultRepository.saveResult(result) }
+                        val sessionManager = SessionManager(context)
+                        runBlocking {
+                            val result = QuizResult(
+                                childName = resolveChildName(sessionManager),
+                                score = message.score,
+                                totalQuestions = message.totalQuestions,
+                                timeSpentSeconds = message.timeSpentSeconds,
+                                contentName = message.contentName ?: contentName,
+                                category = message.category ?: category,
+                                completedAt = message.completedAt
+                            )
+                            quizResultRepository.saveResult(result)
+                        }
                         Log.d("StudyRepository", "Quiz result saved: ${message.score}/${message.totalQuestions}")
                     } catch (e: Exception) {
                         Log.e("StudyRepository", "Failed to parse quiz result", e)
@@ -184,6 +186,17 @@ class StudyRepository private constructor(private val context: Context) {
                 resultCallbackSocket = null
             }
         }.start()
+    }
+
+    /**
+     * Resolves which kid the completed quiz belongs to: the currently selected kid,
+     * else the first kid profile. Falls back to "Quiz" only when no profiles exist.
+     */
+    private suspend fun resolveChildName(sessionManager: SessionManager): String {
+        sessionManager.selectedKidId?.let { id ->
+            database.kidProfileDao().getKidById(id)?.let { return it.name }
+        }
+        return database.kidProfileDao().getAllKidsOnce().firstOrNull()?.name ?: "Quiz"
     }
 
     private fun getWifiIpAddress(): String {

@@ -4,8 +4,11 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kaushalya.interrupter.data.KidProfile
+import com.kaushalya.interrupter.data.KidProfileRepository
 import com.kaushalya.interrupter.data.QuizResult
 import com.kaushalya.interrupter.data.QuizResultRepository
+import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.network.RetrofitClient
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,9 +18,33 @@ import java.time.format.DateTimeFormatter
 
 class SessionResultViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = QuizResultRepository.getInstance(application)
+    private val kidRepository = KidProfileRepository.getInstance(application)
+    private val sessionManager = SessionManager(application)
 
     val recentResults: StateFlow<List<QuizResult>> = repository.getRecentResults(50)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val kidProfiles: StateFlow<List<KidProfile>> = kidRepository.getAllKids()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * The Exp-grade kid that just completed its first test and should be offered a
+     * profile update to unlock class/syllabus based tests. Null when there is nobody
+     * to prompt (no Exp kid, no results for one, or already handled for that kid).
+     */
+    val expUpgradeKid: StateFlow<KidProfile?> =
+        combine(recentResults, kidProfiles) { results, kids ->
+            val handled = sessionManager.expPromptHandledKidIds
+            kids.filter { it.grade.equals(KidProfileRepository.DEFAULT_KID_GRADE, ignoreCase = true) }
+                .firstOrNull { kid ->
+                    kid.id !in handled && results.any { it.childName == kid.name }
+                }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** Marks the prompt as shown for this kid so it is not repeated. */
+    fun markExpPromptHandled(kid: KidProfile) {
+        sessionManager.expPromptHandledKidIds = sessionManager.expPromptHandledKidIds + kid.id
+    }
 
     private val _selectedResult = MutableStateFlow<QuizResult?>(null)
     val selectedResult: StateFlow<QuizResult?> = _selectedResult
