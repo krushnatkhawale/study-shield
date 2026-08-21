@@ -29,7 +29,12 @@ object GradeQuizMapping {
     )
 
     fun quizFilesForGrade(grade: String): List<String> {
-        return gradeToFiles[grade] ?: emptyList()
+        gradeToFiles[grade]?.let { return it }
+        // Kid profiles store grades like "Class 1"; asset files are keyed by bare number ("1").
+        val normalized = grade?.trim()
+            ?.replace(Regex("(?i)^class\\s*"), "")
+            ?.trim()
+        return normalized?.let { gradeToFiles[it] } ?: emptyList()
     }
 }
 
@@ -55,7 +60,10 @@ class QuizLoader(private val context: Context) {
     private suspend fun fetchQuizzesForGrade(grade: String): List<StudyContent> {
         val response = RetrofitClient.getApiService()
             .issueQuizBundle(QuizBundleRequestDto(className = grade, deviceId = deviceId()))
-        if (!response.isSuccessful) return emptyList()
+        if (!response.isSuccessful) {
+            Log.w("QuizLoader", "Quiz bundle request failed: HTTP ${response.code()} for grade $grade")
+            return emptyList()
+        }
         val bundle = response.body() ?: return emptyList()
         val mapped = bundle.quizzes.mapNotNull { quiz ->
             val questions = quiz.questions.mapNotNull { q ->
