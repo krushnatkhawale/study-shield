@@ -58,6 +58,8 @@ import java.net.NetworkInterface
 import java.net.Socket
 import kotlin.random.Random
 
+private const val INTERRUPTOR_COUNTDOWN_SECONDS = 15L
+
 class MainActivity : ComponentActivity() {
 
     private var commandType by mutableStateOf<String?>(null)
@@ -123,11 +125,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape
                 ) {
-                    var countdown by remember { mutableLongStateOf(10L) }
+                    var countdown by remember { mutableLongStateOf(INTERRUPTOR_COUNTDOWN_SECONDS) }
 
                     LaunchedEffect(triggerCount) {
                         if (commandType == null) {
-                            countdown = 10L
+                            countdown = INTERRUPTOR_COUNTDOWN_SECONDS
                             while (countdown > 0) {
                                 delay(1000)
                                 countdown--
@@ -371,7 +373,7 @@ fun MainContent(
                 modifier = Modifier.align(Alignment.TopEnd).padding(60.dp),
                 contentAlignment = Alignment.Center
             ) {
-                val sweepAngle = (countdown.toFloat() / 10f) * 360f
+                val sweepAngle = (countdown.toFloat() / INTERRUPTOR_COUNTDOWN_SECONDS.toFloat()) * 360f
                 Canvas(modifier = Modifier.size(100.dp)) {
                     drawCircle(color = Color.White.copy(alpha = 0.3f), style = Stroke(width = 8.dp.toPx()))
                     drawArc(color = Color.White, startAngle = -90f, sweepAngle = sweepAngle, useCenter = false, style = Stroke(width = 8.dp.toPx()))
