@@ -35,9 +35,21 @@ object RetrofitClient {
                 level = HttpLoggingInterceptor.Level.BODY
             }
 
+            // TEMP: log every REST response's status code and body for debugging
+            val responseLogger = okhttp3.Interceptor { chain ->
+                val response = chain.proceed(chain.request())
+                val body = response.peekBody(Long.MAX_VALUE).string()
+                android.util.Log.i(
+                    "RestCall",
+                    "${response.request.method} ${response.request.url} -> HTTP ${response.code}\n$body"
+                )
+                response
+            }
+
             val client = OkHttpClient.Builder()
                 .addInterceptor(AuthInterceptor(sm))
                 .addInterceptor(logging)
+                .addInterceptor(responseLogger)
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
