@@ -16,6 +16,14 @@ data class QuizQuestion(
     val answer: String
 )
 
+/** Shuffle option order so the correct answer is not always the first option. */
+fun QuizQuestion.shuffledOptions(): QuizQuestion {
+    if (options.size < 2) return this
+    if (answer !in options) return this
+    val shuffled = options.shuffled()
+    return if (shuffled == options) this else copy(options = shuffled)
+}
+
 @Serializable
 data class InterruptionCommand(
     val type: String,

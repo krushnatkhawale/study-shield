@@ -74,7 +74,7 @@ class QuizLoader(private val context: Context) {
                 val answer = q.options.firstOrNull { it.id == correctId }?.text
                     ?: correctId
                     ?: ""
-                QuizQuestion(question = text, options = optionTexts, answer = answer)
+                QuizQuestion(question = text, options = optionTexts, answer = answer).shuffledOptions()
             }
             if (questions.isEmpty()) return@mapNotNull null
             StudyContent(
@@ -170,7 +170,7 @@ class QuizLoader(private val context: Context) {
                     question = questionText,
                     options = options,
                     answer = answer
-                )
+                ).shuffledOptions()
             ),
             grade = classes.firstOrNull()
         )
