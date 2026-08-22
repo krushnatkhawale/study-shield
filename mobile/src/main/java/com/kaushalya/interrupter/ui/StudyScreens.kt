@@ -51,7 +51,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 
     // Study Flow (not in drawer)
     object StudyStart : Screen("study_start", "Start Study", Icons.Default.School)
-    object Scheduler : Screen("scheduler", "Scheduler", Icons.Default.Event)
     object ContentSelection : Screen("content", "Select Content", Icons.AutoMirrored.Filled.List)
 
     // Kid Form (not in drawer)
@@ -156,7 +155,18 @@ fun MainScreen(
                     )
                 }
                 composable(Screen.Option1.route) {
-                    ControlScreen(studyViewModel, onStartStudy = { navController.navigate(Screen.StudyStart.route) })
+                    // If a TV is already selected, skip the Start Study screen entirely
+                    // and go straight to Select Content.
+                    ControlScreen(
+                        studyViewModel,
+                        onStartStudy = {
+                            if (studyViewModel.selectedTvIp != null) {
+                                navController.navigate(Screen.ContentSelection.route)
+                            } else {
+                                navController.navigate(Screen.StudyStart.route)
+                            }
+                        }
+                    )
                 }
                 composable(Screen.ConnectedTvs.route) { TvManagementScreen() }
                 composable(Screen.SessionResults.route) {
@@ -220,13 +230,6 @@ fun MainScreen(
                     StartStudyScreen(
                         viewModel = studyViewModel,
                         sessionManager = sessionManager,
-                        onNavigateToScheduler = { navController.navigate(Screen.Scheduler.route) },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-                composable(Screen.Scheduler.route) {
-                    SchedulerScreen(
-                        viewModel = studyViewModel,
                         onNavigateToContent = { navController.navigate(Screen.ContentSelection.route) },
                         onBack = { navController.popBackStack() }
                     )
@@ -760,7 +763,7 @@ fun SettingsScreen(viewModel: StudyViewModel) {
 fun StartStudyScreen(
     viewModel: StudyViewModel,
     sessionManager: SessionManager,
-    onNavigateToScheduler: () -> Unit,
+    onNavigateToContent: () -> Unit,
     onBack: () -> Unit
 ) {
     val discoveredTvs by viewModel.discoveredTvs.collectAsState()
@@ -872,13 +875,13 @@ fun StartStudyScreen(
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
-                    onClick = onNavigateToScheduler,
+                    onClick = onNavigateToContent,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     enabled = viewModel.selectedTvIp != null,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
                 ) {
-                    Text("Setup Session Plan", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Next: Select Content", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -918,87 +921,6 @@ fun ScheduledSessionItem(session: StudySession) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SchedulerScreen(
-    viewModel: StudyViewModel,
-    onNavigateToContent: () -> Unit,
-    onBack: () -> Unit
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.study_session_scheduler)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)
-        ) {
-            Text(stringResource(R.string.duration), style = MaterialTheme.typography.titleMedium)
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf(15, 30, 45, 60).forEach { mins ->
-                    FilterChip(
-                        selected = viewModel.sessionDuration == mins,
-                        onClick = { viewModel.setDuration(mins) },
-                        label = { Text("$mins min") }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text("Start Time", style = MaterialTheme.typography.titleMedium)
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                FilterChip(
-                    selected = !viewModel.isScheduled,
-                    onClick = { viewModel.isScheduled = false },
-                    label = { Text("Start Now") },
-                    leadingIcon = { if (!viewModel.isScheduled) Icon(Icons.Default.FlashOn, null, modifier = Modifier.size(18.dp)) }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                FilterChip(
-                    selected = viewModel.isScheduled,
-                    onClick = { viewModel.isScheduled = true },
-                    label = { Text("Schedule for Later") },
-                    leadingIcon = { if (viewModel.isScheduled) Icon(Icons.Default.Event, null, modifier = Modifier.size(18.dp)) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(stringResource(R.string.recurrence), style = MaterialTheme.typography.titleMedium)
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                Recurrence.entries.forEach { rec ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { viewModel.setRecurrenceType(rec) }.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = viewModel.recurrence == rec, onClick = { viewModel.setRecurrenceType(rec) })
-                        Text(rec.name.lowercase().replaceFirstChar { it.uppercase() }, modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-            
-            Button(
-                onClick = onNavigateToContent,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
-            ) {
-                Text("Next: Select Content", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun ContentSelectionScreen(
     viewModel: StudyViewModel,
     sessionManager: SessionManager,
@@ -1006,31 +928,26 @@ fun ContentSelectionScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val previewContent = viewModel.previewContent
     val context = LocalContext.current
 
     val kidProfiles by kidViewModel.kidProfiles.collectAsState()
 
-    // Content is always tied to a kid: use the selected kid, or the first profile
-    // when nothing is selected yet (single-kid accounts get their only kid).
-    val selectedKid = remember(kidProfiles, sessionManager.selectedKidId) {
-        kidProfiles.find { it.id == sessionManager.selectedKidId } ?: kidProfiles.firstOrNull()
+    // Freemium packs segregated per kid: each kid gets their own section,
+    // populated from packs matching that kid's class.
+    var packsByKid by remember {
+        mutableStateOf<List<Pair<KidProfile, List<StudyContent>>>>(emptyList())
     }
-
-    var availableQuizzes by remember { mutableStateOf<List<StudyContent>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(selectedKid?.id) {
+    LaunchedEffect(kidProfiles) {
         loading = true
-        availableQuizzes = if (selectedKid != null) {
-            try {
-                sessionManager.selectedKidId = selectedKid.id
-                QuizLoader(context).loadQuizzesForGradeRemoteFirst(selectedKid.grade)
+        packsByKid = kidProfiles.map { kid ->
+            val packs = try {
+                QuizLoader(context).loadQuizzesForGradeRemoteFirst(kid.grade)
             } catch (_: Exception) {
                 emptyList()
             }
-        } else {
-            emptyList()
+            kid to packs
         }
         loading = false
     }
@@ -1062,46 +979,59 @@ fun ContentSelectionScreen(
                             CircularProgressIndicator()
                         }
                     }
-                    availableQuizzes.isEmpty() -> {
+                    packsByKid.all { it.second.isEmpty() } -> {
                         EmptyContentState(
                             icon = { Icon(Icons.Default.Quiz, null, modifier = Modifier.size(64.dp), tint = Color.Gray) },
-                            title = "No quizzes for ${selectedKid?.name ?: "this kid"} (class: ${selectedKid?.grade ?: "?"})",
-                            subtitle = "Update the kid's class info to get matching tests."
+                            title = "No packs available",
+                            subtitle = "Update the kids' class info to get matching freemium packs."
                         )
                     }
                     else -> {
                         LazyColumn(modifier = Modifier.weight(1f)) {
-                            item {
-                                Text(
-                                    "Content for ${selectedKid!!.name} • Class: ${selectedKid.grade}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = Color.Gray,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                            }
-                            items(availableQuizzes) { content ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { viewModel.selectContent(content) },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (viewModel.selectedContent == content) Color(0xFFFFF3E0) else Color.White
-                                    ),
-                                    border = if (viewModel.selectedContent == content)
-                                        androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFF6B00)) else null
-                                ) {
-                                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(content.name, fontWeight = FontWeight.Bold)
-                                            Text(content.category ?: "", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                                        }
-
-                                        if (content.type == ContentType.QUIZ && !content.questions.isNullOrEmpty()) {
-                                            IconButton(onClick = { viewModel.showPreview(content) }) {
-                                                Icon(Icons.Default.Visibility, contentDescription = "Preview Questions", tint = Color(0xFF1E88E5))
+                            packsByKid.forEach { (kid, packs) ->
+                                if (packs.isEmpty()) return@forEach
+                                item(key = "header_${kid.id}") {
+                                    Text(
+                                        "${kid.name} • Class: ${kid.grade}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = Color.Gray,
+                                        modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                                    )
+                                }
+                                items(packs, key = { "${kid.id}_${it.id ?: it.name}" }) { pack ->
+                                    val isSelected = viewModel.selectedContent == pack &&
+                                        sessionManager.selectedKidId == kid.id
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
+                                            sessionManager.selectedKidId = kid.id
+                                            viewModel.selectContent(pack)
+                                        },
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isSelected) Color(0xFFFFF3E0) else Color.White
+                                        ),
+                                        border = if (isSelected)
+                                            androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFF6B00)) else null
+                                    ) {
+                                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                Icons.Default.PlayArrow,
+                                                contentDescription = null,
+                                                tint = Color(0xFFFF6B00),
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(pack.name, fontWeight = FontWeight.Bold)
+                                                Text(
+                                                    pack.category ?: "Freemium pack",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color.Gray
+                                                )
                                             }
-                                        }
 
-                                        if (viewModel.selectedContent == content) {
-                                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
+                                            if (isSelected) {
+                                                Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
+                                            }
                                         }
                                     }
                                 }
@@ -1118,8 +1048,7 @@ fun ContentSelectionScreen(
                             if (uiState is StudyUiState.Loading) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                             } else {
-                                val text = if (viewModel.isScheduled) "Schedule Session" else stringResource(R.string.start_session)
-                                Text(text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.start_session), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -1145,15 +1074,6 @@ fun ContentSelectionScreen(
                     )
                 }
                 else -> {}
-            }
-
-            // Preview Dialog
-            if (previewContent != null) {
-                QuizPreviewDialog(
-                    content = previewContent,
-                    onDismiss = { viewModel.hidePreview() },
-                    onLaunchNow = { viewModel.startStudySession(previewContent) }
-                )
             }
         }
     }
