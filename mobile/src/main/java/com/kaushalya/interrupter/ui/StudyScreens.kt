@@ -903,22 +903,40 @@ fun ContentSelectionScreen(
     val kidProfiles by kidViewModel.kidProfiles.collectAsState()
 
     // Freemium packs segregated per kid: each kid gets their own section,
-    // populated from packs matching that kid's class.
+    // populated from packs matching that kid's class. Packs are cached locally
+    // per user, so the backend is only hit on first download (or cache miss).
+    val packCache = remember { PackCache(context) }
+    var attemptsByPack by remember {
+        mutableStateOf<Map<String, Pair<Int, QuizResult>>>(emptyMap())
+    }
     var packsByKid by remember {
         mutableStateOf<List<Pair<KidProfile, List<StudyContent>>>>(emptyList())
     }
     var loading by remember { mutableStateOf(true) }
 
+    suspend fun loadPacksFor(kid: KidProfile): List<StudyContent> {
+        packCache.get(packCache.userKey(sessionManager.loginId), kid.grade)?.let { return it }
+        val packs = try {
+            QuizLoader(context).loadQuizzesForGradeRemoteFirst(kid.grade)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        if (packs.isNotEmpty()) {
+            packCache.put(packCache.userKey(sessionManager.loginId), kid.grade, packs)
+        }
+        return packs
+    }
+
     LaunchedEffect(kidProfiles) {
         loading = true
-        packsByKid = kidProfiles.map { kid ->
-            val packs = try {
-                QuizLoader(context).loadQuizzesForGradeRemoteFirst(kid.grade)
-            } catch (_: Exception) {
-                emptyList()
+        packsByKid = kidProfiles.map { kid -> kid to loadPacksFor(kid) }
+        val dao = AppDatabase.getDatabase(context).quizResultDao()
+        attemptsByPack = packsByKid.flatMap { (kid, packs) ->
+            packs.mapNotNull { pack ->
+                val results = dao.getResultsForContent(pack.name, kid.name)
+                if (results.isEmpty()) null else "${kid.id}_${pack.name}" to (results.size to results.first())
             }
-            kid to packs
-        }
+        }.toMap()
         loading = false
     }
 
@@ -971,6 +989,7 @@ fun ContentSelectionScreen(
                                 items(packs, key = { "${kid.id}_${it.id ?: it.name}" }) { pack ->
                                     val isSelected = viewModel.selectedContent == pack &&
                                         sessionManager.selectedKidId == kid.id
+                                    val attempts = attemptsByPack["${kid.id}_${pack.name}"]
                                     Card(
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
                                             sessionManager.selectedKidId = kid.id
@@ -997,6 +1016,15 @@ fun ContentSelectionScreen(
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = Color.Gray
                                                 )
+                                                attempts?.let { (count, last) ->
+                                                    val pct = if (last.totalQuestions > 0) (last.score * 100 / last.totalQuestions) else 0
+                                                    Text(
+                                                        "✓ Attempted $count time${if (count > 1) "s" else ""} • last score ${last.score}/${last.totalQuestions} ($pct%)",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = Color(0xFF2E7D32),
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
                                             }
 
                                             if (isSelected) {
