@@ -117,7 +117,6 @@ Shown only when **no TV is selected** (if a TV is already selected, Library goes
 │ Select Target TV         │
 │  [TV card] [TV card] …   │
 │  [ Connect Now (rescan)] │
-│ Scheduled Sessions list  │
 │ [Next: Select Content]   │──► Select Content (needs TV selected)
 └──────────────────────────┘
 ```

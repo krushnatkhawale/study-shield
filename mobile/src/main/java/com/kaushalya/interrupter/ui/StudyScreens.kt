@@ -767,7 +767,6 @@ fun StartStudyScreen(
     onBack: () -> Unit
 ) {
     val discoveredTvs by viewModel.discoveredTvs.collectAsState()
-    val scheduledSessions by viewModel.scheduledSessions.collectAsState(initial = emptyList())
     val kids = sessionManager.profile.kids
     
     LaunchedEffect(Unit) {
@@ -886,35 +885,6 @@ fun StartStudyScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Scheduled Sessions Section
-            if (scheduledSessions.isNotEmpty()) {
-                item {
-                    Text("Scheduled Sessions", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                items(scheduledSessions) { session ->
-                    ScheduledSessionItem(session)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ScheduledSessionItem(session: StudySession) {
-    val sdf = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F3F5))
-    ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(session.content.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("${session.durationMinutes} min • ${session.recurrence.name} • ${sdf.format(Date(session.startTime))}", 
-                    fontSize = 12.sp, color = Color.Gray)
-            }
         }
     }
 }

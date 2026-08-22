@@ -2,23 +2,31 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
-      <SelectionState runConfigName="tv">
+      <SelectionState runConfigName="mobile">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-06-28T18:55:46.067562Z">
+        <DropdownSelection timestamp="2026-08-21T16:47:35.093137Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/hulk/.android/avd/Television_720p.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=ZN4226HQ64" />
             </handle>
           </Target>
         </DropdownSelection>
-        <DialogSelection />
+        <DialogSelection>
+          <targets>
+            <Target type="DEFAULT_BOOT">
+              <handle>
+                <DeviceId pluginId="LocalEmulator" identifier="path=/Users/hulk/.android/avd/Medium_Phone.avd" />
+              </handle>
+            </Target>
+          </targets>
+        </DialogSelection>
       </SelectionState>
-      <SelectionState runConfigName="mobile">
+      <SelectionState runConfigName="tv">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-06-18T02:11:02.569666Z">
+        <DropdownSelection timestamp="2026-08-21T04:31:44.973796Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/hulk/.android/avd/Medium_Phone.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=987a9b11768b" />
             </handle>
           </Target>
         </DropdownSelection>
