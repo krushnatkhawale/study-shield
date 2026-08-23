@@ -832,18 +832,45 @@ fun ContentSelectionScreen(
                         )
                     }
                     else -> {
-                        LazyColumn(modifier = Modifier.weight(1f)) {
-                            packsByKid.forEach { (kid, packs) ->
-                                if (packs.isEmpty()) return@forEach
-                                item(key = "header_${kid.id}") {
-                                    Text(
-                                        "${kid.name} • Class: ${kid.grade}",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = Color.Gray,
-                                        modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                        // Tabbed view: one tab per kid, showing only that kid's packs.
+                        var selectedTab by remember(packsByKid) { mutableStateOf(0) }
+                        Column(modifier = Modifier.weight(1f)) {
+                            TabRow(selectedTabIndex = selectedTab.coerceIn(0, packsByKid.lastIndex)) {
+                                packsByKid.forEachIndexed { index, (kid, _) ->
+                                    Tab(
+                                        selected = selectedTab == index,
+                                        onClick = { selectedTab = index },
+                                        text = {
+                                            Text(
+                                                kid.name,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            )
+                                        }
                                     )
                                 }
-                                items(packs, key = { "${kid.id}_${it.id ?: it.name}" }) { pack ->
+                            }
+
+                            val (kid, packs) = packsByKid[selectedTab.coerceIn(0, packsByKid.lastIndex)]
+                            if (packs.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        "No packs for ${kid.name} • Class: ${kid.grade}",
+                                        color = Color.Gray,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            } else {
+                                LazyColumn {
+                                    item(key = "header_${kid.id}") {
+                                        Text(
+                                            "Class: ${kid.grade}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = Color.Gray,
+                                            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+                                        )
+                                    }
+                                    items(packs, key = { "${kid.id}_${it.id ?: it.name}" }) { pack ->
                                     val isSelected = viewModel.selectedContent == pack &&
                                         sessionManager.selectedKidId == kid.id
                                     val attempts = attemptsByPack["${kid.id}_${pack.name}"]
@@ -888,6 +915,7 @@ fun ContentSelectionScreen(
                                                 Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
                                             }
                                         }
+                                    }
                                     }
                                 }
                             }
