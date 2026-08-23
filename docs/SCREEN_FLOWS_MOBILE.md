@@ -109,21 +109,20 @@ Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity l
 ```
 
 ### 3.3 Select Content (`content`)
-Freemium packs segregated per kid by class.
+Freemium packs in a **tabbed view — one tab per kid**; each tab shows only that kid's packs.
 ```
 ┌──────────────────────────┐
 │ ← Select Content         │
-│ ─ Aarav • Class: 4 ───   │
+│ [Aarav] [Riya]           │  ← kid tabs
+│ ── Class: 4 ─────────    │
 │  [Pack card] [Pack card] │
 │   pack card shows attempt history:
 │   "Attempted N times • last score X/Y (P%)"
-│ ─ Riya • Class: 6 ────   │
-│  [Pack card]             │
 │ [ START SESSION ]        │──► "Session Confirmed" dialog
 │                          │    (STUDY_SESSION sent to TV)
 └──────────────────────────┘
 ```
-Empty states: no kid profiles / no packs for a grade.
+Empty states: no kid profiles / no packs for a grade (a kid tab with no packs shows an inline "No packs for <kid>" message).
 
 Pack loading is **cache-first** (`data/PackCache.kt`): packs are stored per logged-in user + grade in app-private files; the backend is only fetched on the first download or cache miss, and cache hits are logged (`PackCache: Cache hit ... skipping backend fetch`). Attempt counts and last scores come from the local `quiz_results` Room table, matched by kid name + pack name.
 
