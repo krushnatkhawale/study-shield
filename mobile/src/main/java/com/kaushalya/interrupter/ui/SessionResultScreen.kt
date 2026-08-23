@@ -74,7 +74,7 @@ fun SessionResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Session Results") },
+                title = { Text("Results") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -137,20 +137,6 @@ private fun ResultListContent(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Text(
-                "Recent Quiz Results",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "View your child's quiz performance",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
         when (syncState) {
             is SyncState.Syncing -> {
                 item {
@@ -236,8 +222,22 @@ private fun ResultListContent(
                 }
             }
         } else {
-            items(results) { result ->
-                ResultCard(result = result, viewModel = viewModel, onClick = { onSelectResult(result) })
+            val grouped = results.groupBy {
+                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it.completedAt))
+            }
+            grouped.forEach { (dateHeader, groupResults) ->
+                item {
+                    Text(
+                        dateHeader,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                items(groupResults) { result ->
+                    ResultCard(result = result, viewModel = viewModel, onClick = { onSelectResult(result) })
+                }
             }
         }
     }
@@ -249,10 +249,11 @@ private fun ResultCard(
     viewModel: SessionResultViewModel,
     onClick: () -> Unit
 ) {
-    val sdf = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
     val percentage = if (result.totalQuestions > 0) (result.score * 100 / result.totalQuestions) else 0
-    val message = viewModel.getMessageForScore(result.score, result.totalQuestions)
     val isSynced = result.syncStatus == 1
+    val quizTitle = (result.contentName ?: result.category ?: result.childName).let {
+        if (it.length > 30) it.take(30) + "…" else it
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -286,32 +287,19 @@ private fun ResultCard(
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(result.childName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(quizTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
                 Text(
                     "${result.score}/${result.totalQuestions} correct",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    sdf.format(Date(result.completedAt)),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Icon(
-                    if (isSynced) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                    contentDescription = if (isSynced) "Synced" else "Not synced",
-                    tint = if (isSynced) Color(0xFF38A169) else Color(0xFF9E9E9E),
-                    modifier = Modifier.size(16.dp)
-                )
-            }
+            Icon(
+                if (isSynced) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                contentDescription = if (isSynced) "Synced" else "Not synced",
+                tint = if (isSynced) Color(0xFF38A169) else Color(0xFF9E9E9E),
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
