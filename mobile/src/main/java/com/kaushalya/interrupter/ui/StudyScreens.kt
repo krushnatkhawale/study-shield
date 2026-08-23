@@ -917,16 +917,18 @@ fun ContentSelectionScreen(
                                     )
                                 }
                             } else {
-                                LazyColumn {
-                                    item(key = "header_${kid.id}") {
-                                        Text(
-                                            "Class: ${kid.grade}",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = Color.Gray,
-                                            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
-                                        )
+                                val subjects = packs.map { it.category ?: "General" }.distinct()
+                                var subjectTab by remember(kid.id, subjects) { mutableStateOf(0) }
+                                val filteredPacks = if (subjects.size <= 1) packs else packs.filter { (it.category ?: "General") == subjects[subjectTab.coerceIn(0, subjects.lastIndex)] }
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    Text("Class: ${kid.grade}", style = MaterialTheme.typography.titleSmall, color = Color.Gray, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                                    if (subjects.size > 1) {
+                                        ScrollableTabRow(selectedTabIndex = subjectTab.coerceIn(0, subjects.lastIndex), edgePadding = 0.dp) {
+                                            subjects.forEachIndexed { idx, subj -> Tab(selected = subjectTab == idx, onClick = { subjectTab = idx }, text = { Text(subj, maxLines = 1) }) }
+                                        }
                                     }
-                                    items(packs, key = { "${kid.id}_${it.id ?: it.name}" }) { pack ->
+                                    LazyColumn(modifier = Modifier.weight(1f)) {
+                                    items(filteredPacks, key = { "${kid.id}_${it.id ?: it.name}" }) { pack ->
                                     val isSelected = viewModel.selectedContent == pack &&
                                         sessionManager.selectedKidId == kid.id
                                     val attempts = attemptsByPack["${kid.id}_${pack.name}"]
@@ -972,6 +974,7 @@ fun ContentSelectionScreen(
                                                 Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
                                             }
                                         }
+                                    }
                                     }
                                     }
                                 }
