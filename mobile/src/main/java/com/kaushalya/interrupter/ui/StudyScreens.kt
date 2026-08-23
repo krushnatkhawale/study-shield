@@ -764,7 +764,7 @@ fun ContentSelectionScreen(
     // per user, so the backend is only hit on first download (or cache miss).
     val packCache = remember { PackCache(context) }
     var attemptsByPack by remember {
-        mutableStateOf<Map<String, Pair<Int, QuizResult>>>(emptyMap())
+        mutableStateOf<Map<String, Triple<Int, QuizResult, Int>>>(emptyMap())
     }
     var packsByKid by remember {
         mutableStateOf<List<Pair<KidProfile, List<StudyContent>>>>(emptyList())
@@ -791,7 +791,10 @@ fun ContentSelectionScreen(
         attemptsByPack = packsByKid.flatMap { (kid, packs) ->
             packs.mapNotNull { pack ->
                 val results = dao.getResultsForContent(pack.name, kid.name)
-                if (results.isEmpty()) null else "${kid.id}_${pack.name}" to (results.size to results.first())
+                if (results.isEmpty()) null else {
+                    val avg = results.map { if (it.totalQuestions > 0) it.score * 100 / it.totalQuestions else 0 }.average().toInt()
+                    "${kid.id}_${pack.name}" to Triple(results.size, results.first(), avg)
+                }
             }
         }.toMap()
         loading = false
@@ -832,9 +835,62 @@ fun ContentSelectionScreen(
                         )
                     }
                     else -> {
+                        // TV selector: dropdown of discovered TVs above the tab pane.
+                        // Defaults to "No TV selected"; refresh re-runs NSD discovery.
+                        val discoveredTvs by viewModel.discoveredTvs.collectAsState()
+                        var tvDropdownExpanded by remember { mutableStateOf(false) }
+                        val selectedTv = discoveredTvs.find { it.host?.hostAddress == viewModel.selectedTvIp }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                OutlinedButton(
+                                    onClick = { tvDropdownExpanded = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Tv, contentDescription = null, tint = Color(0xFFFF6B00))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        selectedTv?.serviceName ?: "No TV selected",
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        color = if (selectedTv != null) Color.Unspecified else Color.Gray
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = tvDropdownExpanded,
+                                    onDismissRequest = { tvDropdownExpanded = false }
+                                ) {
+                                    if (discoveredTvs.isEmpty()) {
+                                        DropdownMenuItem(
+                                            text = { Text("No TVs found — tap refresh", color = Color.Gray) },
+                                            onClick = { tvDropdownExpanded = false }
+                                        )
+                                    } else {
+                                        discoveredTvs.forEach { tv ->
+                                            DropdownMenuItem(
+                                                text = { Text(tv.serviceName ?: tv.host?.hostAddress ?: "Unknown TV") },
+                                                trailingIcon = {
+                                                    if (tv.host?.hostAddress == viewModel.selectedTvIp) {
+                                                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
+                                                    }
+                                                },
+                                                onClick = {
+                                                    viewModel.selectedTvIp = tv.host?.hostAddress
+                                                    tvDropdownExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            IconButton(onClick = { viewModel.startDiscovery() }) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Refresh TVs")
+                            }
+                        }
+
                         // Tabbed view: one tab per kid, showing only that kid's packs.
                         var selectedTab by remember(packsByKid) { mutableStateOf(0) }
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f).padding(top = 8.dp)) {
                             TabRow(selectedTabIndex = selectedTab.coerceIn(0, packsByKid.lastIndex)) {
                                 packsByKid.forEachIndexed { index, (kid, _) ->
                                     Tab(
@@ -900,13 +956,14 @@ fun ContentSelectionScreen(
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = Color.Gray
                                                 )
-                                                attempts?.let { (count, last) ->
+                                                attempts?.let { (count, last, avg) ->
                                                     val pct = if (last.totalQuestions > 0) (last.score * 100 / last.totalQuestions) else 0
                                                     Text(
-                                                        "✓ Attempted $count time${if (count > 1) "s" else ""} • last score ${last.score}/${last.totalQuestions} ($pct%)",
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        "×$count  last ${last.score}/${last.totalQuestions} ($pct%)  avg ${avg}%",
+                                                        style = MaterialTheme.typography.labelSmall,
                                                         color = Color(0xFF2E7D32),
-                                                        fontWeight = FontWeight.Medium
+                                                        fontWeight = FontWeight.Medium,
+                                                        maxLines = 1
                                                     )
                                                 }
                                             }
