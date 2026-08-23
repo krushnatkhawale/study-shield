@@ -952,12 +952,10 @@ fun ContentSelectionScreen(
                                             )
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Column(modifier = Modifier.weight(1f)) {
-                                                Text(pack.name, fontWeight = FontWeight.Bold)
-                                                Text(
-                                                    pack.category ?: "Freemium pack",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = Color.Gray
-                                                )
+                                                val quizShort = pack.name.split("·").lastOrNull()?.trim()?.takeIf { it.isNotBlank() } ?: pack.name
+                                                val bundleName = if (pack.category != null) "Freemium ${pack.category}" else "Freemium pack"
+                                                Text(quizShort, fontWeight = FontWeight.Bold)
+                                                Text(bundleName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                                 attempts?.let { (count, last, avg) ->
                                                     val pct = if (last.totalQuestions > 0) (last.score * 100 / last.totalQuestions) else 0
                                                     Text(
