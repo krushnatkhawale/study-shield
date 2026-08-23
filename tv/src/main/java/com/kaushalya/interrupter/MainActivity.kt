@@ -484,17 +484,18 @@ fun QuizSession(
                     }
                 }
 
+                val advance: (Boolean) -> Unit = { isCorrect ->
+                    if (isCorrect) score++
+                    if (currentIndex < questions.size - 1) currentIndex++
+                    else completed = true
+                }
                 if (type == "MCQ") {
                     if (q.options.size == 2 && (q.options.contains("True") || q.options.contains("False"))) {
                         TrueFalseUI(
                             question = q.question,
                             options = q.options,
                             correctAnswer = q.answer,
-                            onCorrect = {
-                                score++
-                                if (currentIndex < questions.size - 1) currentIndex++
-                                else completed = true
-                            },
+                            onAnswer = advance,
                             onWrongAnswer = onWrong
                         )
                     } else {
@@ -502,11 +503,7 @@ fun QuizSession(
                             question = q.question,
                             options = q.options,
                             correctAnswer = q.answer,
-                            onCorrect = {
-                                score++
-                                if (currentIndex < questions.size - 1) currentIndex++
-                                else completed = true
-                            },
+                            onAnswer = advance,
                             onWrongAnswer = onWrong
                         )
                     }
@@ -514,11 +511,7 @@ fun QuizSession(
                     FitbUI(
                         question = q.question,
                         answer = q.answer,
-                        onCorrect = {
-                            score++
-                            if (currentIndex < questions.size - 1) currentIndex++
-                            else completed = true
-                        },
+                        onAnswer = advance,
                         onWrongAnswer = onWrong
                     )
                 }
@@ -627,7 +620,7 @@ fun StudySessionUI(contentName: String?, category: String?, durationMinutes: Lon
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCorrect: () -> Unit, onWrongAnswer: () -> Unit) {
+fun QuizUI(question: String, options: List<String>, correctAnswer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
     // Accept both legacy numeric-index answers ("2") and option-text answers ("Mango")
     val correctIndex = correctAnswer.toIntOrNull()
@@ -693,11 +686,12 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
 
                             Button(
                                 onClick = {
-                                    if (index == correctIndex) onCorrect()
-                                    else {
+                                    val isCorrect = index == correctIndex
+                                    if (!isCorrect) {
                                         onWrongAnswer()
                                         scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; wrongAnswerTrigger = 0 }
                                     }
+                                    scope.launch { delay(if (isCorrect) 0 else 350); onAnswer(isCorrect) }
                                 },
                                 modifier = Modifier
                                     .weight(1f)
@@ -728,7 +722,7 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onCor
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, onCorrect: () -> Unit, onWrongAnswer: () -> Unit) {
+fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
     var wrongAnswerTrigger by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -776,11 +770,12 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
                     val scale by animateFloatAsState(if (isFocused) 1.08f else 1f, label = "scale")
                     Button(
                         onClick = {
-                            if (option == correctAnswer) onCorrect()
-                            else {
+                            val isCorrect = option.equals(correctAnswer, ignoreCase = true)
+                            if (!isCorrect) {
                                 onWrongAnswer()
                                 scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; wrongAnswerTrigger = 0 }
                             }
+                            scope.launch { delay(if (isCorrect) 0 else 350); onAnswer(isCorrect) }
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -811,7 +806,7 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun FitbUI(question: String, answer: String, onCorrect: () -> Unit, onWrongAnswer: () -> Unit) {
+fun FitbUI(question: String, answer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit) {
     val characters = ('A'..'Z').toList() + ('0'..'9').toList()
     val focusRequester = remember { FocusRequester() }
     var currentInput by remember { mutableStateOf("") }
@@ -872,10 +867,11 @@ fun FitbUI(question: String, answer: String, onCorrect: () -> Unit, onWrongAnswe
                 Button(
                     onClick = {
                         currentInput += char
-                        if (currentInput.equals(answer, ignoreCase = true)) onCorrect()
-                        else if (currentInput.length >= answer.length) {
+                        if (currentInput.equals(answer, ignoreCase = true)) {
+                            onAnswer(true)
+                        } else if (currentInput.length >= answer.length) {
                             onWrongAnswer()
-                            scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; currentInput = ""; wrongAnswerTrigger = 0 }
+                            scope.launch { repeat(6) { wrongAnswerTrigger++; delay(60) }; wrongAnswerTrigger = 0; onAnswer(false) }
                         }
                     },
                     modifier = Modifier
