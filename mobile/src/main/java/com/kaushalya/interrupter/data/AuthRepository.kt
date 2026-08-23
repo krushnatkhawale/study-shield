@@ -1,8 +1,13 @@
 package com.kaushalya.interrupter.data
 
 import com.kaushalya.interrupter.network.RetrofitClient
+import kotlinx.coroutines.withTimeout
 
 open class AuthRepository {
+
+    companion object {
+        const val VALIDATE_TIMEOUT_MS = 4_000L
+    }
 
     private val api get() = RetrofitClient.getApiService()
 
@@ -36,7 +41,11 @@ open class AuthRepository {
 
     open suspend fun validateSession(): Result<ValidationResponse> {
         return try {
-            val response = api.validateSession()
+            // Session validation must never block startup — fall back to offline
+            // mode quickly if the backend is slow or unreachable.
+            val response = withTimeout(VALIDATE_TIMEOUT_MS) {
+                api.validateSession()
+            }
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {

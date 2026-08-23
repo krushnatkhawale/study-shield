@@ -14,8 +14,11 @@ import com.kaushalya.interrupter.data.ProfileData
 import com.kaushalya.interrupter.data.ProfileKid
 import com.kaushalya.interrupter.data.ProfileParent
 import com.kaushalya.interrupter.data.ProfileTv
+import com.kaushalya.interrupter.data.QuizResultRepository
 import com.kaushalya.interrupter.data.SessionManager
+import com.kaushalya.interrupter.data.ToastHelper
 import com.kaushalya.interrupter.network.RetrofitClient
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -45,6 +48,9 @@ class AuthViewModel(
 
     private val dataGuard = AccountDataGuard(context, sessionManager)
     private val kidProfileRepository = KidProfileRepository.getInstance(context)
+    private val quizResultRepository = QuizResultRepository.getInstance(context)
+    @Volatile
+    private var offlineRetryActive = false
 
     fun checkExistingSession() {
         Log.d(TAG, "checkExistingSession: start")
@@ -78,7 +84,7 @@ class AuthViewModel(
             } else {
                 val cause = result.exceptionOrNull()
                 Log.d(TAG, "checkExistingSession: validation failed (${cause?.javaClass?.simpleName}: ${cause?.message}), trusting local session")
-                sessionManager.isOfflineMode = true
+                enterOfflineMode()
                 _authState.value = AuthState.Success(sessionManager.sessionId!!)
                 kidProfileRepository.ensureDefaultKid()
             }
@@ -86,9 +92,51 @@ class AuthViewModel(
         }
     }
 
+    /**
+     * Falls back to offline mode with a user-visible toast and keeps re-validating
+     * in the background so the app goes back online (and syncs pending actions)
+     * as soon as the backend responds.
+     */
+    private fun enterOfflineMode() {
+        sessionManager.isOfflineMode = true
+        ToastHelper.show("Offline mode — changes will sync once backend is reachable")
+        startOfflineRetryLoop()
+    }
+
+    private fun startOfflineRetryLoop() {
+        if (offlineRetryActive) return
+        offlineRetryActive = true
+        viewModelScope.launch {
+            while (sessionManager.isOfflineMode && !sessionManager.isGuest) {
+                delay(OFFLINE_RETRY_INTERVAL_MS)
+                Log.d(TAG, "offlineRetry: re-validating session against backend")
+                val result = authRepository.validateSession()
+                val valid = result.getOrNull()?.valid
+                if (result.isSuccess && valid != false) {
+                    Log.d(TAG, "offlineRetry: backend reachable again — going online")
+                    sessionManager.isOfflineMode = false
+                    offlineRetryActive = false
+                    ToastHelper.show("Back online — syncing…")
+                    runCatching { quizResultRepository.retrySyncFailed() }
+                    runCatching { kidProfileRepository.retrySyncFailed() }
+                    return@launch
+                }
+                if (result.isSuccess && valid == false) {
+                    // Backend is up but rejected this session — stop retrying.
+                    Log.d(TAG, "offlineRetry: backend up but session invalid, clearing session")
+                    sessionManager.clear()
+                    offlineRetryActive = false
+                    _authState.value = AuthState.Idle
+                    return@launch
+                }
+            }
+            offlineRetryActive = false
+        }
+    }
+
     fun skipSessionValidation() {
         Log.d(TAG, "skipSessionValidation: skipping due to no network, trusting local session")
-        sessionManager.isOfflineMode = true
+        enterOfflineMode()
         _isCheckingSession.value = false
         _authState.value = AuthState.Success(sessionManager.sessionId!!)
         viewModelScope.launch { kidProfileRepository.ensureDefaultKid() }
@@ -236,5 +284,6 @@ class AuthViewModel(
         private const val TAG = "AuthViewModel"
         private const val OWNER_GUEST = "guest"
         private const val OWNER_UNKNOWN = "unknown"
+        private const val OFFLINE_RETRY_INTERVAL_MS = 30_000L
     }
 }
