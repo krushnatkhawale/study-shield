@@ -50,7 +50,6 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object ProfData : Screen("profdata", "ProfData", Icons.Default.Info)
 
     // Study Flow (not in drawer)
-    object StudyStart : Screen("study_start", "Start Study", Icons.Default.School)
     object ContentSelection : Screen("content", "Select Content", Icons.AutoMirrored.Filled.List)
 
     // Kid Form (not in drawer)
@@ -155,17 +154,13 @@ fun MainScreen(
                     )
                 }
                 composable(Screen.Option1.route) {
-                    // Skip the Start Study screen when a TV is already selected OR when
-                    // no TV has been scanned — in both cases go straight to Select Content.
-                    val discoveredTvs by studyViewModel.discoveredTvs.collectAsState()
+                    // Start Study Now always goes straight to Select Content —
+                    // no intermediate kid/TV selection screen. TV selection lives
+                    // in Connected TVs; the kid is picked when a pack card is tapped.
                     ControlScreen(
                         studyViewModel,
                         onStartStudy = {
-                            if (studyViewModel.selectedTvIp != null || discoveredTvs.isEmpty()) {
-                                navController.navigate(Screen.ContentSelection.route)
-                            } else {
-                                navController.navigate(Screen.StudyStart.route)
-                            }
+                            navController.navigate(Screen.ContentSelection.route)
                         }
                     )
                 }
@@ -227,14 +222,6 @@ fun MainScreen(
                 composable(Screen.ProfData.route) { ProfDataScreen() }
 
                 // Study Flow
-                composable(Screen.StudyStart.route) {
-                    StartStudyScreen(
-                        viewModel = studyViewModel,
-                        sessionManager = sessionManager,
-                        onNavigateToContent = { navController.navigate(Screen.ContentSelection.route) },
-                        onBack = { navController.popBackStack() }
-                    )
-                }
                 composable(Screen.ContentSelection.route) {
                     val kidViewModel: KidProfileViewModel = viewModel(
                         viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
@@ -755,137 +742,6 @@ fun SettingsScreen(viewModel: StudyViewModel) {
                 supportingContent = { Text("Search for TVs on app launch") },
                 trailingContent = { Switch(checked = true, onCheckedChange = {}) }
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun StartStudyScreen(
-    viewModel: StudyViewModel,
-    sessionManager: SessionManager,
-    onNavigateToContent: () -> Unit,
-    onBack: () -> Unit
-) {
-    val discoveredTvs by viewModel.discoveredTvs.collectAsState()
-    val kids = sessionManager.profile.kids
-    
-    LaunchedEffect(Unit) {
-        viewModel.startDiscovery()
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.start_study_now)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(text = "🚀", fontSize = 60.sp)
-                Text(
-                    text = stringResource(R.string.start_study_now),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFF6B00)
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            // Kid Selection Section (only if multiple kids exist)
-            if (kids.size > 1) {
-                item {
-                    Text("Select Kid", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        kids.forEach { kid ->
-                            FilterChip(
-                                selected = sessionManager.selectedKidId == kid.id,
-                                onClick = {
-                                    sessionManager.selectedKidId = kid.id
-                                },
-                                label = { Text(kid.name) }
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            } else if (kids.size == 1 && sessionManager.selectedKidId == null) {
-                item {
-                    LaunchedEffect(kids) {
-                        sessionManager.selectedKidId = kids.first().id
-                    }
-                }
-            }
-
-            // TV Selection Section
-            item {
-                Text(
-                    if (kids.size > 1) "2. Select Target TV" else "1. Select Target TV",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                if (discoveredTvs.isEmpty()) {
-                    val statusText = if (viewModel.isDiscovering) "Searching..." else "No TV found"
-                    Text(statusText, color = if (viewModel.isDiscovering) Color.Gray else Color.Red, fontSize = 14.sp)
-                    Button(onClick = { viewModel.startDiscovery() }, modifier = Modifier.padding(top = 8.dp), enabled = !viewModel.isDiscovering) {
-                        Text(stringResource(R.string.connect_now))
-                    }
-                }
-            }
-
-            items(discoveredTvs) { tv ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable { viewModel.selectedTvIp = tv.host?.hostAddress },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (viewModel.selectedTvIp == tv.host?.hostAddress) 
-                            Color(0xFFE3F2FD) else Color.White
-                    ),
-                    border = if (viewModel.selectedTvIp == tv.host?.hostAddress)
-                        androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF1E88E5)) else null
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Tv, contentDescription = null, tint = Color(0xFF1E88E5))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(tv.serviceName, fontWeight = FontWeight.Medium)
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onNavigateToContent,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = viewModel.selectedTvIp != null,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
-                ) {
-                    Text("Next: Select Content", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
         }
     }
 }

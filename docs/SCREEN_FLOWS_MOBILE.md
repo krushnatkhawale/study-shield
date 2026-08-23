@@ -89,7 +89,6 @@ Shown when auth responds `ParentSelectionRequired`. List of parent rows; "Add Ne
 | parents | Parents (non-guest) | `ui/parents/ParentManagementScreen.kt` |
 | settings | Settings | `StudyScreens.kt` |
 | profdata | Debug data | `ui/ProfDataScreen.kt` |
-| study_start | Start Study Now | `StudyScreens.kt` |
 | content | Select Content | `StudyScreens.kt` |
 
 ### 3.1 Home — Stats Dashboard
@@ -98,7 +97,7 @@ Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity l
 ### 3.2 Library (Control)
 ```
 ┌──────────────────────────┐
-│ 🎓 START STUDY NOW       │──► Start Study / Select Content
+│ 🎓 START STUDY NOW       │──► Select Content (always)
 │ ─────────────────────    │
 │ TV IP field              │
 │ Discovered TVs list      │
@@ -109,19 +108,7 @@ Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity l
 └──────────────────────────┘
 ```
 
-### 3.3 Start Study Now (`study_start`)
-Shown only when **at least one TV has been discovered but none is selected** (if a TV is already selected, or no TV has been scanned at all, Library goes straight to Select Content).
-```
-┌──────────────────────────┐
-│ ← Select Kid chips (>1)  │
-│ Select Target TV         │
-│  [TV card] [TV card] …   │
-│  [ Connect Now (rescan)] │
-│ [Next: Select Content]   │──► Select Content (needs TV selected)
-└──────────────────────────┘
-```
-
-### 3.4 Select Content (`content`)
+### 3.3 Select Content (`content`)
 Freemium packs segregated per kid by class.
 ```
 ┌──────────────────────────┐
@@ -140,32 +127,31 @@ Empty states: no kid profiles / no packs for a grade.
 
 Pack loading is **cache-first** (`data/PackCache.kt`): packs are stored per logged-in user + grade in app-private files; the backend is only fetched on the first download or cache miss, and cache hits are logged (`PackCache: Cache hit ... skipping backend fetch`). Attempt counts and last scores come from the local `quiz_results` Room table, matched by kid name + pack name.
 
-### 3.5 Connected TVs
+### 3.4 Connected TVs
 Scan Now button, discovered TV list, Remember toggle.
 
-### 3.6 Kids & Kid Form
+### 3.5 Kids & Kid Form
 Kids: profile rows (name, grade); empty state "Click + to add your first child." Kid Form: add/edit fields, "Save Profile".
 
-### 3.7 Results
+### 3.6 Results
 Session Results list → Result Details; Edit Kid entry.
 
-### 3.8 Quiz Setup (non-guest)
+### 3.7 Quiz Setup (non-guest)
 Per-kid quiz configuration; prompts to add a kid first if none exist.
 
-### 3.9 Parents (non-guest)
+### 3.8 Parents (non-guest)
 Parent list; "Add Parent" dialog (Name required); Retry on failure.
 
-### 3.10 Settings
+### 3.9 Settings
 TV connection selection + General settings (Parental PIN, Auto-Discovery).
 
-### 3.11 ProfData (dev/debug)
+### 3.10 ProfData (dev/debug)
 Internal data inspection screen.
 
 ## 4. Edge Summary
 
 ```
-Library ─[START STUDY NOW]──► study_start (if no TV) | content (if TV selected)
-study_start ─[Next: Select Content]──► content
+Library ─[START STUDY NOW]──► content (always)
 content ─[START SESSION]──► session confirmed on TV (dialog, stays on screen)
 kids/kid row ─► kid_form ─[Save]──► back
 results ─[tap]──► result detail ─[back]──► results
