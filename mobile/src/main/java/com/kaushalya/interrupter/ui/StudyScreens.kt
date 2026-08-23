@@ -155,12 +155,13 @@ fun MainScreen(
                     )
                 }
                 composable(Screen.Option1.route) {
-                    // If a TV is already selected, skip the Start Study screen entirely
-                    // and go straight to Select Content.
+                    // Skip the Start Study screen when a TV is already selected OR when
+                    // no TV has been scanned — in both cases go straight to Select Content.
+                    val discoveredTvs by studyViewModel.discoveredTvs.collectAsState()
                     ControlScreen(
                         studyViewModel,
                         onStartStudy = {
-                            if (studyViewModel.selectedTvIp != null) {
+                            if (studyViewModel.selectedTvIp != null || discoveredTvs.isEmpty()) {
                                 navController.navigate(Screen.ContentSelection.route)
                             } else {
                                 navController.navigate(Screen.StudyStart.route)

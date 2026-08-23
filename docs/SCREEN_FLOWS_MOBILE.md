@@ -110,7 +110,7 @@ Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity l
 ```
 
 ### 3.3 Start Study Now (`study_start`)
-Shown only when **no TV is selected** (if a TV is already selected, Library goes straight to Select Content).
+Shown only when **at least one TV has been discovered but none is selected** (if a TV is already selected, or no TV has been scanned at all, Library goes straight to Select Content).
 ```
 ┌──────────────────────────┐
 │ ← Select Kid chips (>1)  │
