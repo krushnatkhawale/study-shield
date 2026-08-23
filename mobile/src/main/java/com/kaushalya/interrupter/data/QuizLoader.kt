@@ -77,11 +77,14 @@ class QuizLoader(private val context: Context) {
                 QuizQuestion(question = text, options = optionTexts, answer = answer).shuffledOptions()
             }
             if (questions.isEmpty()) return@mapNotNull null
+            val subject = quiz.title?.split("·")?.firstOrNull()?.trim()
+                ?: quiz.contentPackName?.removePrefix("Freemium ")?.trim()
+                ?: bundle.subjects.firstOrNull()
             StudyContent(
                 type = ContentType.QUIZ,
                 id = quiz.id?.toString(),
                 name = quiz.title ?: "Quiz",
-                category = bundle.subjects.firstOrNull(),
+                category = subject,
                 questions = questions,
                 grade = grade
             )
