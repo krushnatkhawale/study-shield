@@ -959,7 +959,7 @@ fun ContentSelectionScreen(
                                                 attempts?.let { (count, last, avg) ->
                                                     val pct = if (last.totalQuestions > 0) (last.score * 100 / last.totalQuestions) else 0
                                                     Text(
-                                                        "×$count  last ${last.score}/${last.totalQuestions} ($pct%)  avg ${avg}%",
+                                                        "Attempts: $count, Last: $pct%, Avg: $avg%",
                                                         style = MaterialTheme.typography.labelSmall,
                                                         color = Color(0xFF2E7D32),
                                                         fontWeight = FontWeight.Medium,
