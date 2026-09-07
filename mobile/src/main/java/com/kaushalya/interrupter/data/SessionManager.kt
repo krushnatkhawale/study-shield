@@ -158,6 +158,30 @@ class SessionManager(context: Context) {
             return profile.kids.find { it.id == kidId }?.name
         }
 
+    private fun kidConfigKey(kidId: String) = "$KEY_KID_CONFIG_PREFIX$kidId"
+
+    /** Per-kid quiz presentation config (Features 4/5 switchable threshold). Defaults when unset. */
+    fun getKidQuizConfig(kidId: String): KidQuizConfig {
+        val raw = prefs.getString(kidConfigKey(kidId), null) ?: return KidQuizConfig()
+        return try {
+            profileJson.decodeFromString(raw)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to decode kid config: ${e.message}")
+            KidQuizConfig()
+        }
+    }
+
+    fun setKidQuizConfig(kidId: String, config: KidQuizConfig) {
+        prefs.edit().putString(kidConfigKey(kidId), profileJson.encodeToString(config)).apply()
+    }
+
+    /** IP of the TV the family most recently launched a session on (used for TTS checks). */
+    var lastTvIp: String?
+        get() = prefs.getString(KEY_LAST_TV_IP, null)
+        set(value) {
+            prefs.edit().putString(KEY_LAST_TV_IP, value).apply()
+        }
+
     fun isLoggedIn(): Boolean {
         val loggedIn = sessionId != null
         Log.d(TAG, "isLoggedIn -> $loggedIn (sessionId=${sessionId})")
@@ -203,6 +227,8 @@ class SessionManager(context: Context) {
         private const val KEY_SEEN_CAROUSEL = "seen_carousel"
         private const val KEY_SELECTED_KID = "selected_kid_id"
         private const val KEY_EXP_PROMPT_HANDLED = "exp_prompt_handled_kids"
+        private const val KEY_KID_CONFIG_PREFIX = "kid_quiz_config_"
+        private const val KEY_LAST_TV_IP = "last_tv_ip"
         private const val KEY_PROFILE = "app_profile"
     }
 }

@@ -138,12 +138,62 @@ class StudyRepository private constructor(private val context: Context) {
                 command
             }
 
-            val socket = Socket(ip, 8888)
+            val socket = Socket().apply { connect(java.net.InetSocketAddress(ip, 8888), 2000) }
             val out = PrintWriter(socket.getOutputStream(), true)
             out.println(json.encodeToString(finalCommand))
             socket.close()
             Result.success(Unit)
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Asks the TV what TTS languages its engine can speak (for the parent-chosen greeting
+     * language). Mirrors the quiz-result callback channel: open a listener socket, send a
+     * `TTS_CAP_CHECK` command pointing at it, and read the one-line reply.
+     */
+    suspend fun probeTtsLanguages(ip: String): Result<List<String>> = withContext(Dispatchers.IO) {
+        var server: ServerSocket? = null
+        try {
+            val mobileIp = getWifiIpAddress()
+            // No Wi-Fi/lan → the TV isn't reachable; fail fast instead of stalling 5s. The setting
+            // is already saved by the caller, so this is purely informational.
+            if (mobileIp == "0.0.0.0" || mobileIp == "Unknown") {
+                return@withContext Result.failure(IllegalStateException("NOT_ON_WIFI"))
+            }
+
+            server = ServerSocket(0).apply { soTimeout = 4000 }
+            val port = server.localPort
+            Log.d("StudyRepository", "Probing TV TTS at $ip via $mobileIp:$port")
+
+            val probe = InterruptionCommand(
+                type = "TTS_CAP_CHECK",
+                mobileIp = mobileIp,
+                resultCallbackPort = port
+            )
+            val socket = Socket().apply { connect(java.net.InetSocketAddress(ip, 8888), 2000) }
+            val out = PrintWriter(socket.getOutputStream(), true)
+            out.println(json.encodeToString(probe))
+            socket.close()
+
+            val client = server.accept().apply { soTimeout = 4000 }
+            val reader = BufferedReader(InputStreamReader(client.getInputStream()))
+            val data = reader.readLine()
+            client.close()
+            server.close()
+            server = null
+
+            if (data == null) {
+                Result.failure(IllegalStateException("TV returned no TTS capability reply"))
+            } else {
+                val reply = json.decodeFromString<TtsCapabilitiesMessage>(data)
+                Log.d("StudyRepository", "TV supports ${reply.supportedLanguages.size} TTS locales")
+                Result.success(reply.supportedLanguages)
+            }
+        } catch (e: Exception) {
+            try { server?.close() } catch (_: Exception) {}
+            Log.w("StudyRepository", "TTS capability probe failed: ${e.message}")
             Result.failure(e)
         }
     }
@@ -165,13 +215,14 @@ class StudyRepository private constructor(private val context: Context) {
                         val sessionManager = SessionManager(context)
                         runBlocking {
                             val result = QuizResult(
-                                childName = resolveChildName(sessionManager),
+                                childName = message.kidName ?: resolveChildName(sessionManager),
                                 score = message.score,
                                 totalQuestions = message.totalQuestions,
                                 timeSpentSeconds = message.timeSpentSeconds,
                                 contentName = message.contentName ?: contentName,
                                 category = message.category ?: category,
-                                completedAt = message.completedAt
+                                completedAt = message.completedAt,
+                                fastAnswerCount = message.fastAnswerCount
                             )
                             quizResultRepository.saveResult(result)
                         }

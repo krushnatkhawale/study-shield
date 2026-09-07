@@ -39,6 +39,8 @@ open class AuthRepository {
             val response = api.validateSession()
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
+            } else if (response.code() == 401 || response.code() == 403) {
+                Result.failure(UnauthorizedException("Session expired"))
             } else {
                 Result.failure(Exception("Session invalid"))
             }

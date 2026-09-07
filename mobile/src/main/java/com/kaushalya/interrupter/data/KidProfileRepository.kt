@@ -14,6 +14,8 @@ class KidProfileRepository private constructor(context: Context) {
 
     fun getAllKids(): Flow<List<KidProfile>> = kidProfileDao.getAllKids()
 
+    suspend fun getAllKidsOnce(): List<KidProfile> = kidProfileDao.getAllKidsOnce()
+
     suspend fun saveKid(kid: KidProfile) {
         val finalKid = if (sessionManager.isOfflineMode) kid.copy(mode = "offline") else kid
         kidProfileDao.insertKid(finalKid)
@@ -98,14 +100,14 @@ class KidProfileRepository private constructor(context: Context) {
 
     /**
      * Guarantees at least one kid profile exists after auth: pulls server kids first,
-     * then creates the default "Kid1" (class "Exp") locally if the account still has none.
-     * The default kid maps to hello-world/promo content until real details are provided.
+     * then creates the default "Kid 1" (class "Trial") locally if the account still has none.
+     * The default kid maps to Nursery content until real details are provided.
      */
     suspend fun ensureDefaultKid() = withContext(Dispatchers.IO) {
         syncFromBackend()
         if (kidProfileDao.getAllKidsOnce().isEmpty()) {
             saveKid(defaultKid())
-            Log.d(TAG, "Created default kid profile (Kid1 / Exp)")
+            Log.d(TAG, "Created default kid profile (Kid 1 / Trial)")
         }
         refreshProfileKids()
     }
@@ -120,8 +122,8 @@ class KidProfileRepository private constructor(context: Context) {
 
     companion object {
         private const val TAG = "KidProfileRepository"
-        const val DEFAULT_KID_NAME = "Kid1"
-        const val DEFAULT_KID_GRADE = "Exp"
+        const val DEFAULT_KID_NAME = "Kid 1"
+        const val DEFAULT_KID_GRADE = "Trial"
 
         fun defaultKid(): KidProfile = KidProfile(
             name = DEFAULT_KID_NAME,

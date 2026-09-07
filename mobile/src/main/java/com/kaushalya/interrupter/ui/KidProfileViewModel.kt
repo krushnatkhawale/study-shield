@@ -25,7 +25,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
     var showAddDialog by mutableStateOf(false)
     var editingKid by mutableStateOf<KidProfile?>(null)
 
-    fun saveKid(name: String, gender: String, birthYear: Int, dob: Long?, grade: String, syllabus: String?) {
+    fun saveKid(name: String, gender: String, birthYear: Int, dob: Long?, grade: String, syllabus: String?, avatar: String = "hero") {
         viewModelScope.launch {
             val kid = editingKid?.copy(
                 name = name,
@@ -34,6 +34,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
                 dateOfBirth = dob,
                 grade = grade,
                 syllabus = syllabus,
+                avatar = avatar,
                 lastModified = System.currentTimeMillis(),
                 syncStatus = 2 // Mark as modified
             ) ?: KidProfile(
@@ -43,6 +44,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
                 dateOfBirth = dob,
                 grade = grade,
                 syllabus = syllabus,
+                avatar = avatar,
                 syncStatus = 0 // New local record
             )
             
@@ -59,6 +61,13 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.deleteKid(kid)
             Log.d(TAG, "Deleted Kid (JSON): ${Json.encodeToString(kid)}")
+            repository.refreshProfileKids()
+        }
+    }
+
+    /** Re-syncs kid profiles from the backend (manual refresh). */
+    fun refresh() {
+        viewModelScope.launch {
             repository.refreshProfileKids()
         }
     }

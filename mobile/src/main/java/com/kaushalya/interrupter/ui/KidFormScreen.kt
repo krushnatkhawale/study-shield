@@ -13,12 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaushalya.interrupter.data.Avatars
 import com.kaushalya.interrupter.data.ClassGradeDto
 import com.kaushalya.interrupter.network.RetrofitClient
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun KidFormScreen(
     onBack: () -> Unit,
@@ -30,9 +31,10 @@ fun KidFormScreen(
     var name by remember { mutableStateOf(kid?.name ?: "") }
     var gender by remember { mutableStateOf(kid?.gender?.takeIf { it.isNotBlank() } ?: "Boy") }
     var birthYear by remember { mutableStateOf(kid?.birthYear?.takeIf { it > 0 }?.toString() ?: "") }
-    var grade by remember { mutableStateOf(kid?.grade?.takeIf { it.isNotBlank() && !it.equals("Exp", true) } ?: "") }
+    var grade by remember { mutableStateOf(kid?.grade?.takeIf { it.isNotBlank() } ?: "") }
     var dob by remember { mutableStateOf(kid?.dateOfBirth) }
     var selectedSyllabus by remember { mutableStateOf(kid?.syllabus ?: "") }
+    var selectedAvatar by remember { mutableStateOf(kid?.avatar ?: "hero") }
     var expanded by remember { mutableStateOf(false) }
     var gradeExpanded by remember { mutableStateOf(false) }
 
@@ -72,7 +74,7 @@ fun KidFormScreen(
                 onClick = {
                     val year = birthYear.toIntOrNull()
                     if (name.isNotBlank() && year != null && grade.isNotBlank()) {
-                        viewModel.saveKid(name, gender, year, dob, grade, selectedSyllabus.takeIf { it.isNotBlank() })
+                        viewModel.saveKid(name, gender, year, dob, grade, selectedSyllabus.takeIf { it.isNotBlank() }, selectedAvatar)
                         handleSaveAndBack()
                     }
                 },
@@ -231,6 +233,28 @@ fun KidFormScreen(
                                 selectedSyllabus = option
                                 expanded = false
                             }
+                        )
+                    }
+                }
+            }
+
+            // Celebration mascot (shown on the TV completion screen after a quiz)
+            Column {
+                Text("Celebration Mascot", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    "This animated buddy celebrates your kid's score on the TV.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Avatars.ALL.forEach { avatar ->
+                        FilterChip(
+                            selected = selectedAvatar == avatar.id,
+                            onClick = { selectedAvatar = avatar.id },
+                            label = { Text(avatar.label) }
                         )
                     }
                 }

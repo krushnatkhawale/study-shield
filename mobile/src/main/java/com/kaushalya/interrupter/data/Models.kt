@@ -1,5 +1,6 @@
 package com.kaushalya.interrupter.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -13,7 +14,8 @@ import kotlinx.serialization.json.Json
 data class QuizQuestion(
     val question: String,
     val options: List<String>,
-    val answer: String
+    val answer: String,
+    val id: Long? = null
 )
 
 /** Shuffle option order so the correct answer is not always the first option. */
@@ -36,8 +38,49 @@ data class InterruptionCommand(
     val options: List<String>? = null,
     val answer: String? = null,
     val mobileIp: String? = null,
-    val resultCallbackPort: Int? = null
+    val resultCallbackPort: Int? = null,
+    // Per-kid quiz presentation configuration (Features 4/5 + configurable threshold).
+    val revealReadLock: Boolean? = null,
+    val autoDictation: Boolean? = null,
+    val fastAnswerThresholdMs: Long? = null,
+    // The kid who is taking this quiz, so the TV can show + echo it back with the result
+    // (avoids relying on a potentially stale mobile-side kid selection after account switches).
+    val kidName: String? = null,
+    // Parent-selected locale tag for the TV's post-quiz greeting message + TTS (default: English).
+    // Mirrors KidQuizConfig.greetingLanguage.
+    val greetingLanguage: String? = null,
+    // Which mascot avatar the TV completion screen should celebrate with (Avatars.IDS).
+    val avatarId: String? = null
 )
+
+/** Per-kid quiz presentation configuration, persisted per kid and pushed to the TV on session start. */
+@Serializable
+data class KidQuizConfig(
+    val revealReadLock: Boolean = false,
+    val autoDictation: Boolean = false,
+    val fastAnswerThresholdMs: Long = DEFAULT_FAST_ANSWER_THRESHOLD_MS,
+    val greetingLanguage: String = DEFAULT_GREETING_LANGUAGE
+) {
+    companion object {
+        const val DEFAULT_FAST_ANSWER_THRESHOLD_MS: Long = 1500L
+        const val MIN_FAST_ANSWER_THRESHOLD_MS: Long = 0L
+        const val MAX_FAST_ANSWER_THRESHOLD_MS: Long = 10000L
+
+        /** Locale tag for the TV's post-quiz greeting; English by default. */
+        const val DEFAULT_GREETING_LANGUAGE: String = "en"
+    }
+}
+
+/** Greeting-message languages offered to parents for the TV's post-quiz greeting. */
+object GreetingLanguages {
+    val options: List<Pair<String, String>> = listOf(
+        "en" to "English",
+        "mr-IN" to "मराठी (Marathi)",
+        "hi-IN" to "हिन्दी (Hindi)"
+    )
+
+    fun labelOf(tag: String): String = options.firstOrNull { it.first == tag }?.second ?: "English"
+}
 
 @Serializable
 data class QuizResultMessage(
@@ -46,7 +89,16 @@ data class QuizResultMessage(
     val contentName: String? = null,
     val category: String? = null,
     val timeSpentSeconds: Long = 0,
-    val completedAt: Long = System.currentTimeMillis()
+    val completedAt: Long = System.currentTimeMillis(),
+    val fastAnswerCount: Int = 0,
+    // Echo back which kid the quiz was for so the mobile stores it under the right profile.
+    val kidName: String? = null
+)
+
+/** Reply to the TV's `TTS_CAP_CHECK` probe: the TV's speakable TTS locale tags. */
+@Serializable
+data class TtsCapabilitiesMessage(
+    val supportedLanguages: List<String> = emptyList()
 )
 
 @Serializable
@@ -101,8 +153,41 @@ data class KidProfile(
     val lastModified: Long = System.currentTimeMillis(),
     val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: Modified
     val remoteId: String? = null,
-    val mode: String = "online" // "online" or "offline"
+    val mode: String = "online", // "online" or "offline"
+    // Mascot avatar id shown on the TV completion screen after this kid's quiz.
+    // See Avatars.IDS for the shared set (defaults to "hero").
+    // @ColumnInfo defaultValue must match MIGRATION_12_13's ALTER ... DEFAULT 'hero'.
+    @ColumnInfo(defaultValue = "'hero'")
+    val avatar: String = "hero"
 )
+
+/**
+ * The selectable TV completion-mascot avatars. These are friendly, inspired-by original
+ * interpretations of well-known character archetypes (not brand reproductions), keyed by a
+ * stable id that the TV-side LiveMascot uses to pick colours/features.
+ */
+object Avatars {
+    data class Avatar(val id: String, val label: String)
+
+    val ALL: List<Avatar> = listOf(
+        Avatar("hero", "Hero Kid"),
+        Avatar("warrior", "Brave Warrior"),
+        Avatar("pig", "Pink Piggy"),
+        Avatar("panda", "Panda"),
+        Avatar("bear", "Teddy Bear"),
+        Avatar("bunny", "Bunny"),
+        Avatar("tiger", "Tiger Cub"),
+        Avatar("monkey", "Mischievous Monkey"),
+        Avatar("cat", "Cute Kitty"),
+        Avatar("fox", "Clever Fox"),
+        Avatar("dino", "Little Dino"),
+        Avatar("robot", "Friendly Robot")
+    )
+
+    fun labelOf(id: String?): String = ALL.firstOrNull { it.id == id }?.label ?: ALL.first().label
+
+    fun isValid(id: String?): Boolean = ALL.any { it.id == id }
+}
 
 // --- Smart TV Connection History Models ---
 
@@ -249,7 +334,8 @@ data class QuizResult(
     val completedAt: Long = System.currentTimeMillis(),
     val syncStatus: Int = 0, // 0: Local, 1: Synced, 2: SyncFailed
     val backendId: Long? = null, // Backend-assigned ID for dedup on fetch
-    val mode: String = "online" // "online" or "offline"
+    val mode: String = "online", // "online" or "offline"
+    val fastAnswerCount: Int = 0 // Answers given suspiciously fast (parent-side signal only)
 )
 
 @Serializable
@@ -260,7 +346,8 @@ data class QuizResultRequest(
     val timeSpentSeconds: Long,
     val contentName: String? = null,
     val category: String? = null,
-    val completedAt: Long
+    val completedAt: Long,
+    val fastAnswerCount: Int = 0
 )
 
 @Serializable
@@ -280,7 +367,8 @@ data class QuizResultListItem(
     val contentName: String? = null,
     val category: String? = null,
     val completedAt: String? = null,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val fastAnswerCount: Int? = null
 )
 
 @Serializable
@@ -387,4 +475,68 @@ data class QuizBundleResponseDto(
     val subjects: List<String> = emptyList(),
     val quizCount: Int? = null,
     val quizzes: List<QuizBundleQuizDto> = emptyList()
+)
+
+// --- Question feedback (review) ---
+
+@Serializable
+data class QuestionFeedbackRequest(
+    val vote: String,
+    val downCategory: String? = null,
+    val comment: String? = null,
+    val report: Boolean = false
+)
+
+@Serializable
+data class QuestionFeedbackResponse(
+    val id: Long? = null,
+    val questionId: Long? = null,
+    val vote: String = "NONE",
+    val downCategory: String? = null,
+    val reported: Boolean = false,
+    val comment: String? = null
+)
+
+// --- Pending question feedback (offline queue) ---
+// Opaque server question id (backend ID, not the local question resource id). Kept as a
+// plain Long; there is no FK to a local quiz table because feedback is keyed by the remote id.
+
+@Entity(tableName = "pending_feedback")
+data class PendingFeedback(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val questionId: Long,
+    val vote: String,
+    val downCategory: String? = null,
+    val comment: String? = null,
+    val report: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+// --- Question bank load (POST /api/v1/questions/load) ---
+// Each item carries board/class/subject metadata so the backend can auto-create
+// the full Board -> ClassGrade -> Subject -> ContentPack -> Quiz -> Question chain.
+
+@Serializable
+data class QuestionBankLoadItem(
+    val boardCode: String,
+    val className: String,
+    val age: Int? = null,
+    val subject: String,
+    val questionText: String,
+    val questionType: String? = null, // SINGLE_CHOICE / MULTIPLE_CHOICE / TRUE_FALSE / FITB; derived by backend if absent
+    val correctAnswer: String,
+    val options: List<String> = emptyList(),
+    val orderIndex: Int? = null
+)
+
+@Serializable
+data class QuestionBankLoadResponseDto(
+    val boardsCreated: Int = 0,
+    val classGradesCreated: Int = 0,
+    val subjectsCreated: Int = 0,
+    val contentPacksCreated: Int = 0,
+    val quizzesCreated: Int = 0,
+    val questionsCreated: Int = 0,
+    val questionsSkipped: Int = 0
 )

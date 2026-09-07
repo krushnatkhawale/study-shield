@@ -3,6 +3,7 @@ package com.kaushalya.interrupter
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.kaushalya.interrupter.data.SessionManager
+import com.kaushalya.interrupter.data.UnauthorizedException
 import com.kaushalya.interrupter.data.ValidationResponse
 import com.kaushalya.interrupter.ui.auth.AuthState
 import com.kaushalya.interrupter.ui.auth.AuthViewModel
@@ -26,11 +27,12 @@ import java.net.UnknownHostException
 class AuthViewModelTest {
 
     private lateinit var sessionManager: SessionManager
+    private lateinit var ctx: android.content.Context
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setUp() {
-        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         ctx.getSharedPreferences("auth_session", android.content.Context.MODE_PRIVATE).edit().clear().apply()
         sessionManager = SessionManager(ctx)
         Dispatchers.setMain(testDispatcher)
@@ -45,7 +47,7 @@ class AuthViewModelTest {
     fun checkExistingSession_returns_Success_when_session_stored() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.success(ValidationResponse(valid = true))
         ))
         vm.checkExistingSession()
@@ -59,7 +61,7 @@ class AuthViewModelTest {
     fun checkExistingSession_returns_Success_when_valid_field_absent() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.success(ValidationResponse(valid = null))
         ))
         vm.checkExistingSession()
@@ -72,7 +74,7 @@ class AuthViewModelTest {
     fun checkExistingSession_clears_session_when_valid_explicitly_false() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.success(ValidationResponse(valid = false))
         ))
         vm.checkExistingSession()
@@ -86,7 +88,7 @@ class AuthViewModelTest {
     fun checkExistingSession_returns_Success_on_ConnectException() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.failure(ConnectException("Connection refused"))
         ))
         vm.checkExistingSession()
@@ -97,10 +99,24 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun checkExistingSession_forcesRelogin_when_token_rejected() = runTest(testDispatcher) {
+        sessionManager.sessionId = "expired-session"
+
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
+            validateResult = Result.failure(UnauthorizedException("Session expired"))
+        ))
+        vm.checkExistingSession()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.authState.value is AuthState.Idle)
+        assertNull(sessionManager.sessionId)
+    }
+
+    @Test
     fun checkExistingSession_returns_Success_on_SocketTimeout() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.failure(SocketTimeoutException("timeout"))
         ))
         vm.checkExistingSession()
@@ -113,7 +129,7 @@ class AuthViewModelTest {
     fun checkExistingSession_returns_Success_on_UnknownHost() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.failure(UnknownHostException("no such host"))
         ))
         vm.checkExistingSession()
@@ -126,7 +142,7 @@ class AuthViewModelTest {
     fun checkExistingSession_returns_Success_on_non_network_error() = runTest(testDispatcher) {
         sessionManager.sessionId = "stored-session"
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.failure(Exception("Some other error"))
         ))
         vm.checkExistingSession()
@@ -141,7 +157,7 @@ class AuthViewModelTest {
         sessionManager.sessionId = "guest"
         sessionManager.isGuest = true
 
-        val vm = AuthViewModel(sessionManager, FakeAuthRepository(
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
             validateResult = Result.failure(Exception("should not be called"))
         ))
         vm.checkExistingSession()
@@ -155,7 +171,7 @@ class AuthViewModelTest {
     fun checkExistingSession_shows_welcome_when_no_session() = runTest(testDispatcher) {
         sessionManager.clear()
 
-        val vm = AuthViewModel(sessionManager)
+        val vm = AuthViewModel(sessionManager, ctx)
         vm.checkExistingSession()
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -167,7 +183,7 @@ class AuthViewModelTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         sessionManager.sessionId = null
 
-        val vm = AuthViewModel(sessionManager)
+        val vm = AuthViewModel(sessionManager, ctx)
         vm.handleAuthResponse(
             com.kaushalya.interrupter.data.AuthResponse(
                 sessionId = "session-from-signin",

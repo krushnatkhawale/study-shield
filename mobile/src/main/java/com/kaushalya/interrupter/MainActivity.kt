@@ -30,12 +30,14 @@ import androidx.core.content.ContextCompat
 import com.kaushalya.interrupter.data.ConnectivityObserver
 import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.data.ToastHelper
+import com.kaushalya.interrupter.network.AuthEvents
 import com.kaushalya.interrupter.network.RetrofitClient
 import com.kaushalya.interrupter.ui.*
 import com.kaushalya.interrupter.ui.auth.AuthViewModel
 import com.kaushalya.interrupter.ui.auth.*
 import com.kaushalya.interrupter.ui.theme.InterrupterTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 
 class MainActivity : ComponentActivity() {
 
@@ -190,6 +192,17 @@ class MainActivity : ComponentActivity() {
                 !isCheckingSession && authState is AuthState.Idle && (screen == "validating" || screen == "main") -> {
                     Log.d(TAG, "AppNavigation: navigating to welcome")
                     screen = "welcome"
+                }
+            }
+        }
+
+        // Force a re-login (drop session, go to welcome) whenever any authenticated
+        // call reports the stored token as expired/rejected (401/403).
+        LaunchedEffect(Unit) {
+            AuthEvents.sessionExpired.collect { count ->
+                if (count > 0) {
+                    Log.d(TAG, "AppNavigation: session expired signal received")
+                    authViewModel.forceReLogin()
                 }
             }
         }

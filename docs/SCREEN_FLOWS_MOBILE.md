@@ -90,6 +90,7 @@ Shown when auth responds `ParentSelectionRequired`. List of parent rows; "Add Ne
 | settings | Settings | `StudyScreens.kt` |
 | profdata | Debug data | `ui/ProfDataScreen.kt` |
 | content | Select Content | `StudyScreens.kt` |
+| quiz_review | Quiz Review | `ui/quiz/QuizReviewScreen.kt` |
 
 ### 3.1 Home — Stats Dashboard
 Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity list; one-time Exp-upgrade prompt dialog.
@@ -118,10 +119,25 @@ Freemium packs in a **tabbed view — one tab per kid**; each tab shows only tha
 │  [Pack card] [Pack card] │
 │   pack card shows attempt history:
 │   "Attempted N times • last score X/Y (P%)"
+│   each card has a 👁 review icon
 │ [ START SESSION ]        │──► "Session Confirmed" dialog
 │                          │    (STUDY_SESSION sent to TV)
 └──────────────────────────┘
 ```
+
+Each pack card has a **review (👁) icon** that opens `Quiz Review` (`quiz_review` route) — a listing of the quiz's questions, options, and highlighted correct answers. Reviewing does not record a result and leaves the `Select Content` screen selection untouched.
+
+Each question in the review screen offers icon-only **feedback actions**: **up (👍) / down (👎) / report (🚩)** — no text label, just the glyphs.
+- **Up ▲** → comment optional.
+- **Down ▼** → category select (wrong answer / typo / offensive / other) + comment optional.
+- **Report 🚩** → comment mandatory.
+- A user's up/down is recorded **once per question**; tapping the same vote again clears it (`NONE`). Feedback is persisted backend-side via `PUT /api/v1/questions/{id}/feedback`, and the current state is loaded on screen open via `GET /api/v1/questions/{id}/feedback` (JWT auth, current account).
+
+**Offline + sync behavior (all API calls):**
+- Every network call has a **7-second timeout** (`OkHttpClient.callTimeout/connectTimeout/readTimeout/writeTimeout = 7s`), so the app stays responsive when the backend is slow or gone.
+- With no backend the app keeps working as-is: pack content is cache/asset-first (`PackCache` + bundled quizzes), and mutations degrade gracefully.
+- Feedback submits are **queued offline**: if the API can't be reached, the action is stored in Room (`pending_feedback`) and flushed automatically via `ConnectivityObserver` when connectivity returns (`FeedbackRepository.retrySyncFailed`). Quiz results and kid profiles follow the same pending-sync pattern.
+- **Quiz results are never re-sent just by opening the app.** Results are only pushed to the server when (a) they were captured offline and are queued for sync, or (b) a quiz finishes on the TV and the mobile record is acknowledged. Rows pulled back from the backend on fetch are inserted locally **without** re-syncing (`QuizResultRepository.insertFromBackend`), and offline-mode rows are deleted locally once the server has acknowledged them — so attempt counts stay correct instead of climbing on every restart.
 Empty states: no kid profiles / no packs for a grade (a kid tab with no packs shows an inline "No packs for <kid>" message).
 
 Pack loading is **cache-first** (`data/PackCache.kt`): packs are stored per logged-in user + grade in app-private files; the backend is only fetched on the first download or cache miss, and cache hits are logged (`PackCache: Cache hit ... skipping backend fetch`). Attempt counts and last scores come from the local `quiz_results` Room table, matched by kid name + pack name.
@@ -152,8 +168,48 @@ Internal data inspection screen.
 ```
 Library ─[START STUDY NOW]──► content (always)
 content ─[START SESSION]──► session confirmed on TV (dialog, stays on screen)
-kids/kid row ─► kid_form ─[Save]──► back
+content ─[review icon]──► quiz_review ─[back]──► content
+kids/kid row ─[tap]──► kid_detail ─[Edit]──► kid_form ─[Save]──► back
+kids/kid row ─[+]──► kid_form ─[Save]──► back
+kid_detail ─[Delete]──► (confirm) ─► back to kids
 results ─[tap]──► result detail ─[back]──► results
 drawer item ─► target route (popUpTo home)
 Sign Out ─► welcome
 ```
+
+## 5. Quiz Learning Countermeasures
+
+### Implemented (2026-09-03)
+- **Fast-answer detection**: TV silently captures `fastAnswerCount` (answers under the threshold),
+  sent with every quiz result, never shown to the kid.
+- **Kid Detail page (new)** — krushnat UX (2026-09-03): the **Kids** list is now clean info-only
+  cards (no per-row edit/delete buttons); tapping a kid opens a full-screen **Kid Detail** page
+  (`KidDetailScreen.kt`) that contains:
+  - Profile summary header with an Edit action (→ existing kid form).
+  - **Performance section** (charts drawn with Compose Canvas, no new dependency): a bar chart of
+    quiz % across attempts, a donut of score distribution (Great ≥80 / Good 50–79 / Needs practice
+    <50), and a **fast-answer insight** comparing the configured threshold vs the latest attempt's
+    fast-answer share.
+  - **Quiz presentation** controls (moved here from Select Content).
+  - **Delete profile** button (error-color) at the very end with a confirmation dialog.
+- **Configurable threshold + Features 4/5**: the per-kid "Quiz presentation" card
+  (`QuizPresentationConfigCard`, moved from Select Content to Kid Detail) with:
+  - **Lock answers until read** (reveal/read-lock) — switch
+  - **Read questions aloud (TTS)** — switch
+  - **Fast-answer threshold** slider (0–5s, default 1.5s)
+  Persisted per kid via `SessionManager.getKidQuizConfig/setKidQuizConfig` and pushed to the TV in
+  the `InterruptionCommand` (`revealReadLock`, `autoDictation`, `fastAnswerThresholdMs`).
+- **Feature 6 — kid performance insight**: the **Kids page** now shows on each kid card the latest
+  quiz % and a ⚠ "N fast" flag when any recent result has `fastAnswerCount > 0` (via
+  `QuizResultDao.getResultsByChild`).
+- Results screen already flags "Fast answers: N" in the list + detail.
+
+### Note — threshold-vs-actual chart data
+The TV currently stores only a fast-answer **count**, not per-answer response times. So the
+fast-answer insight on Kid Detail compares the configured threshold against the observed fast
+*share*. A true "threshold vs actual time per answer" chart requires the TV to record and send
+per-answer timestamps (not stored today) — flagged to krushnat.
+
+### Backlog
+Previously-deferred parent-config items (reveal/read-lock, TTS) are now implemented as above. See
+`docs/PLANS/MOBILE_PARENT_CONFIG_BACKLOG.md` for the design rationale.

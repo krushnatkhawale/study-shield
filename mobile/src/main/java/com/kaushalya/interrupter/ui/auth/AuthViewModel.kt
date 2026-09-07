@@ -15,6 +15,8 @@ import com.kaushalya.interrupter.data.ProfileKid
 import com.kaushalya.interrupter.data.ProfileParent
 import com.kaushalya.interrupter.data.ProfileTv
 import com.kaushalya.interrupter.data.SessionManager
+import com.kaushalya.interrupter.data.TrialContentDownloader
+import com.kaushalya.interrupter.data.UnauthorizedException
 import com.kaushalya.interrupter.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +47,14 @@ class AuthViewModel(
 
     private val dataGuard = AccountDataGuard(context, sessionManager)
     private val kidProfileRepository = KidProfileRepository.getInstance(context)
+    private val appContext: Context = context.applicationContext
+
+    /** Seeds the Trial question bank on the backend (fire-and-forget) after ensuring a default kid. */
+    private fun syncTrialContent() {
+        viewModelScope.launch {
+            TrialContentDownloader.ensureTrialContent(appContext)
+        }
+    }
 
     fun checkExistingSession() {
         Log.d(TAG, "checkExistingSession: start")
@@ -74,13 +84,23 @@ class AuthViewModel(
                     Log.d(TAG, "checkExistingSession: session valid, navigating to home")
                     _authState.value = AuthState.Success(sessionManager.sessionId!!)
                     kidProfileRepository.ensureDefaultKid()
+                    syncTrialContent()
                 }
             } else {
                 val cause = result.exceptionOrNull()
+                if (cause is UnauthorizedException) {
+                    Log.d(TAG, "checkExistingSession: server rejected stored session, forcing re-login")
+                    sessionManager.sessionId = null
+                    sessionManager.isOfflineMode = false
+                    _authState.value = AuthState.Idle
+                    _isCheckingSession.value = false
+                    return@launch
+                }
                 Log.d(TAG, "checkExistingSession: validation failed (${cause?.javaClass?.simpleName}: ${cause?.message}), trusting local session")
                 sessionManager.isOfflineMode = true
                 _authState.value = AuthState.Success(sessionManager.sessionId!!)
                 kidProfileRepository.ensureDefaultKid()
+                syncTrialContent()
             }
             _isCheckingSession.value = false
         }
@@ -91,7 +111,7 @@ class AuthViewModel(
         sessionManager.isOfflineMode = true
         _isCheckingSession.value = false
         _authState.value = AuthState.Success(sessionManager.sessionId!!)
-        viewModelScope.launch { kidProfileRepository.ensureDefaultKid() }
+        viewModelScope.launch { kidProfileRepository.ensureDefaultKid(); syncTrialContent() }
     }
 
     fun signUp(loginId: String, password: String, name: String) {
@@ -160,6 +180,7 @@ class AuthViewModel(
             Log.d(TAG, "handleAuthResponse: session and profile saved, navigating to home")
             _authState.value = AuthState.Success(sessionId)
             kidProfileRepository.ensureDefaultKid()
+            syncTrialContent()
         }
     }
 
@@ -181,6 +202,7 @@ class AuthViewModel(
                 Log.d(TAG, "handleParentSelection: session and profile updated, navigating to home")
                 _authState.value = AuthState.Success(current.sessionId)
                 kidProfileRepository.ensureDefaultKid()
+                syncTrialContent()
             }
         } else {
             Log.w(TAG, "handleParentSelection: called but state is ${current::class.simpleName}, ignoring")
@@ -198,6 +220,20 @@ class AuthViewModel(
         }
     }
 
+    /**
+     * Called when an authenticated API call reports the session token as expired
+     * or rejected (401/403). Drops the token, keeps the downloaded profile data,
+     * and routes back to the login flow.
+     */
+    fun forceReLogin() {
+        Log.d(TAG, "forceReLogin: clearing expired session")
+        sessionManager.sessionId = null
+        sessionManager.isOfflineMode = false
+        RetrofitClient.reset()
+        _isCheckingSession.value = false
+        _authState.value = AuthState.Idle
+    }
+
     fun goOnline() {
         sessionManager.isOfflineMode = false
     }
@@ -212,6 +248,7 @@ class AuthViewModel(
             dataGuard.ensureOwner(OWNER_GUEST)
             _authState.value = AuthState.Success("guest")
             kidProfileRepository.ensureDefaultKid()
+            syncTrialContent()
         }
     }
 

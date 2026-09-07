@@ -14,6 +14,7 @@ class ConnectivityObserver private constructor(context: Context) {
     private val sessionManager = SessionManager(context)
     private val quizResultRepository = QuizResultRepository.getInstance(context)
     private val kidProfileRepository = KidProfileRepository.getInstance(context)
+    private val feedbackRepository = FeedbackRepository.getInstance(context)
 
     private var callback: ConnectivityManager.NetworkCallback? = null
     private var wasInOfflineMode = false
@@ -64,6 +65,8 @@ class ConnectivityObserver private constructor(context: Context) {
                 runBlocking { quizResultRepository.retrySyncFailed() }
                 Log.d(TAG, "Retrying pending kid profile syncs...")
                 runBlocking { kidProfileRepository.retrySyncFailed() }
+                Log.d(TAG, "Retrying pending question feedback syncs...")
+                runBlocking { feedbackRepository.retrySyncFailed() }
                 Log.d(TAG, "All pending syncs completed")
                 ToastHelper.show("Sync complete")
             } catch (e: Exception) {

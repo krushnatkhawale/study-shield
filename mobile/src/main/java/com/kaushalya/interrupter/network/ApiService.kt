@@ -64,4 +64,18 @@ interface ApiService {
     // Quiz Bundles (server-issued quizzes)
     @POST("/api/v1/quiz-bundles")
     suspend fun issueQuizBundle(@Body request: QuizBundleRequestDto): Response<QuizBundleResponseDto>
+
+    // Question Feedback (review)
+    @PUT("/api/v1/questions/{id}/feedback")
+    suspend fun submitQuestionFeedback(
+        @Path("id") id: Long,
+        @Body request: QuestionFeedbackRequest
+    ): Response<QuestionFeedbackResponse>
+
+    @GET("/api/v1/questions/{id}/feedback")
+    suspend fun getQuestionFeedback(@Path("id") id: Long): Response<QuestionFeedbackResponse>
+
+    // Question Bank Load (seed content on demand)
+    @POST("/api/v1/questions/load")
+    suspend fun loadQuestionBank(@Body items: List<QuestionBankLoadItem>): Response<QuestionBankLoadResponseDto>
 }

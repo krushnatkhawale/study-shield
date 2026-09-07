@@ -48,11 +48,15 @@ object RetrofitClient {
 
             val client = OkHttpClient.Builder()
                 .addInterceptor(AuthInterceptor(sm))
+                .addInterceptor(AuthExpiryInterceptor(sm))
                 .addInterceptor(logging)
                 .addInterceptor(responseLogger)
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
+                // Every API call must complete within 7 seconds so the app stays responsive
+                // (and degrades gracefully to offline/cached behavior) when the backend is slow/unreachable.
+                .callTimeout(7, TimeUnit.SECONDS)
+                .connectTimeout(7, TimeUnit.SECONDS)
+                .readTimeout(7, TimeUnit.SECONDS)
+                .writeTimeout(7, TimeUnit.SECONDS)
                 .build()
 
             val contentType = "application/json".toMediaType()

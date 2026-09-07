@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
- * Shown after the default "Exp" kid completes its first test: specialized,
+ * Shown after the default "Trial" kid completes its first test: specialized,
  * class-based tests become available once the kid's profile is updated.
  */
 @Composable
@@ -39,7 +39,7 @@ fun ExpUpgradePromptDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "$kidName is currently on the starter (Exp) profile with sample tests.",
+                    "$kidName is currently on the starter (Trial) profile with sample tests.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))

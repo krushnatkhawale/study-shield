@@ -9,12 +9,8 @@ import com.kaushalya.interrupter.data.KidProfileRepository
 import com.kaushalya.interrupter.data.QuizResult
 import com.kaushalya.interrupter.data.QuizResultRepository
 import com.kaushalya.interrupter.data.SessionManager
-import com.kaushalya.interrupter.network.RetrofitClient
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 class SessionResultViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = QuizResultRepository.getInstance(application)
@@ -28,9 +24,9 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
-     * The Exp-grade kid that just completed its first test and should be offered a
+     * The Trial-grade kid that just completed its first test and should be offered a
      * profile update to unlock class/syllabus based tests. Null when there is nobody
-     * to prompt (no Exp kid, no results for one, or already handled for that kid).
+     * to prompt (no Trial kid, no results for one, or already handled for that kid).
      */
     val expUpgradeKid: StateFlow<KidProfile?> =
         combine(recentResults, kidProfiles) { results, kids ->
@@ -56,37 +52,16 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
         fetchResultsFromBackend()
     }
 
+    fun refresh() {
+        fetchResultsFromBackend()
+        retrySync()
+    }
+
     fun fetchResultsFromBackend() {
         viewModelScope.launch {
             try {
-                val api = RetrofitClient.getApiService()
-                val response = api.listQuizResults()
-                if (response.isSuccessful) {
-                    val backendResults = response.body() ?: emptyList()
-                    Log.d("SessionResultVM", "Fetched ${backendResults.size} results from backend")
-                    backendResults.forEach { item ->
-                        val backendId = item.id ?: return@forEach
-                        val existing = repository.getByBackendId(backendId)
-                        if (existing == null) {
-                            val completedAt = try {
-                                LocalDateTime.parse(item.completedAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                                    .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                            } catch (_: Exception) { System.currentTimeMillis() }
-
-                            repository.saveResult(QuizResult(
-                                childName = item.childName ?: "Quiz",
-                                score = item.score ?: 0,
-                                totalQuestions = item.totalQuestions ?: 0,
-                                timeSpentSeconds = item.timeSpentSeconds ?: 0,
-                                contentName = item.contentName,
-                                category = item.category,
-                                completedAt = completedAt,
-                                syncStatus = 1,
-                                backendId = backendId
-                            ))
-                        }
-                    }
-                }
+                val added = repository.syncFromBackend()
+                Log.d("SessionResultVM", "Backend fetch: added $added results")
             } catch (e: Exception) {
                 Log.e("SessionResultVM", "Failed to fetch from backend", e)
             }

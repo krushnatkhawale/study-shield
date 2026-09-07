@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaushalya.interrupter.data.KidProfile
+import com.kaushalya.interrupter.data.QuizResult
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -23,9 +25,18 @@ import java.util.*
 fun KidProfileScreen(
     viewModel: KidProfileViewModel = viewModel(),
     onAddKid: () -> Unit = {},
-    onEditKid: (KidProfile) -> Unit = {}
+    onSelectKid: (KidProfile) -> Unit = {}
 ) {
     val kids by viewModel.kidProfiles.collectAsState()
+
+    // Per-kid performance insight (Feature 6): latest result + fast-answer flag per kid.
+    val resultViewModel: SessionResultViewModel = viewModel()
+    val recentResults by resultViewModel.recentResults.collectAsState()
+    val latestByKid = remember(kids, recentResults) {
+        kids.associateWith { kid ->
+            recentResults.firstOrNull { it.childName == kid.name }
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -43,13 +54,25 @@ fun KidProfileScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Text(
-                "Manage Kid Profiles",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
+Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Manage Kid Profiles",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = {
+                    viewModel.refresh()
+                    resultViewModel.refresh()
+                }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                }
+            }
             if (kids.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -60,12 +83,18 @@ fun KidProfileScreen(
                     }
                 }
             } else {
+                Text(
+                    "Tap a kid to view their profile, performance and quiz settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(kids) { kid ->
                         KidItem(
                             kid = kid,
-                            onEdit = { onEditKid(kid) },
-                            onDelete = { viewModel.deleteKid(kid) }
+                            latest = latestByKid[kid],
+                            onClick = { onSelectKid(kid) }
                         )
                     }
                 }
@@ -77,12 +106,13 @@ fun KidProfileScreen(
 @Composable
 fun KidItem(
     kid: KidProfile,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
+    latest: QuizResult? = null,
+    onClick: () -> Unit
 ) {
     val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    
+
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -125,20 +155,47 @@ fun KidItem(
                         color = Color.Gray
                     )
                 }
-                if (kid.grade.equals("Exp", ignoreCase = true)) {
+                if (kid.grade.equals("Trial", ignoreCase = true)) {
                     Text(
                         "Starter profile — update info to unlock class-based tests",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFFF6B00)
                     )
                 }
+                latest?.let { r ->
+                    val pct = if (r.totalQuestions > 0) (r.score * 100 / r.totalQuestions) else 0
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Latest quiz: ${pct}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF2E7D32)
+                        )
+                        if (r.fastAnswerCount > 0) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "⚠ ${r.fastAnswerCount} fast",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFFB26A00)
+                            )
+                        }
+                    }
+                } ?: run {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        "No results yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
             }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray)
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "View profile",
+                tint = Color.Gray
+            )
         }
     }
 }

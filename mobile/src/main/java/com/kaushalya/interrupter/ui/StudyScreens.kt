@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.*
 import com.kaushalya.interrupter.ui.parents.ParentManagementScreen
+import com.kaushalya.interrupter.ui.quiz.QuizReviewScreen
 import com.kaushalya.interrupter.ui.quiz.QuizSetupScreen
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -54,6 +55,22 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 
     // Kid Form (not in drawer)
     object KidForm : Screen("kid_form", "Kid Profile", Icons.Default.ChildCare)
+
+    // Kid Detail (full-screen profile + performance; not in drawer)
+    object KidDetail : Screen("kid_detail", "Kid Profile", Icons.Default.ChildCare)
+
+    // Quiz Review (not in drawer)
+    object QuizReview : Screen("quiz_review", "Quiz Review", Icons.Default.Visibility)
+}
+
+/** Transient holder for the pack being reviewed, passed between nav destinations. */
+object QuizReviewTarget {
+    var pack: StudyContent? = null
+}
+
+/** Transient holder for the kid whose full profile/detail page is being viewed. */
+object KidDetailTarget {
+    var kid: KidProfile? = null
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,18 +140,25 @@ fun MainScreen(
             }
         }
     ) {
+        val inDrawerScreen = items.any { it.route == currentRoute }
         Scaffold(
             topBar = {
-                val title = items.find { it.route == currentRoute }?.title ?: "StudyShield"
-                CenterAlignedTopAppBar(
-                    title = { Text(title, fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                if (inDrawerScreen) {
+                    val title = items.find { it.route == currentRoute }?.title ?: "StudyShield"
+                    CenterAlignedTopAppBar(
+                        title = { Text(title, fontWeight = FontWeight.Bold) },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
                         }
-                    }
-                )
-            }
+                    )
+                }
+            },
+            // Full-screen flows (Select Content, Kid Form/Detail, Quiz Review) render their own
+            // top bar; suppress the outer scaffold insets so their bar sits at the top and the
+            // double-title blank space is removed.
+            contentWindowInsets = if (inDrawerScreen) ScaffoldDefaults.contentWindowInsets else WindowInsets(0)
         ) { padding ->
             NavHost(
                 navController = navController,
@@ -190,10 +214,29 @@ fun MainScreen(
                     KidProfileScreen(
                         viewModel = kidViewModel,
                         onAddKid = { navController.navigate(Screen.KidForm.route) },
-                        onEditKid = { kid ->
+                        onSelectKid = { kid ->
+                            KidDetailTarget.kid = kid
+                            navController.navigate(Screen.KidDetail.route)
+                        }
+                    )
+                }
+                composable(Screen.KidDetail.route) {
+                    val kidViewModel: KidProfileViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
+                    val resultViewModel: SessionResultViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
+                    KidDetailScreen(
+                        kid = KidDetailTarget.kid,
+                        kidViewModel = kidViewModel,
+                        resultViewModel = resultViewModel,
+                        sessionManager = sessionManager,
+                        onEditProfile = { kid ->
                             kidViewModel.editingKid = kid
                             navController.navigate(Screen.KidForm.route)
-                        }
+                        },
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable(Screen.KidForm.route) {
@@ -230,6 +273,16 @@ fun MainScreen(
                         viewModel = studyViewModel,
                         sessionManager = sessionManager,
                         kidViewModel = kidViewModel,
+                        onReviewPack = { pack ->
+                            QuizReviewTarget.pack = pack
+                            navController.navigate(Screen.QuizReview.route)
+                        },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable(Screen.QuizReview.route) {
+                    QuizReviewScreen(
+                        pack = QuizReviewTarget.pack,
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -368,7 +421,7 @@ fun StatsDashboardScreen(
 
     val kids = sessionManager.profile.kids
 
-    // One-time offer: after the default Exp kid finishes a test, invite the parent
+    // One-time offer: after the default Trial kid finishes a test, invite the parent
     // to update the kid profile to unlock class-based tests.
     val expUpgradeKid by resultViewModel.expUpgradeKid.collectAsState()
     val expKid = expUpgradeKid
@@ -752,6 +805,7 @@ fun ContentSelectionScreen(
     viewModel: StudyViewModel,
     sessionManager: SessionManager,
     kidViewModel: KidProfileViewModel,
+    onReviewPack: (StudyContent) -> Unit,
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -771,8 +825,10 @@ fun ContentSelectionScreen(
     }
     var loading by remember { mutableStateOf(true) }
 
-    suspend fun loadPacksFor(kid: KidProfile): List<StudyContent> {
-        packCache.get(packCache.userKey(sessionManager.loginId), kid.grade)?.let { return it }
+    suspend fun loadPacksFor(kid: KidProfile, forceRemote: Boolean = false): List<StudyContent> {
+        if (!forceRemote) {
+            packCache.get(packCache.userKey(sessionManager.loginId), kid.grade)?.let { return it }
+        }
         val packs = try {
             QuizLoader(context).loadQuizzesForGradeRemoteFirst(kid.grade)
         } catch (_: Exception) {
@@ -784,9 +840,22 @@ fun ContentSelectionScreen(
         return packs
     }
 
-    LaunchedEffect(kidProfiles) {
+    var refreshKey by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+
+    // Manual refresh: pull missing results/quizzes from the backend first, then re-read
+    // local data so packs and attempt stats reflect quiz results that came in after the
+    // phone's LAN listener was started (or while the app was backgrounded).
+    fun refreshContent() {
+        scope.launch {
+            runCatching { QuizResultRepository.getInstance(context).syncFromBackend() }
+            refreshKey++
+        }
+    }
+
+    LaunchedEffect(kidProfiles, refreshKey) {
         loading = true
-        packsByKid = kidProfiles.map { kid -> kid to loadPacksFor(kid) }
+        packsByKid = kidProfiles.map { kid -> kid to loadPacksFor(kid, forceRemote = refreshKey > 0) }
         val dao = AppDatabase.getDatabase(context).quizResultDao()
         attemptsByPack = packsByKid.flatMap { (kid, packs) ->
             packs.mapNotNull { pack ->
@@ -807,6 +876,11 @@ fun ContentSelectionScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { refreshContent() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                 }
             )
@@ -971,6 +1045,16 @@ fun ContentSelectionScreen(
                                             if (isSelected) {
                                                 Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
                                             }
+                                            IconButton(
+                                                onClick = { onReviewPack(pack) },
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Visibility,
+                                                    contentDescription = "Review ${pack.name}",
+                                                    tint = Color(0xFFFF6B00)
+                                                )
+                                            }
                                         }
                                     }
                                     }
@@ -1014,9 +1098,220 @@ fun ContentSelectionScreen(
                         text = { Text(state.message) }
                     )
                 }
+                is StudyUiState.ConfirmGreetingFallback -> {
+                    val langLabel = GreetingLanguages.labelOf(state.command.greetingLanguage ?: "en")
+                    AlertDialog(
+                        onDismissRequest = { viewModel.resetState() },
+                        title = { Text("Greeting language not supported") },
+                        text = {
+                            Text(
+                                "This TV can't speak $langLabel for the end-of-quiz greeting, " +
+                                    "so it would fall back to English."
+                            )
+                        },
+                        confirmButton = {
+                            Button(onClick = { viewModel.confirmGreetingFallback(state, useEnglish = true) }) {
+                                Text("Use English instead")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { viewModel.confirmGreetingFallback(state, useEnglish = false) }) {
+                                Text("Start anyway")
+                            }
+                        }
+                    )
+                }
                 else -> {}
             }
         }
+    }
+}
+
+@Composable
+fun QuizPresentationConfigCard(
+    kid: KidProfile,
+    sessionManager: SessionManager
+) {
+    var config by remember(kid.id) { mutableStateOf(sessionManager.getKidQuizConfig(kid.id)) }
+    fun persist(updated: KidQuizConfig) {
+        config = updated
+        sessionManager.setKidQuizConfig(kid.id, updated)
+    }
+
+    // Quick TTS support check against the family TV (the last one used) after picking a language.
+    val context = LocalContext.current
+    val repository = remember { StudyRepository.getInstance(context) }
+    val scope = rememberCoroutineScope()
+    var verifyingLanguage by remember { mutableStateOf(false) }
+    var greetingNotice by remember { mutableStateOf<String?>(null) }
+
+    fun onGreetingPicked(tag: String) {
+        persist(config.copy(greetingLanguage = tag))
+        greetingNotice = null
+        if (tag == "en") return
+        val tvIp = sessionManager.lastTvIp
+        if (tvIp.isNullOrBlank()) {
+            greetingNotice =
+                "No TV saved yet. When you start a quiz, the app checks whether this TV can speak the language."
+            return
+        }
+        verifyingLanguage = true
+        scope.launch {
+            val result = repository.probeTtsLanguages(tvIp)
+            verifyingLanguage = false
+            val label = GreetingLanguages.labelOf(tag)
+            val supported = result.getOrNull()
+            val error = result.exceptionOrNull()
+            greetingNotice = when {
+                result.isSuccess && tag in (supported ?: emptyList()) ->
+                    "Your TV can speak $label."
+                error?.message == "NOT_ON_WIFI" ->
+                    "You're not on Wi-Fi, so I could only save the setting. It's checked again when you " +
+                        "start a quiz; your TV falls back to English automatically if it can't speak $label."
+                error != null ->
+                    "Couldn't reach your TV to verify (setting still saved). If it can't speak $label, " +
+                        "it will use English when you connect."
+                tag !in (supported ?: emptyList()) ->
+                    "Your TV can't speak $label yet - the greeting will fall back to English until you pick another."
+                else ->
+                    "Your TV can speak $label."
+            }
+        }
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(
+                "Quiz presentation",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.Gray,
+                fontWeight = FontWeight.Bold
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Lock answers until read",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = config.revealReadLock,
+                    onCheckedChange = { persist(config.copy(revealReadLock = it)) }
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Read questions aloud (TTS)",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Switch(
+                    checked = config.autoDictation,
+                    onCheckedChange = { persist(config.copy(autoDictation = it)) }
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Fast-answer threshold",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    "${config.fastAnswerThresholdMs / 1000}s",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF2E7D32),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Slider(
+                value = config.fastAnswerThresholdMs.toFloat(),
+                onValueChange = { persist(config.copy(fastAnswerThresholdMs = (it / 100f).toLong() * 100L)) },
+                valueRange = KidQuizConfig.MIN_FAST_ANSWER_THRESHOLD_MS.toFloat()..5000f
+            )
+            Text(
+                "Answers given faster than this time are flagged for the parent to review.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Greeting message language",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (verifyingLanguage) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+                var langMenuOpen by remember { mutableStateOf(false) }
+                Box {
+                    OutlinedButton(
+                        onClick = { langMenuOpen = true },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            GreetingLanguages.labelOf(config.greetingLanguage),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = langMenuOpen,
+                        onDismissRequest = { langMenuOpen = false }
+                    ) {
+                        GreetingLanguages.options.forEach { (tag, label) ->
+                            DropdownMenuItem(
+                                text = {
+                                    if (tag == config.greetingLanguage) CheckedTextLabel(label) else Text(label)
+                                },
+                                onClick = {
+                                    onGreetingPicked(tag)
+                                    langMenuOpen = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                "Language of the message the TV plays when the quiz ends. Your TV is checked " +
+                    "after you pick one; unsupported languages fall back to English.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+            if (greetingNotice != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        greetingNotice.orEmpty(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (greetingNotice.orEmpty().contains("can't") || greetingNotice.orEmpty().contains("Couldn't"))
+                            MaterialTheme.colorScheme.error else Color(0xFF2E7D32),
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (config.greetingLanguage != "en") {
+                        TextButton(onClick = { onGreetingPicked("en") }) {
+                            Text("Back to English", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CheckedTextLabel(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text, modifier = Modifier.weight(1f))
+        Icon(
+            Icons.Default.Check,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+        )
     }
 }
 

@@ -38,6 +38,9 @@ interface QuizResultDao {
     @Query("SELECT * FROM quiz_results WHERE contentName = :contentName AND childName = :childName ORDER BY completedAt DESC")
     suspend fun getResultsForContent(contentName: String, childName: String): List<QuizResult>
 
+    @Query("SELECT * FROM quiz_results WHERE childName = :childName ORDER BY completedAt DESC")
+    fun getResultsByChild(childName: String): Flow<List<QuizResult>>
+
     @Query("DELETE FROM quiz_results")
     suspend fun deleteAll()
 }

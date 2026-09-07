@@ -54,7 +54,7 @@ fun SessionResultScreen(
         }
     }
 
-    // One-time offer: after the default Exp kid finishes a test, invite the parent
+    // One-time offer: after the default Trial kid finishes a test, invite the parent
     // to update the kid profile to unlock class-based tests.
     val expUpgradeKid by viewModel.expUpgradeKid.collectAsState()
     val expKid = expUpgradeKid
@@ -81,6 +81,9 @@ fun SessionResultScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.refresh() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    }
                     IconButton(onClick = { viewModel.retrySync() }) {
                         Icon(Icons.Default.Sync, contentDescription = "Sync")
                     }
@@ -293,6 +296,13 @@ private fun ResultCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (result.fastAnswerCount > 0) {
+                    Text(
+                        "⚠ Fast answers: ${result.fastAnswerCount}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFB26A00)
+                    )
+                }
             }
             Icon(
                 if (isSynced) Icons.Default.CloudDone else Icons.Default.CloudOff,
@@ -380,6 +390,15 @@ private fun ResultDetailContent(
                         if (result.category != null) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                             ResultDetailRow("Category", result.category)
+                        }
+                        if (result.fastAnswerCount > 0) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                            Text(
+                                "⚠ ${result.fastAnswerCount} question(s) answered very fast — review if the child is reading the content.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFB26A00),
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
                         }
                     }
                 }

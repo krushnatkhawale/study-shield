@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.provider.Settings
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.serialization.builtins.ListSerializer
@@ -22,6 +23,8 @@ import java.io.InputStreamReader
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.ArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 class TvServerService : Service() {
@@ -100,7 +103,11 @@ class TvServerService : Service() {
     private fun checkSavedLock() {
         val savedCommand = persistenceManager.getSavedLockCommand()
         if (savedCommand != null && savedCommand.type != "UNLOCK") {
-            handleCommand(savedCommand, save = false)
+            // Replaying a persisted command: there is no live mobile waiting on this callback.
+            // The saved mobileIp/resultCallbackPort are from the device that last sent it and may
+            // be stale (e.g. after the account switched on the mobile). Strip them so the TV does
+            // not attempt to deliver the result to a dead/old mobile address and silently lose it.
+            handleCommand(savedCommand.copy(mobileIp = null, resultCallbackPort = null), save = false)
         }
     }
 
@@ -166,9 +173,15 @@ class TvServerService : Service() {
         if (save) {
             if (command.type == "UNLOCK") {
                 persistenceManager.clearLockCommand()
-            } else {
+            } else if (command.type != "TTS_CAP_CHECK") {
                 persistenceManager.saveLockCommand(command)
             }
+        }
+
+        // TTS capability probe — answered directly, no UI.
+        if (command.type == "TTS_CAP_CHECK") {
+            respondTtsCapabilities(command)
+            return
         }
 
         try {
@@ -186,6 +199,12 @@ class TvServerService : Service() {
             putExtra("CATEGORY", command.category)
             putExtra("MOBILE_IP", command.mobileIp)
             putExtra("RESULT_CALLBACK_PORT", command.resultCallbackPort ?: 0)
+            putExtra("KID_NAME", command.kidName)
+            putExtra("GREETING_LANGUAGE", command.greetingLanguage ?: "en")
+            putExtra("AVATAR_ID", command.avatarId ?: "hero")
+            putExtra("REVEAL_READ_LOCK", command.revealReadLock ?: false)
+            putExtra("AUTO_DICTATION", command.autoDictation ?: false)
+            putExtra("FAST_ANSWER_THRESHOLD_MS", command.fastAnswerThresholdMs ?: 1500L)
             
             // Pass all questions as JSON for multi-question support
             val questions = command.questions
@@ -218,6 +237,58 @@ class TvServerService : Service() {
         } catch (e: Exception) {
             Log.e("TvServerService", "Direct launch failed", e)
         }
+    }
+
+    /** Answers a mobile `TTS_CAP_CHECK` with the engine's speakable locale tags. */
+    private fun respondTtsCapabilities(command: InterruptionCommand) {
+        val mobileIp = command.mobileIp
+        val port = command.resultCallbackPort
+        if (mobileIp.isNullOrBlank() || port == null || port <= 0) {
+            Log.w("TvServerService", "TTS_CAP_CHECK ignored: missing mobileIp/resultCallbackPort")
+            return
+        }
+        thread {
+            try {
+                val locales = TtsCapabilities.supportedLocales.ifEmpty { probeEngineLanguages() }
+                val reply = TtsCapabilitiesMessage(supportedLanguages = locales)
+                val socket = Socket(mobileIp, port)
+                val out = java.io.PrintWriter(socket.getOutputStream(), true)
+                out.println(json.encodeToString(TtsCapabilitiesMessage.serializer(), reply))
+                socket.close()
+                Log.d("TvServerService", "TTS_CAP_CHECK reply sent: ${locales.size} locales")
+            } catch (e: Exception) {
+                Log.e("TvServerService", "TTS_CAP_CHECK reply failed", e)
+            }
+        }
+    }
+
+    /**
+     * Best-effort: if MainActivity hasn't initialised its TTS yet, spin up a throwaway engine
+     * to enumerate the voices, then shut it down. Caches the result for future probes.
+     */
+    private fun probeEngineLanguages(): List<String> {
+        if (TtsCapabilities.supportedLocales.isNotEmpty()) return TtsCapabilities.supportedLocales
+        val latch = CountDownLatch(1)
+        var tts: TextToSpeech? = null
+        var locales: List<String> = emptyList()
+        try {
+            tts = TextToSpeech(this) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    locales = tts?.voices.orEmpty()
+                        .map { it.locale.toLanguageTag() }
+                        .distinct()
+                        .sorted()
+                }
+                latch.countDown()
+            }
+            latch.await(3, TimeUnit.SECONDS)
+            TtsCapabilities.supportedLocales = locales
+        } catch (e: Exception) {
+            Log.e("TvServerService", "TTS engine probe failed", e)
+        } finally {
+            try { tts?.shutdown() } catch (_: Exception) {}
+        }
+        return locales
     }
 
     override fun onDestroy() {

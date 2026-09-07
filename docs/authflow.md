@@ -42,6 +42,8 @@
 │                                                                  │
 │  Network           ApiService.kt (Retrofit interface)            │
 │                    AuthInterceptor.kt (adds Authorization header) │
+│                    AuthExpiryInterceptor.kt (401/403 → re-login)  │
+│                    AuthEvents.kt (expiry signal to UI)            │
 │                    RetrofitClient.kt (singleton)                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -247,7 +249,8 @@ checkExistingSession():
       GET /api/auth/validate
       ├── 200 + valid = true/null  → authState = Success
       ├── 200 + valid = false       → clear, authState = Idle
-      └── Any error (network, 400, 500) → authState = Success (trust local)
+      ├── 401 / 403 (token rejected) → drop sessionId, authState = Idle (re-login)
+      └── Any other error (network, 400, 500) → authState = Success (trust local)
 
 AppNavigation LaunchedEffect:
   authState is Success → screen = "main"
@@ -259,9 +262,32 @@ AppNavigation LaunchedEffect:
 All API errors during session validation **trust the local session**. The session is only cleared if:
 
 1. Server explicitly returns `200 OK` with `"valid": false` in the response body
-2. User explicitly signs out
+2. Server explicitly rejects the token on an authenticated call (`401` / `403`) — from startup validation *or* mid-use via `AuthExpiryInterceptor`
+3. User explicitly signs out
 
-This prevents transient API failures (network blips, server 400/500, bad header format) from logging the user out.
+This prevents transient API failures (network blips, server 400/500, bad header format) from logging the user out — while an expired/rejected token is treated as authoritative and routes back to login.
+
+## Session Expiry During Use (401 / 403)
+
+The backend uses a JSON `401 Unauthorized` entry point for missing/expired credentials (previously an anonymous 403 that the app could not tell apart from a real denial). `AuthExpiryInterceptor` runs after `AuthInterceptor` on every Retrofit client:
+
+```
+Authenticated call returns 401 or 403
+  ├── Authorization header was attached           (a token exists)
+  ├── not a login attempt                           (signin/signup stay local)
+  ├── not a guest session
+  └── sessionId still stored
+        → ToastHelper: "Session expired. Please sign in again."
+        → sessionManager.sessionId = null
+        → AuthEvents.notifySessionExpired()          (monotonic counter)
+        → MainActivity observes counter change
+              → authViewModel.forceReLogin()
+                    sessionId = null, offline = false, RetrofitClient.reset()
+                    authState = Idle  → screen = "welcome"  (profile data kept)
+```
+
+The decision predicate (`shouldForceRelogin`) is a pure function covered by
+`AuthExpiryInterceptorTest` in `mobile/src/test`.
 
 ## Sign Out
 
@@ -368,6 +394,21 @@ MainActivity: AppNavigation: effect fired authState=Success isCheckingSession=fa
 MainActivity: AppNavigation: navigating to main
 ```
 
+**Session expired (startup validation rejects token):**
+```
+AuthViewModel: checkExistingSession: server rejected stored session, forcing re-login
+MainActivity: AppNavigation: effect fired authState=Idle isCheckingSession=false screen=validating
+MainActivity: AppNavigation: navigating to welcome
+```
+
+**Session expired (mid-use call returns 401/403):**
+```
+AuthExpiryInterceptor: Auth response 401; clearing expired session
+MainActivity: AppNavigation: session expired signal received
+AuthViewModel: forceReLogin: clearing expired session
+MainActivity: AppNavigation: navigating to welcome
+```
+
 **Guest login:**
 ```
 AuthViewModel: guestLogin: setting guest mode
@@ -438,7 +479,9 @@ has_seen_carousel → Boolean (default false)
 | `AuthViewModel.kt` | Auth state machine, API orchestration |
 | `AuthRepository.kt` | REST API calls (signUp, signIn, validate, signOut) |
 | `SessionManager.kt` | SharedPreferences persistence layer |
-| `AuthInterceptor.kt` | OkHttp interceptor, adds `Authorization: <sessionId>` header |
+| `AuthInterceptor.kt` | OkHttp interceptor, adds `Authorization: Bearer <sessionId>` header |
+| `AuthExpiryInterceptor.kt` | OkHttp interceptor, 401/403 on authed call → drop session, signal re-login |
+| `AuthEvents.kt` | Monotonic `sessionExpired` counter consumed by `AppNavigation` |
 | `RetrofitClient.kt` | Retrofit singleton with kotlinx.serialization |
 | `ApiService.kt` | Retrofit interface (endpoint definitions) |
 | `WelcomeScreen.kt` | Welcome screen (Create Account / Sign In / Guest) |

@@ -118,42 +118,87 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
             
             // Populating both the questions list AND the legacy fields for redundancy
             val firstQ = content.questions?.firstOrNull()
-            val command = InterruptionCommand(
-                type = commandType,
-                duration = if (commandType == "STUDY_SESSION") sessionDuration.toLong() else sessionDuration.toLong() * 60,
-                contentName = content.name,
-                category = content.category,
-                questions = content.questions,
-                // Fallback fields populated with first question
-                question = firstQ?.question ?: content.question,
-                options = firstQ?.options ?: content.options,
-                answer = firstQ?.answer ?: content.answer
-            )
+
+            // Attach the selected kid's quiz presentation config (Features 4/5 + threshold).
+            val sessionManager = SessionManager(getApplication())
+            val kidId = sessionManager.selectedKidId
+            val kidConfig = kidId?.let { sessionManager.getKidQuizConfig(it) } ?: KidQuizConfig()
+// Resolve the kid's name so the TV can show it and echo it back with the result,
+                // rather than the mobile re-deriving it later (which can go stale on account switch).
+                val allKids = KidProfileRepository.getInstance(getApplication()).getAllKidsOnce()
+                val kid = allKids.firstOrNull { it.id == kidId } ?: allKids.firstOrNull()
+                val kidName = kid?.name
+
+                val command = InterruptionCommand(
+                    type = commandType,
+                    duration = if (commandType == "STUDY_SESSION") sessionDuration.toLong() else sessionDuration.toLong() * 60,
+                    contentName = content.name,
+                    category = content.category,
+                    questions = content.questions,
+                    // Fallback fields populated with first question
+                    question = firstQ?.question ?: content.question,
+                    options = firstQ?.options ?: content.options,
+                    answer = firstQ?.answer ?: content.answer,
+                    revealReadLock = kidConfig.revealReadLock,
+                    autoDictation = kidConfig.autoDictation,
+                    fastAnswerThresholdMs = kidConfig.fastAnswerThresholdMs,
+                    kidName = kidName,
+                    greetingLanguage = kidConfig.greetingLanguage,
+                    avatarId = kid?.avatar ?: "hero"
+                )
 
             Log.d("StudyViewModel", "Sending command: type=$commandType, questionsCount=${content.questions?.size ?: 0}")
+
+            // Remember the TV this family uses, so the greeting-language picker can verify it.
+            sessionManager.lastTvIp = ip
 
             if (isScheduled && contentOverride == null) {
                 scheduleSession(ip, command, content)
             } else {
-                val result = repository.sendCommand(ip, command)
-                if (result.isSuccess) {
-                    saveToHistory(ip)
-                    
-                    repository.saveSession(
-                        StudySession(
-                            durationMinutes = sessionDuration,
-                            startTime = System.currentTimeMillis(),
-                            recurrence = recurrence,
-                            content = content,
-                            isActive = false
-                        )
-                    )
-                    _uiState.value = StudyUiState.Success("Study session started on TV")
-                    hidePreview()
-                } else {
-                    _uiState.value = StudyUiState.Error("Failed to start session: ${result.exceptionOrNull()?.message}")
+                // Quick real-world check: if the greeting language is not default English, ask the
+                // TV what it can actually speak, and let the parent fall back to English if not.
+                val isQuiz = command.type == "MCQ" || command.type == "FITB"
+                val greeting = command.greetingLanguage
+                if (isQuiz && greeting != null && greeting != "en") {
+                    val probe = repository.probeTtsLanguages(ip)
+                    val supported = probe.getOrNull()
+                    if (probe.isSuccess && supported != null && greeting !in supported) {
+                        _uiState.value = StudyUiState.ConfirmGreetingFallback(ip, command, content, contentOverride)
+                        return@launch
+                    }
                 }
+                performSend(ip, command, content, contentOverride)
             }
+        }
+    }
+
+    /** Proceed after the greeting-language fallback confirmation: English (or as-is). */
+    fun confirmGreetingFallback(state: StudyUiState.ConfirmGreetingFallback, useEnglish: Boolean) {
+        val command = if (useEnglish) state.command.copy(greetingLanguage = null) else state.command
+        viewModelScope.launch {
+            _uiState.value = StudyUiState.Loading
+            performSend(state.ip, command, state.content, state.contentOverride)
+        }
+    }
+
+    private suspend fun performSend(ip: String, command: InterruptionCommand, content: StudyContent, contentOverride: StudyContent?) {
+        val result = repository.sendCommand(ip, command)
+        if (result.isSuccess) {
+            saveToHistory(ip)
+
+            repository.saveSession(
+                StudySession(
+                    durationMinutes = sessionDuration,
+                    startTime = System.currentTimeMillis(),
+                    recurrence = recurrence,
+                    content = content,
+                    isActive = false
+                )
+            )
+            _uiState.value = StudyUiState.Success("Study session started on TV")
+            hidePreview()
+        } else {
+            _uiState.value = StudyUiState.Error("Failed to start session: ${result.exceptionOrNull()?.message}")
         }
     }
 
