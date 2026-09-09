@@ -18,7 +18,10 @@ Welcome ──"Create Account"──► Sign Up ──┐
                             [Parent Selection overlay]
                                         │
                                         ▼
-                                   Main App (drawer)
+   Main App ──(first quiz not started, SS-EXP-01)──► First-Run Stepper (Home shows 1·2·3)
+    │               └─(completed)──► Home (stats + "Start quiz" CTA)
+    ▼
+ Main App (drawer)
 ```
 
 ### Main App (drawer navigation)
@@ -79,7 +82,7 @@ Shown when auth responds `ParentSelectionRequired`. List of parent rows; "Add Ne
 
 | Route | Screen | File |
 |---|---|---|
-| home | Stats Dashboard | `StudyScreens.kt` |
+| home | First-Run Stepper (until first quiz) / Stats Dashboard | `StudyScreens.kt` |
 | control | Library | `StudyScreens.kt` |
 | connected_tvs | Connected TVs | `ui/TvManagementScreen.kt` |
 | kids | Kids list | `ui/KidProfileScreen.kt` |
@@ -92,16 +95,28 @@ Shown when auth responds `ParentSelectionRequired`. List of parent rows; "Add Ne
 | content | Select Content | `StudyScreens.kt` |
 | quiz_review | Quiz Review | `ui/quiz/QuizReviewScreen.kt` |
 
-### 3.1 Home — Stats Dashboard
+### 3.0 First-Run Stepper (SS-EXP-01)
+Replaces the Home screen after auth until the parent starts the first quiz (sets `hasCompletedFirstQuiz` in `SessionManager`). A numbered **1 Add child → 2 Find TV → 3 Start quiz** wizard:
+- **Step 1 Add child:** lists existing kid profiles (the default "Kid 1" is always present); "Edit" opens the kid form. Next is enabled once a kid exists.
+- **Step 2 Find TV:** auto-starts NSD discovery; parent taps a discovered TV name to select (`StudyViewModel.selectedTvIp`). Each row shows its advertised pairing code (SS-EXP-02). "Can't find your TV?" → 4-digit code entry (numeric keyboard) that matches the NSD `PAIR_CODE` attribute or verifies over TCP (`PAIR_CODE_CHECK`). "Need help? Enter the TV address" reveals the legacy manual-IP field behind it.
+- **Step 3 Start quiz:** confirms child + TV, then a big **"Start quiz"** button sets `hasCompletedFirstQuiz = true` and navigates to Select Content.
+ProfData is removed from the drawer until the first quiz has been started.
+
+### 3.1 Home — Stats Dashboard (after first quiz)
 Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity list; one-time Exp-upgrade prompt dialog.
+When at least one kid exists **and** a TV has been used before (`lastTvIp` set), a prominent orange **"Start quiz"** CTA card sits at the top → Select Content.
 
 ### 3.2 Library (Control)
 ```
 ┌──────────────────────────┐
 │ 🎓 START STUDY NOW       │──► Select Content (always)
 │ ─────────────────────    │
-│ TV IP field              │
-│ Discovered TVs list      │
+│ TV CONNECTION card       │
+│  Discovered TVs by name  │  ← primary selection, code shown
+│  Rescan button           │
+│  Can't find your TV?     │
+│   4-digit code entry     │  ← numeric keypad, SS-EXP-02
+│  Need help? (manual IP)  │  ← legacy, hidden
 │ Interruption Setup card  │
 │  (mode, message, etc.)   │
 │ [🚀 ACTIVATE INTERRUPTER]│──► alert (sends command to TV)
@@ -143,7 +158,7 @@ Empty states: no kid profiles / no packs for a grade (a kid tab with no packs sh
 Pack loading is **cache-first** (`data/PackCache.kt`): packs are stored per logged-in user + grade in app-private files; the backend is only fetched on the first download or cache miss, and cache hits are logged (`PackCache: Cache hit ... skipping backend fetch`). Attempt counts and last scores come from the local `quiz_results` Room table, matched by kid name + pack name.
 
 ### 3.4 Connected TVs
-Scan Now button, discovered TV list, Remember toggle.
+Scan Now button; discovered TV list (name + 4-digit pairing code, SS-EXP-02); "Remember" toggle; "Or enter the TV's 4-digit pairing code" section connecting by code then saving the profile for the current network; History tab groups remembered TVs by Wi-Fi SSID.
 
 ### 3.5 Kids & Kid Form
 Kids: profile rows (name, grade); empty state "Click + to add your first child." Kid Form: add/edit fields, "Save Profile".

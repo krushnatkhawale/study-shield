@@ -1,5 +1,6 @@
 package com.kaushalya.interrupter.ui
 
+import android.net.nsd.NsdServiceInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -20,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +90,7 @@ fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route
 
     val isGuest = sessionManager.isGuest
+    val firstRun = !sessionManager.hasCompletedFirstQuiz
 
     val items = buildList {
         add(Screen.Home)
@@ -99,7 +103,9 @@ fun MainScreen(
             add(Screen.Parents)
         }
         add(Screen.Settings)
-        add(Screen.ProfData)
+        if (!firstRun) {
+            add(Screen.ProfData)
+        }
     }
 
     ModalNavigationDrawer(
@@ -169,13 +175,29 @@ fun MainScreen(
                     val kidViewModel: KidProfileViewModel = viewModel(
                         viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
                     )
-                    StatsDashboardScreen(
-                        sessionManager = sessionManager,
-                        onEditKid = { kid ->
-                            kidViewModel.editingKid = kid
-                            navController.navigate(Screen.KidForm.route)
-                        }
-                    )
+                    if (sessionManager.hasCompletedFirstQuiz) {
+                        StatsDashboardScreen(
+                            sessionManager = sessionManager,
+                            onEditKid = { kid ->
+                                kidViewModel.editingKid = kid
+                                navController.navigate(Screen.KidForm.route)
+                            },
+                            onStartQuiz = { navController.navigate(Screen.ContentSelection.route) }
+                        )
+                    } else {
+                        FirstRunStepper(
+                            sessionManager = sessionManager,
+                            studyViewModel = studyViewModel,
+                            onEditKid = { kid ->
+                                kidViewModel.editingKid = kid
+                                navController.navigate(Screen.KidForm.route)
+                            },
+                            onStartQuiz = {
+                                sessionManager.hasCompletedFirstQuiz = true
+                                navController.navigate(Screen.ContentSelection.route)
+                            }
+                        )
+                    }
                 }
                 composable(Screen.Option1.route) {
                     // Start Study Now always goes straight to Select Content —
@@ -395,7 +417,8 @@ fun DrawerHeader(sessionManager: SessionManager) {
 @Composable
 fun StatsDashboardScreen(
     sessionManager: SessionManager,
-    onEditKid: (KidProfile) -> Unit = {}
+    onEditKid: (KidProfile) -> Unit = {},
+    onStartQuiz: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val resultViewModel: SessionResultViewModel = viewModel(
@@ -420,6 +443,8 @@ fun StatsDashboardScreen(
     val totalTimeMinutes = filteredResults.sumOf { it.timeSpentSeconds } / 60
 
     val kids = sessionManager.profile.kids
+    val hasKid = kids.isNotEmpty()
+    val hasTv = sessionManager.lastTvIp != null
 
     // One-time offer: after the default Trial kid finishes a test, invite the parent
     // to update the kid profile to unlock class-based tests.
@@ -444,6 +469,29 @@ fun StatsDashboardScreen(
     ) {
         item {
             Text("Home - Statistics", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        }
+
+        if (hasKid && hasTv) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onStartQuiz),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFF6B00))
+                ) {
+                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Start quiz", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Play ${kids.firstOrNull()?.name ?: "your child"}'s next quiz on the TV",
+                                color = Color.White.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White)
+                    }
+                }
+            }
         }
 
         if (kids.isNotEmpty()) {
@@ -512,6 +560,411 @@ fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier
     }
 }
 
+/** First-run onboarding: 1 Child → 2 TV → 3 Start quiz. Replaces Home until the first quiz is started. */
+@Composable
+fun FirstRunStepper(
+    sessionManager: SessionManager,
+    studyViewModel: StudyViewModel,
+    onEditKid: (KidProfile) -> Unit,
+    onStartQuiz: () -> Unit
+) {
+    val context = LocalContext.current
+    val kidViewModel: KidProfileViewModel = viewModel(
+        viewModelStoreOwner = context as androidx.activity.ComponentActivity
+    )
+    val kidProfiles by kidViewModel.kidProfiles.collectAsState()
+    val discoveredTvs by studyViewModel.discoveredTvs.collectAsState()
+
+    var step by remember { mutableIntStateOf(1) }
+    var showManualIp by remember { mutableStateOf(false) }
+
+    // Start NSD discovery when the parent reaches step 2.
+    LaunchedEffect(step) {
+        if (step == 2) {
+            studyViewModel.startDiscovery()
+        }
+    }
+
+    val selectedTv = discoveredTvs.firstOrNull { it.host?.hostAddress == studyViewModel.selectedTvIp }
+    val selectedKid = kidProfiles.firstOrNull { it.id == sessionManager.selectedKidId } ?: kidProfiles.firstOrNull()
+    val canProceed = when (step) {
+        1 -> kidProfiles.isNotEmpty()
+        2 -> studyViewModel.selectedTvIp != null || studyViewModel.manualIp.isNotBlank()
+        else -> true
+    }
+
+    val stepLabels = listOf("Add child", "Find TV", "Start quiz")
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            if (step < 3) {
+                Surface(tonalElevation = 3.dp) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (step > 1) {
+                            OutlinedButton(
+                                onClick = { step -= 1 },
+                                modifier = Modifier.weight(1f)
+                            ) { Text("Back") }
+                        }
+                        Button(
+                            onClick = {
+                                if (step == 2) studyViewModel.stopDiscovery()
+                                step += 1
+                            },
+                            enabled = canProceed,
+                            modifier = Modifier.weight(if (step > 1) 1f else 1f)
+                        ) { Text("Next") }
+                    }
+                }
+            }
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Text(
+                    "Three steps to the first quiz",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Set this up once, then quiz your child on the TV whenever you like.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    stepLabels.forEachIndexed { index, label ->
+                        val number = index + 1
+                        StepNumberBadge(
+                            number = number,
+                            label = label,
+                            active = step == number,
+                            done = step > number
+                        )
+                        if (index < stepLabels.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                                color = if (step > number) Color(0xFF2E7D32) else MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            when (step) {
+                1 -> item { StepAddChild(kidProfiles, onEditKid) }
+                2 -> item {
+                    StepFindTv(
+                        viewModel = studyViewModel,
+                        discoveredTvs = discoveredTvs,
+                        showManualIp = showManualIp,
+                        onShowManualIp = { showManualIp = !showManualIp }
+                    )
+                }
+                3 -> item {
+                    StepStartQuiz(
+                        selectedKidName = selectedKid?.name ?: "your child",
+                        selectedTvName = selectedTv?.serviceName
+                            ?: if (studyViewModel.manualIp.isNotBlank()) "Entered TV address" else "your TV",
+                        onStartQuiz = onStartQuiz
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepNumberBadge(number: Int, label: String, active: Boolean, done: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp)) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(
+                    when {
+                        done -> Color(0xFF2E7D32)
+                        active -> Color(0xFFFF6B00)
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (done) "✓" else "$number",
+                color = if (active || done) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            label,
+            fontSize = 11.sp,
+            textAlign = TextAlign.Center,
+            color = if (active || done) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
+@Composable
+private fun StepAddChild(kidProfiles: List<KidProfile>, onEditKid: (KidProfile) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("1. Add your child", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "This is who plays on the TV. You can edit the default child now, or do it later.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+            if (kidProfiles.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Setting up your child…", color = Color.Gray)
+                }
+            } else {
+                kidProfiles.forEach { kid ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.ChildCare, null, tint = Color(0xFFFF6B00))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(kid.name, fontWeight = FontWeight.Bold)
+                                Text(
+                                    if (kid.grade.isBlank()) "Class not set yet" else "Class: ${kid.grade}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                            TextButton(onClick = { onEditKid(kid) }) { Text("Edit") }
+                        }
+                    }
+                }
+                Text(
+                    "Tip: you can rename \"Kid 1\" to your child's real name.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepFindTv(
+    viewModel: StudyViewModel,
+    discoveredTvs: List<NsdServiceInfo>,
+    showManualIp: Boolean,
+    onShowManualIp: () -> Unit
+) {
+    val context = LocalContext.current
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("2. Find your TV", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "Turn on the TV and keep StudyShield open on it. Tap your TV to connect.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+
+            if (discoveredTvs.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (viewModel.isDiscovering) "Searching for TVs…" else "Scan finished. Tap refresh to try again.",
+                        color = Color.Gray
+                    )
+                }
+            } else {
+                discoveredTvs.forEach { tv ->
+                    val ip = tv.host?.hostAddress ?: ""
+                    val isSelected = viewModel.selectedTvIp == ip
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { viewModel.selectedTvIp = ip },
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(12.dp),
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFFF6B00)) else null
+                    ) {
+                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Tv, null, tint = Color(0xFF1E88E5))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    tv.serviceName,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    StudyRepository.getInstance(context).pairCodeOf(tv)?.let { "Matching code: $it" } ?: "Same Wi-Fi network",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32))
+                            }
+                        }
+                    }
+                }
+                if (viewModel.isDiscovering) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Still searching…", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            Text("Can't find your TV?", fontWeight = FontWeight.SemiBold)
+            Text(
+                "Enter the 4-digit code shown on the TV screen.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+            PairCodeEntryCard(viewModel, discoveredTvs)
+
+            TextButton(onClick = onShowManualIp) {
+                Text(if (showManualIp) "Hide manual entry" else "Need help? Enter the TV address")
+            }
+            if (showManualIp) {
+                OutlinedTextField(
+                    value = viewModel.manualIp,
+                    onValueChange = {
+                        viewModel.manualIp = it
+                        if (it.isNotBlank()) viewModel.selectedTvIp = null
+                    },
+                    label = { Text("TV address (IP)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PairCodeEntryCard(
+    viewModel: StudyViewModel,
+    discoveredTvs: List<NsdServiceInfo>
+) {
+    var codeEntry by remember { mutableStateOf("") }
+    var isConnecting by remember { mutableStateOf(false) }
+    var lastResult by remember { mutableStateOf<Boolean?>(null) }
+    val scope = rememberCoroutineScope()
+    val connectedIp = viewModel.selectedTvIp
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = codeEntry,
+            onValueChange = {
+                val digits = it.filter { digit -> digit.isDigit() }
+                if (digits.length <= 4) codeEntry = digits
+                lastResult = null
+            },
+            label = { Text("4-digit TV code") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Button(
+            onClick = {
+                val code = codeEntry
+                if (code.length != 4) return@Button
+                scope.launch {
+                    isConnecting = true
+                    lastResult = null
+                    val matched = viewModel.connectByPairCode(code)
+                    isConnecting = false
+                    lastResult = matched
+                    if (matched) codeEntry = ""
+                }
+            },
+            enabled = codeEntry.length == 4 && !isConnecting,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isConnecting) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Connecting…")
+            } else {
+                Text("Connect with code")
+            }
+        }
+        when (lastResult) {
+            true -> {
+                val tvName = discoveredTvs.firstOrNull { it.host?.hostAddress == connectedIp }?.serviceName ?: "TV"
+                Text("Connected to $tvName", color = Color(0xFF2E7D32), style = MaterialTheme.typography.bodySmall)
+            }
+            false -> Text(
+                "No TV matched that code. Make sure the TV is on, on the same Wi-Fi, and showing StudyShield.",
+                color = Color(0xFFC62828),
+                style = MaterialTheme.typography.bodySmall
+            )
+            null -> {}
+        }
+    }
+}
+
+@Composable
+private fun StepStartQuiz(selectedKidName: String, selectedTvName: String, onStartQuiz: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("3. Start quiz", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "Everything is set. Press start to pick a quiz.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.ChildCare, null, tint = Color(0xFFFF6B00))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Child: $selectedKidName", fontWeight = FontWeight.SemiBold)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Tv, null, tint = Color(0xFF1E88E5))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("TV: $selectedTvName", fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onStartQuiz,
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+            ) {
+                Text("Start quiz", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ControlScreen(viewModel: StudyViewModel, onStartStudy: () -> Unit) {
@@ -539,51 +992,79 @@ fun ControlScreen(viewModel: StudyViewModel, onStartStudy: () -> Unit) {
 
         // TV Connection Card
         item {
+            val context = LocalContext.current
+            var showManualIp by remember { mutableStateOf(false) }
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("📡 TV CONNECTION", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF1E88E5))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = viewModel.manualIp,
-                        onValueChange = { viewModel.manualIp = it },
-                        label = { Text("TV IP Address") },
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            if (viewModel.isDiscovering) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            } else {
-                                IconButton(onClick = { viewModel.startDiscovery() }) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                                }
-                            }
-                        }
+                    Text(
+                        "Tap your TV by name, or enter the code shown on its screen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
                     )
-                    
+
                     if (discoveredTvs.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Discovered TVs:", style = MaterialTheme.typography.labelSmall)
                         discoveredTvs.forEach { tv ->
                             val ip = tv.host?.hostAddress ?: ""
+                            val isSelected = viewModel.selectedTvIp == ip
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clickable { viewModel.manualIp = ip; viewModel.selectedTvIp = ip },
-                                color = if (viewModel.manualIp == ip) Color(0xFFE3F2FD) else Color.Transparent,
+                                color = if (isSelected) Color(0xFFE3F2FD) else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp),
-                                border = if (viewModel.manualIp == ip) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E88E5)) else null
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E88E5)) else null
                             ) {
-                                Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Tv, null, tint = Color(0xFF1E88E5), modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(tv.serviceName, style = MaterialTheme.typography.bodyMedium)
+                                    Column(Modifier.weight(1f)) {
+                                        Text(tv.serviceName, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                        Text(
+                                            StudyRepository.getInstance(context).pairCodeOf(tv)?.let { "Code: $it" } ?: "Same Wi-Fi",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    if (isSelected) {
+                                        Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+                                    }
                                 }
                             }
                         }
                     } else {
-                        val statusText = if (viewModel.isDiscovering) "Searching for TVs..." else "Scan stopped. Click refresh to try again."
-                        Text(statusText, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp), color = Color.Gray)
+                        val statusText = if (viewModel.isDiscovering) "Searching for TVs..." else "No TVs found. Tap rescan to try again."
+                        Text(statusText, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (viewModel.isDiscovering) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        TextButton(onClick = { viewModel.startDiscovery() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Rescan", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (viewModel.isDiscovering) "Scanning…" else "Rescan")
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text("Can't find your TV?", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                    PairCodeEntryCard(viewModel, discoveredTvs)
+
+                    TextButton(onClick = { showManualIp = !showManualIp }) {
+                        Text(if (showManualIp) "Hide manual entry" else "Need help? Enter the TV address")
+                    }
+                    if (showManualIp) {
+                        OutlinedTextField(
+                            value = viewModel.manualIp,
+                            onValueChange = { viewModel.manualIp = it },
+                            label = { Text("TV address (IP)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
                     }
                 }
             }

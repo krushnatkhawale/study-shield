@@ -9,7 +9,7 @@ The TV has **no local navigation** — every screen is a remote-driven state:
 1. `TvServerService` runs a LAN socket server; the mobile app sends commands to it.
 2. Commands also arrive as Activity intents (`handleIntent`, MainActivity.kt:231): `COMMAND_TYPE`, `MESSAGE`, `DURATION`, `CONTENT_NAME`, `CATEGORY`, `MOBILE_IP`, `RESULT_CALLBACK_PORT`, `QUESTIONS_JSON`.
 3. `LockPersistenceManager` re-applies an active lock after reboot; `BootReceiver` restarts the service at boot.
-4. The idle screen displays device name + IP so the phone can connect.
+4. The idle screen displays device name + 4-digit pairing code (SS-EXP-02: IP shown small as a fallback) so the phone can connect without typing an IP.
 
 ## 2. State Map
 
@@ -37,11 +37,20 @@ The TV has **no local navigation** — every screen is a remote-driven state:
 ┌──────────────────────────────────────────────┐
 │                                    ⏱ 15s ring│
 │         {device name}                        │
-│      Interrupter Ready! 🚀                   │
-│   Connect using IP: 192.168.x.x              │
+│         Ready to play!                       │
+│   ┌──────────────────────────────┐           │
+│   │          4 8 2 1             │  ← pairing│
+│   └──────────────────────────────┘    code  │
+│          Pairing code                      │
+│  On your phone, tap this TV or enter code   │
+│            IP: 192.168.x.x   (small/faded)  │
 └──────────────────────────────────────────────┘
 ```
-15-second countdown then `moveTaskToBack`. Any incoming command fades into its state.
+The 4-digit pairing code (SS-EXP-02) is generated once and persisted (`PairCodeStore`), so it is
+stable across app restarts and TV reboots. It is advertised in the NSD TXT record
+(`PAIR_CODE`) and answered by the `PAIR_CODE_CHECK` probe, so the phone can connect by name or code
+without typing an IP. 15-second countdown then `moveTaskToBack`. Any incoming command fades into its
+state.
 
 ### 3.2 BLOCK — lock screen
 ```
@@ -97,6 +106,14 @@ parent can be warned (and fall back to English) when their chosen greeting langu
 - Locale list comes from the cached `TtsCapabilities` snapshot (refreshed on TTS init); if the TV
   app hasn't initialised TTS yet, `TvServerService` spins a throwaway engine to enumerate voices.
 
+### 3.9 PAIR_CODE_CHECK (no UI)
+Command-only probe (SS-EXP-02): the phone sends a `PAIR_CODE_CHECK` command and the TV replies with
+its current 4-digit pairing code as a `PairCodeMessage`. Used only to verify a typed code against a
+discovered TV that didn't advertise `PAIR_CODE` in its NSD TXT record.
+
+- Reply is sent to `mobileIp:RESULT_CALLBACK_PORT` on the same JSON-line channel, **not** persisted,
+  **not** shown on the TV.
+
 ### 3.9 UNLOCK (no screen)
 Command-only transition: clears the active lock/quiz and returns to Idle immediately.
 
@@ -108,6 +125,7 @@ IDLE ─[TIMER cmd]──► TIMER ─[timeout]──► IDLE
 IDLE ─[STUDY_SESSION cmd]──► Study Session ─[UNLOCK/end]──► IDLE
 IDLE ─[MCQ/FITB cmd]──► Quiz ─[all answered]──► Results ─[Exit]──► IDLE
 TTS_CAP_CHECK ─► reply TtsCapabilitiesMessage to mobileCallback ─► (no state change)
+PAIR_CODE_CHECK ─► reply PairCodeMessage to mobileCallback ─► (no state change)
 any active state ─[UNLOCK cmd]──► IDLE
 reboot with active lock ─► LockPersistenceManager re-applies previous state
 ```

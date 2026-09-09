@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,11 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaushalya.interrupter.data.ConnectedTV
 import com.kaushalya.interrupter.data.NetworkWithTvs
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -116,10 +119,80 @@ fun CurrentNetworkTab(viewModel: TvManagementViewModel) {
             TvDeviceItem(
                 name = tv.serviceName,
                 ip = ip,
+                code = viewModel.pairCodeOf(tv),
                 isAvailable = true,
                 isSaved = isSaved,
                 onSave = { viewModel.saveConnection(tv.serviceName, ip) }
             )
+        }
+
+        item {
+            var codeEntry by remember { mutableStateOf("") }
+            var isConnecting by remember { mutableStateOf(false) }
+            var result by remember { mutableStateOf<Boolean?>(null) }
+            val scope = rememberCoroutineScope()
+
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text("Or enter the TV's 4-digit pairing code", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Shown on the TV screen under \"Ready to play!\"",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+                OutlinedTextField(
+                    value = codeEntry,
+                    onValueChange = {
+                        val digits = it.filter { c -> c.isDigit() }
+                        if (digits.length <= 4) codeEntry = digits
+                        result = null
+                    },
+                    label = { Text("TV code") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = {
+                        val code = codeEntry
+                        if (code.length != 4) return@Button
+                        scope.launch {
+                            isConnecting = true
+                            result = null
+                            val connected = viewModel.connectByPairCode(code)
+                            isConnecting = false
+                            result = connected != null
+                            if (connected != null) codeEntry = ""
+                        }
+                    },
+                    enabled = codeEntry.length == 4 && !isConnecting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isConnecting) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Connecting…")
+                    } else {
+                        Text("Connect with code")
+                    }
+                }
+                when (result) {
+                    true -> Text(
+                        "TV remembered for this network.",
+                        color = Color(0xFF2E7D32),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    false -> Text(
+                        "No TV matched that code. Make sure the TV is on, on the same Wi-Fi, and showing StudyShield.",
+                        color = Color(0xFFC62828),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    null -> {}
+                }
+            }
         }
 
         if (savedTvs.isNotEmpty()) {
@@ -167,6 +240,7 @@ fun HistoryTab(viewModel: TvManagementViewModel) {
 fun TvDeviceItem(
     name: String,
     ip: String,
+    code: String? = null,
     isAvailable: Boolean,
     isSaved: Boolean,
     isFavorite: Boolean = false,
@@ -202,7 +276,11 @@ fun TvDeviceItem(
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(name, fontWeight = FontWeight.Bold)
-                Text(ip, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    if (code != null) "Code: $code" else ip,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
                 if (isAvailable && !isSaved) {
                     Text("New device detected!", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
                 }
