@@ -1,0 +1,158 @@
+<resources>
+    <!-- SS-EXP-03: App language -->
+    <string name="language_picker_title">अपनी भाषा चुनें</string>
+    <string name="language_picker_subtitle">स्टडीशील्ड की स्क्रीन आपकी भाषा में दिखाई देंगी। आपका बच्चा टीवी पर किसी भी भाषा का उपयोग कर सकता है।</string>
+    <string name="language_english">English</string>
+    <string name="language_hindi">हिन्दी (Hindi)</string>
+    <string name="language_marathi">मराठी (Marathi)</string>
+    <string name="language_continue">जारी रखें</string>
+
+    <!-- SS-EXP-03: Auth / welcome (first-quiz path) -->
+    <string name="app_tagline">टीवी विज्ञापनों को पढ़ाई के समय में बदलें</string>
+    <string name="welcome_create_account">खाता बनाएं</string>
+    <string name="welcome_sign_in">साइन इन करें</string>
+    <string name="welcome_continue_guest">मेहमान के रूप में जारी रखें</string>
+    <string name="signin_welcome_back">वापसी पर स्वागत है</string>
+    <string name="signin_subtitle">अपने खाते में साइन इन करें</string>
+    <string name="signin_email_username">ईमेल या उपयोगकर्ता नाम</string>
+    <string name="signin_password">पासवर्ड</string>
+    <string name="signin_back">वापस</string>
+    <string name="signup_subtitle">अपना स्टडीशील्ड खाता बनाएं</string>
+    <string name="signup_name_optional">आपका नाम (वैकल्पिक)</string>
+    <string name="signup_confirm_password">पासवर्ड की पुष्टि करें</string>
+    <string name="signup_password_length_error">पासवर्ड कम से कम 6 अक्षरों का होना चाहिए</string>
+    <string name="signup_password_mismatch">पासवर्ड मेल नहीं खाते</string>
+    <string name="signup_email_required">ईमेल या उपयोगकर्ता नाम आवश्यक है</string>
+    <string name="signup_already_account">पहले से खाता है? साइन इन करें</string>
+
+    <!-- SS-EXP-03/01: First-run stepper -->
+    <string name="first_quiz_three_steps">पहली क्विज़ तक तीन कदम</string>
+    <string name="first_quiz_subtitle">इसे एक बार सेट करें, फिर जब चाहें टीवी पर अपने बच्चे से क्विज़ पूछें।</string>
+    <string name="step_add_child">बच्चा जोड़ें</string>
+    <string name="step_find_tv">टीवी खोजें</string>
+    <string name="step_start_quiz">क्विज़ शुरू करें</string>
+    <string name="back">वापस</string>
+    <string name="next">आगे</string>
+    <string name="step_add_child_title">1. अपना बच्चा जोड़ें</string>
+    <string name="step_add_child_subtitle">यही टीवी पर खेलता है। आप डिफ़ॉल्ट बच्चा अभी संपादित कर सकते हैं, या बाद में।</string>
+    <string name="setting_up_child">आपका बच्चा सेट हो रहा है…</string>
+    <string name="class_not_set_yet">कक्षा अभी तय नहीं हुई है</string>
+    <string name="class_label">कक्षा: %1$s</string>
+    <string name="edit">संपादित करें</string>
+    <string name="kid_rename_tip">सुझाव: आप \"किड 1\" को अपने बच्चे के असली नाम में बदल सकते हैं।</string>
+    <string name="step_find_tv_title">2. अपना टीवी खोजें</string>
+    <string name="step_find_tv_subtitle">टीवी चालू करें और उस पर स्टडीशील्ड खुला रखें। जुड़ने के लिए अपना टीवी दबाएँ।</string>
+    <string name="searching_for_tvs">टीवी खोजे जा रहे हैं…</string>
+    <string name="scan_finished_refresh">खोज पूरी हुई। दोबारा प्रयास करने के लिए रीफ़्रेश दबाएँ।</string>
+    <string name="matching_code">मिलान कोड: %1$s</string>
+    <string name="same_wifi_network">एक ही वाई-फ़ाई नेटवर्क</string>
+    <string name="still_searching">अभी भी खोज रहे हैं…</string>
+    <string name="cant_find_tv">अपना टीवी नहीं मिल रहा?</string>
+    <string name="enter_four_digit_code">टीवी स्क्रीन पर दिख रहा 4-अंकीय कोड दर्ज करें।</string>
+    <string name="hide_manual_entry">मैनुअल प्रविष्टि छिपाएँ</string>
+    <string name="need_help_tv_address">मदद चाहिए? टीवी का पता दर्ज करें</string>
+    <string name="tv_address_ip">टीवी का पता (IP)</string>
+    <string name="tv_4_digit_code">4-अंकीय टीवी कोड</string>
+    <string name="connecting">जुड़ रहे हैं…</string>
+    <string name="connect_with_code">कोड से जुड़ें</string>
+    <string name="connected_to">%1$s से जुड़ गए</string>
+    <string name="no_tv_match_code">उस कोड से कोई टीवी मेल नहीं खाया। सुनिश्चित करें कि टीवी चालू है, उसी वाई-फ़ाई पर है, और स्टडीशील्ड दिखा रहा है।</string>
+    <string name="step_start_quiz_title">3. क्विज़ शुरू करें</string>
+    <string name="step_start_quiz_subtitle">सब कुछ तैयार है। क्विज़ चुनने के लिए शुरू करें दबाएँ।</string>
+    <string name="child_label">बच्चा: %1$s</string>
+    <string name="tv_label">टीवी: %1$s</string>
+    <string name="start_quiz">क्विज़ शुरू करें</string>
+    <string name="your_child">आपका बच्चा</string>
+    <string name="your_tv">आपका टीवी</string>
+    <string name="entered_tv_address">दर्ज किया गया टीवी पता</string>
+
+    <!-- SS-EXP-03: Kid form -->
+    <string name="add_kid_title">बच्चे की प्रोफ़ाइल जोड़ें</string>
+    <string name="edit_kid_title">बच्चे की प्रोफ़ाइल संपादित करें</string>
+    <string name="save_profile">प्रोफ़ाइल सहेजें</string>
+    <string name="full_name">पूरा नाम *</string>
+    <string name="gender_label">लिंग *</string>
+    <string name="gender_boy">लड़का</string>
+    <string name="gender_girl">लड़की</string>
+    <string name="gender_other">अन्य</string>
+    <string name="birth_year">जन्म वर्ष *</string>
+    <string name="birth_year_example">उदाहरण: 2015</string>
+    <string name="grade_class">कक्षा *</string>
+    <string name="select_class">कक्षा चुनें</string>
+    <string name="grade_example">उदाहरण: चौथी कक्षा</string>
+    <string name="birthday_optional">जन्मदिन (वैकल्पिक)</string>
+    <string name="ok">ठीक है</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="syllabus_optional">पाठ्यक्रम (वैकल्पिक)</string>
+    <string name="celebration_mascot">जश्न मनाने वाला मस्कट</string>
+    <string name="mascot_hint">यह एनिमेटेड दोस्त टीवी पर आपके बच्चे के स्कोर का जश्न मनाता है।</string>
+
+    <!-- SS-EXP-03: Results -->
+    <string name="results_title">परिणाम</string>
+    <string name="results_refresh">रीफ़्रेश</string>
+    <string name="results_sync">सिंक</string>
+    <string name="syncing_results">परिणाम सिंक हो रहे हैं...</string>
+    <string name="results_synced">परिणाम सिंक हो गए</string>
+    <string name="sync_failed">सिंक विफल: %1$s</string>
+    <string name="no_results_yet">अभी कोई परिणाम नहीं</string>
+    <string name="no_results_subtitle">टीवी पर आपके बच्चे के सत्र पूरा होने के बाद यहाँ क्विज़ परिणाम दिखाई देंगे।</string>
+    <string name="result_details">परिणाम विवरण</string>
+    <string name="score">स्कोर</string>
+    <string name="time_spent">समय</string>
+    <string name="completed">पूरा हुआ</string>
+    <string name="quiz">क्विज़</string>
+    <string name="category">श्रेणी</string>
+    <string name="great_effort">शानदार प्रयास!</string>
+    <string name="good_try">अच्छी कोशिश!</string>
+    <string name="keep_practicing">अभ्यास जारी रखें!</string>
+    <string name="result_msg_great">शानदार प्रयास! ऐसे ही जारी रखो!</string>
+    <string name="result_msg_good">अच्छी कोशिश! थोड़ा और अभ्यास मदद करेगा।</string>
+    <string name="result_msg_practice">थोड़ा और अभ्यास करें। हार मत मानो!</string>
+    <string name="synced_to_cloud">क्लाउड से सिंक हुआ</string>
+    <string name="sync_failed_retry">सिंक विफल - पुनः प्रयास के लिए सिंक दबाएँ</string>
+    <string name="saved_locally">स्थानीय रूप से सहेजा गया</string>
+    <string name="score_of_correct">%1$d/%2$d सही</string>
+    <string name="fast_answers">⚠ तीव्र उत्तर: %1$d</string>
+    <string name="fast_answers_warning">⚠ %1$d प्रश्नों के उत्तर बहुत तेजी से दिए गए — जाँचें कि बच्चा सामग्री पढ़ रहा है।</string>
+    <string name="result_synced_reason">सिंक हुआ</string>
+    <string name="result_not_synced_reason">सिंक नहीं हुआ</string>
+    <string name="all">सभी</string>
+
+    <!-- SS-EXP-03: Home (post-setup) -->
+    <string name="home_statistics">होम - आँकड़े</string>
+    <string name="play_next_quiz_on_tv">%1$s की अगली क्विज़ टीवी पर चलाएँ</string>
+    <string name="study_minutes">पढ़ाई मिनट</string>
+    <string name="sessions">सत्र</string>
+    <string name="correct_answers">सही उत्तर</string>
+    <string name="recent_activity">हाल की गतिविधि</string>
+    <string name="no_sessions_yet">अभी कोई क्विज़ सत्र नहीं। परिणाम देखने के लिए कोई अध्ययन सत्र शुरू करें।</string>
+
+    <!-- SS-EXP-04: plain-words performance -->
+    <string name="band_did_well">अच्छा प्रदर्शन किया</string>
+    <string name="band_ok">ठीक प्रदर्शन किया</string>
+    <string name="band_needs_practice">अभ्यास की आवश्यकता है</string>
+    <string name="kid_perf_hero">%1$s %2$s — %4$d में से %3$d</string>
+    <string name="kid_card_latest">नवीनतम: %2$d में से %1$d — %3$s</string>
+    <string name="result_row_summary">%2$d में से %1$d — %3$s</string>
+    <string name="kid_detail_performance">प्रदर्शन</string>
+    <string name="kid_detail_charts">और देखें</string>
+    <string name="kid_detail_charts_hide">कम देखें</string>
+    <string name="kid_detail_no_results_title">अभी कोई क्विज़ परिणाम नहीं।</string>
+    <string name="kid_detail_no_results_body">जब %1$s क्विज़ पूरी करेगा/करेगी तो उसके अंक यहाँ दिखेंगे।</string>
+    <string name="kid_detail_start_first_quiz">पहली क्विज़ शुरू करें</string>
+    <string name="kid_detail_start_quiz">क्विज़ शुरू करें</string>
+    <string name="kid_detail_chart_over_attempts">प्रयासों में क्विज़ अंक</string>
+    <string name="kid_detail_chart_distribution">अंक वितरण</string>
+    <string name="kid_detail_attempts">प्रयास</string>
+    <string name="kid_grade_label">कक्षा: %1$s</string>
+    <string name="kid_trial_upgrade">स्टार्टर प्रोफ़ाइल — कक्षा-आधारित टेस्ट अनलॉक करने के लिए जानकारी अपडेट करें</string>
+    <string name="kid_no_results">अभी कोई परिणाम नहीं</string>
+    <string name="kid_fast_flag">⚠ %1$d तीव्र</string>
+    <string name="kid_latest_quiz_pct">नवीनतम क्विज़: %1$d%%</string>
+    <string name="manual_setup_title">⚙️ सत्र सेट करें</string>
+    <string name="manual_activate">🚀 टीवी पर शुरू करें</string>
+    <string name="manual_unlock">🔓 टीवी अनलॉक करें</string>
+    <string name="manual_fill_blank">रिक्त स्थान भरें</string>
+    <string name="pack_subtitle_quiz">क्विज़</string>
+    <string name="class_age_hint">आयु %1$d</string>
+</resources>

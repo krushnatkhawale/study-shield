@@ -145,7 +145,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⚙️ INTERRUPTION SETUP"
+                        android:text="⚙️ Set up a session"
                         android:textColor="@color/primary_blue"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -326,7 +326,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="64.dp"
                 android:layout_marginTop="24.dp"
-                android:text="🚀 ACTIVATE INTERRUPTER"
+                android:text="🚀 Start on TV"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:cornerRadius="16.dp" />
@@ -337,7 +337,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56.dp"
                 android:layout_marginTop="12.dp"
-                android:text="🔓 EMERGENCY UNLOCK"
+                android:text="🔓 Unlock TV"
                 app:backgroundTint="@color/unlock_red"
                 android:textColor="@color/white"
                 app:cornerRadius="16.dp" />

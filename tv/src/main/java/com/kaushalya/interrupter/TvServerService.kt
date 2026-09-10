@@ -92,7 +92,9 @@ class TvServerService : Service() {
     private fun registerService(port: Int) {
         val deviceName = getDeviceName()
         val serviceInfo = NsdServiceInfo().apply {
-            serviceName = "Interrupter-$deviceName"
+            // Display name is the device name, not "Interrupter-…". The protocol type stays
+            // "_interrupter._tcp" (internal); only the human-facing name changes.
+            serviceName = deviceName
             serviceType = "_interrupter._tcp"
             setPort(port)
             // Advertise the 4-digit pairing code in the TXT record so phones can match by code

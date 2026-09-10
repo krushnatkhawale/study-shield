@@ -16,10 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.KidProfile
 import com.kaushalya.interrupter.data.QuizResult
 import com.kaushalya.interrupter.data.SessionManager
@@ -41,8 +44,10 @@ fun SessionResultScreen(
     val kidProfiles by kidViewModel.kidProfiles.collectAsState()
     var selectedKidIndex by remember { mutableIntStateOf(0) }
 
+    val context = LocalContext.current
+
     val allKidNames = remember(kidProfiles) {
-        listOf("All") + kidProfiles.map { it.name }
+        listOf(context.getString(R.string.all)) + kidProfiles.map { it.name }
     }
 
     val filteredResults = remember(recentResults, selectedKidIndex, kidProfiles) {
@@ -74,18 +79,18 @@ fun SessionResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Results") },
+                title = { Text(stringResource(R.string.results_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.signin_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.results_refresh))
                     }
                     IconButton(onClick = { viewModel.retrySync() }) {
-                        Icon(Icons.Default.Sync, contentDescription = "Sync")
+                        Icon(Icons.Default.Sync, contentDescription = stringResource(R.string.results_sync))
                     }
                 }
             )
@@ -153,7 +158,7 @@ private fun ResultListContent(
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text("Syncing results...", style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.syncing_results), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -210,13 +215,13 @@ private fun ResultListContent(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "No results yet",
+                            stringResource(R.string.no_results_yet),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Quiz results will appear here after your child completes a session on the TV.",
+                            stringResource(R.string.no_results_subtitle),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center
@@ -292,13 +297,18 @@ private fun ResultCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(quizTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
                 Text(
-                    "${result.score}/${result.totalQuestions} correct",
+                    stringResource(
+                        R.string.result_row_summary,
+                        result.score,
+                        result.totalQuestions,
+                        stringResource(bandStringRes(percentage))
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (result.fastAnswerCount > 0) {
                     Text(
-                        "⚠ Fast answers: ${result.fastAnswerCount}",
+                        stringResource(R.string.fast_answers, result.fastAnswerCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFB26A00)
                     )
@@ -306,7 +316,7 @@ private fun ResultCard(
             }
             Icon(
                 if (isSynced) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                contentDescription = if (isSynced) "Synced" else "Not synced",
+                contentDescription = if (isSynced) stringResource(R.string.result_synced_reason) else stringResource(R.string.result_not_synced_reason),
                 tint = if (isSynced) Color(0xFF38A169) else Color(0xFF9E9E9E),
                 modifier = Modifier.size(16.dp)
             )
@@ -331,10 +341,10 @@ private fun ResultDetailContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Result Details") },
+                title = { Text(stringResource(R.string.result_details)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.signin_back))
                     }
                 }
             )
@@ -378,23 +388,23 @@ private fun ResultDetailContent(
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        ResultDetailRow("Score", "${result.score} / ${result.totalQuestions}")
+                        ResultDetailRow(stringResource(R.string.score), "${result.score} / ${result.totalQuestions}")
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        ResultDetailRow("Time Spent", "${timeMinutes}m ${timeSeconds}s")
+                        ResultDetailRow(stringResource(R.string.time_spent), "${timeMinutes}m ${timeSeconds}s")
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        ResultDetailRow("Completed", sdf.format(Date(result.completedAt)))
+                        ResultDetailRow(stringResource(R.string.completed), sdf.format(Date(result.completedAt)))
                         if (result.contentName != null) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                            ResultDetailRow("Quiz", result.contentName)
+                            ResultDetailRow(stringResource(R.string.quiz), result.contentName)
                         }
                         if (result.category != null) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                            ResultDetailRow("Category", result.category)
+                            ResultDetailRow(stringResource(R.string.category), result.category)
                         }
                         if (result.fastAnswerCount > 0) {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                             Text(
-                                "⚠ ${result.fastAnswerCount} question(s) answered very fast — review if the child is reading the content.",
+                                stringResource(R.string.fast_answers_warning, result.fastAnswerCount),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color(0xFFB26A00),
                                 modifier = Modifier.padding(top = 4.dp)
@@ -418,9 +428,9 @@ private fun ResultDetailContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            if (percentage >= 80) "Great effort!"
-                            else if (percentage >= 50) "Good try!"
-                            else "Keep practicing!",
+                            if (percentage >= 80) stringResource(R.string.great_effort)
+                            else if (percentage >= 50) stringResource(R.string.good_try)
+                            else stringResource(R.string.keep_practicing),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (percentage >= 80) Color(0xFF2E7D32)
@@ -440,9 +450,9 @@ private fun ResultDetailContent(
 
             item {
                 val syncStatusText = when (result.syncStatus) {
-                    1 -> "Synced to cloud"
-                    2 -> "Sync failed - tap sync to retry"
-                    else -> "Saved locally"
+                    1 -> stringResource(R.string.synced_to_cloud)
+                    2 -> stringResource(R.string.sync_failed_retry)
+                    else -> stringResource(R.string.saved_locally)
                 }
                 val syncIcon = when (result.syncStatus) {
                     1 -> Icons.Default.CloudDone

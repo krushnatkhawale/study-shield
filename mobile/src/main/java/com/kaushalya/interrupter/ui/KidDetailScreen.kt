@@ -23,11 +23,13 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.KidProfile
 import com.kaushalya.interrupter.data.QuizResult
 import com.kaushalya.interrupter.data.SessionManager
@@ -53,6 +55,7 @@ fun KidDetailScreen(
     resultViewModel: SessionResultViewModel,
     sessionManager: SessionManager,
     onEditProfile: (KidProfile) -> Unit,
+    onStartQuiz: () -> Unit = {},
     onBack: () -> Unit
 ) {
     if (kid == null) {
@@ -97,50 +100,86 @@ fun KidDetailScreen(
             ProfileHeaderCard(kid = kid, accent = accent, onEditProfile = { onEditProfile(kid) })
 
             if (results.isEmpty()) {
-                SectionCard(title = "Performance", accent = accent) {
+                SectionCard(title = stringResource(R.string.kid_detail_performance), accent = accent) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(Icons.Default.Insights, null, modifier = Modifier.size(40.dp), tint = Color.Gray)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("No quiz results yet.", color = Color.Gray)
+                        Text(stringResource(R.string.kid_detail_no_results_title), color = Color.Gray)
                         Text(
-                            "Once ${kid.name} finishes a quiz their scores and fast-answer trends will appear here.",
+                            stringResource(R.string.kid_detail_no_results_body, kid.name),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = onStartQuiz) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.kid_detail_start_first_quiz))
+                        }
                     }
                 }
             } else {
-                SectionCard(title = "Performance", accent = accent) {
-                    Text(
-                        "Quiz scores over attempts",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    QuizScoreBarChart(results = results, accent = accent)
-                    Spacer(modifier = Modifier.height(16.dp))
+                val latest = results.first()
+                val latestPct = if (latest.totalQuestions > 0) (latest.score * 100f / latest.totalQuestions).toInt() else 0
+                PerfHeroCard(
+                    text = stringResource(
+                        R.string.kid_perf_hero,
+                        kid.name,
+                        stringResource(bandStringRes(latestPct)),
+                        latest.score,
+                        latest.totalQuestions
+                    ),
+                    accent = accent
+                )
 
-                    Text(
-                        "Score distribution",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ScoreDistribution(results = results, accent = accent)
-                    Spacer(modifier = Modifier.height(16.dp))
+                SectionCard(title = stringResource(R.string.kid_detail_performance), accent = accent) {
+                    var showCharts by remember { mutableStateOf(false) }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        TextButton(onClick = { showCharts = !showCharts }) {
+                            Icon(
+                                if (showCharts) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                if (showCharts) stringResource(R.string.kid_detail_charts_hide)
+                                else stringResource(R.string.kid_detail_charts)
+                            )
+                        }
+                    }
+                    if (showCharts) {
+                        Text(
+                            stringResource(R.string.kid_detail_chart_over_attempts),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        QuizScoreBarChart(results = results, accent = accent)
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    FastAnswerInsight(
-                        kid = kid,
-                        results = results,
-                        sessionManager = sessionManager,
-                        accent = accent
-                    )
+                        Text(
+                            stringResource(R.string.kid_detail_chart_distribution),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        ScoreDistribution(results = results, accent = accent)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        FastAnswerInsight(
+                            kid = kid,
+                            results = results,
+                            sessionManager = sessionManager,
+                            accent = accent
+                        )
+                    }
                 }
             }
 
@@ -263,6 +302,41 @@ private fun ProfileHeaderCard(kid: KidProfile, accent: Color, onEditProfile: () 
     }
 }
 
+/** Hero card leading with a plain-words summary of the latest quiz ("Rohan did well — 8 out of 10"). */
+@Composable
+private fun PerfHeroCard(text: String, accent: Color) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(accent, CircleShape)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+/** Maps a quiz percentage to the shared band string used across kids, results and detail screens. */
+fun bandStringRes(pct: Int): Int = when {
+    pct >= 80 -> R.string.band_did_well
+    pct >= 50 -> R.string.band_ok
+    else -> R.string.band_needs_practice
+}
+
 /** Vertical bar chart of quiz % across the most recent attempts. */
 @Composable
 private fun QuizScoreBarChart(results: List<QuizResult>, accent: Color) {
@@ -290,7 +364,11 @@ private fun QuizScoreBarChart(results: List<QuizResult>, accent: Color) {
                     Canvas(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
                         val barHeightPx = (size.height * pct / 100f).coerceAtLeast(4.dp.toPx())
                         drawRoundRect(
-                            color = if (pct >= 60f) Color(0xFF2E7D32) else accent,
+                            color = when {
+                                pct >= 80f -> Color(0xFF2E7D32)
+                                pct >= 50f -> accent
+                                else -> Color(0xFFC62828)
+                            },
                             topLeft = Offset(0f, size.height - barHeightPx),
                             size = Size(size.width, barHeightPx),
                             cornerRadius = androidx.compose.ui.geometry.CornerRadius(barTopRadius.toPx()),
@@ -323,18 +401,22 @@ private fun QuizScoreBarChart(results: List<QuizResult>, accent: Color) {
 private fun ScoreDistribution(results: List<QuizResult>, accent: Color) {
     data class Band(val label: String, val color: Color)
 
+    val highLabel = stringResource(R.string.band_did_well) + " (≥80%)"
+    val midLabel = stringResource(R.string.band_ok) + " (50–79%)"
+    val lowLabel = stringResource(R.string.band_needs_practice) + " (<50%)"
+
     val all = results.map { r ->
         if (r.totalQuestions > 0) r.score * 100f / r.totalQuestions else 0f
     }
     val bands = listOf(
-        Band("Great (≥80%)", Color(0xFF2E7D32)),
-        Band("Good (50–79%)", accent),
-        Band("Needs practice (<50%)", Color(0xFFC62828))
+        Band(highLabel, Color(0xFF2E7D32)),
+        Band(midLabel, accent),
+        Band(lowLabel, Color(0xFFC62828))
     )
     val counts = bands.map { b ->
         when (b.label) {
-            "Great (≥80%)" -> all.count { it >= 80f }
-            "Good (50–79%)" -> all.count { it >= 50f && it < 80f }
+            highLabel -> all.count { it >= 80f }
+            midLabel -> all.count { it >= 50f && it < 80f }
             else -> all.count { it < 50f }
         }
     }
@@ -366,7 +448,7 @@ private fun ScoreDistribution(results: List<QuizResult>, accent: Color) {
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("$total", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("attempts", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text(stringResource(R.string.kid_detail_attempts), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
         }
         Spacer(modifier = Modifier.width(16.dp))

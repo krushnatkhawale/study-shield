@@ -11,10 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kaushalya.interrupter.R
 import kotlinx.coroutines.launch
 
 data class CarouselSlide(
@@ -27,23 +29,23 @@ data class CarouselSlide(
 fun FeatureCarouselScreen(onFinished: () -> Unit) {
     val slides = listOf(
         CarouselSlide(
-            "Welcome to StudyShield",
-            "Turn TV ad breaks into fun learning moments for your kids.",
+            stringResource(R.string.carousel_slide_1_title),
+            stringResource(R.string.carousel_slide_1_desc),
             "\uD83D\uDEE1\uFE0F"
         ),
         CarouselSlide(
-            "Interactive Quizzes",
-            "Answer multiple choice or fill-in-the-blank questions right on the TV.",
+            stringResource(R.string.carousel_slide_2_title),
+            stringResource(R.string.carousel_slide_2_desc),
             "\uD83E\uDDE0"
         ),
         CarouselSlide(
-            "Track Progress",
-            "Monitor your child's learning with detailed stats and history.",
+            stringResource(R.string.carousel_slide_3_title),
+            stringResource(R.string.carousel_slide_3_desc),
             "\uD83D\uDCCA"
         ),
         CarouselSlide(
-            "Ready to Start?",
-            "Create an account to unlock all features, or continue as a guest.",
+            stringResource(R.string.carousel_slide_4_title),
+            stringResource(R.string.carousel_slide_4_desc),
             "\uD83D\uDE80"
         )
     )
@@ -114,7 +116,7 @@ fun FeatureCarouselScreen(onFinished: () -> Unit) {
             shape = MaterialTheme.shapes.large
         ) {
             Text(
-                text = if (pagerState.currentPage == slides.size - 1) "Get Started" else "Next",
+                text = if (pagerState.currentPage == slides.size - 1) stringResource(R.string.carousel_get_started) else stringResource(R.string.carousel_next),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )

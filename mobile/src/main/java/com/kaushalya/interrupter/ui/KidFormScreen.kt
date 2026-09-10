@@ -10,14 +10,36 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.Avatars
 import com.kaushalya.interrupter.data.ClassGradeDto
 import com.kaushalya.interrupter.network.RetrofitClient
 import java.text.SimpleDateFormat
 import java.util.*
+
+/** Typical age for each class name, mirroring the backend's age → class mapping. */
+private fun typicalAgeFor(className: String): Int {
+    val t = className.lowercase(Locale.ROOT)
+    return when {
+        t.contains("nursery") -> 3
+        t.contains("junior") || t.contains("lkg") -> 4
+        t.contains("sr") || t.contains("senior") || t.contains("ukg") -> 5
+        else -> className.filter { it.isDigit() }.toIntOrNull()?.let { it + 5 } ?: 6
+    }
+}
+
+/** Backend-compatible class for an age (same rules as `QuestionBankContent.classNameForAge`). */
+private fun suggestedClassForAge(age: Int): String = when {
+    age <= 3 -> "Nursery"
+    age <= 4 -> "Junior KG"
+    age <= 5 -> "Sr KG"
+    age <= 7 -> "Class 1"
+    else -> "Class ${(age - 5).coerceIn(1, 10)}"
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -36,7 +58,6 @@ fun KidFormScreen(
     var selectedSyllabus by remember { mutableStateOf(kid?.syllabus ?: "") }
     var selectedAvatar by remember { mutableStateOf(kid?.avatar ?: "hero") }
     var expanded by remember { mutableStateOf(false) }
-    var gradeExpanded by remember { mutableStateOf(false) }
 
     val api = remember { RetrofitClient.getApiService() }
     var classGrades by remember { mutableStateOf<List<ClassGradeDto>>(emptyList()) }
@@ -46,7 +67,7 @@ fun KidFormScreen(
                 .filter { !it.name.isNullOrBlank() }
                 .sortedBy { it.name!! }
         } catch (e: Exception) {
-            Log.w("KidFormScreen", "Could not load class grades, falling back to free text", e)
+            Log.w("KidFormScreen", "Could not load class grades, using canonical class list", e)
         }
     }
 
@@ -61,10 +82,10 @@ fun KidFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (kid == null) "Add Kid Profile" else "Edit Kid Profile") },
+                title = { Text(if (kid == null) stringResource(R.string.add_kid_title) else stringResource(R.string.edit_kid_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.signin_back))
                     }
                 }
             )
@@ -72,15 +93,15 @@ fun KidFormScreen(
         floatingActionButton = {
             Button(
                 onClick = {
-                    val year = birthYear.toIntOrNull()
-                    if (name.isNotBlank() && year != null && grade.isNotBlank()) {
+                    val year = birthYear.toIntOrNull() ?: 0
+                    if (name.isNotBlank() && grade.isNotBlank()) {
                         viewModel.saveKid(name, gender, year, dob, grade, selectedSyllabus.takeIf { it.isNotBlank() }, selectedAvatar)
                         handleSaveAndBack()
                     }
                 },
-                enabled = name.isNotBlank() && birthYear.isNotBlank() && grade.isNotBlank()
+                enabled = name.isNotBlank() && grade.isNotBlank()
             ) {
-                Text("Save Profile")
+                Text(stringResource(R.string.save_profile))
             }
         }
     ) { padding ->
@@ -95,13 +116,46 @@ fun KidFormScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Full Name *") },
+                label = { Text(stringResource(R.string.full_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
+            // Class first: canonical backend class names, each with its typical age, so the parent
+            // picks by age ("Nursery · age 3"), not by board jargon. Values match the backend
+            // class-grades list exactly (bandForClassName normalizes synonyms on the server).
+            val fallbackClasses = listOf("Nursery", "Junior KG", "Sr KG") + (1..10).map { "Class $it" }
+            val gradeOptions = remember(classGrades) {
+                (classGrades.mapNotNull { it.name } + fallbackClasses)
+                    .distinct()
+                    .sortedBy(::typicalAgeFor)
+            }
             Column {
-                Text("Gender *", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.grade_class), style = MaterialTheme.typography.labelMedium)
+                Text(
+                    stringResource(R.string.select_class),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    gradeOptions.forEach { option ->
+                        FilterChip(
+                            selected = grade == option,
+                            onClick = { grade = option },
+                            label = {
+                                Text("$option · ${stringResource(R.string.class_age_hint, typicalAgeFor(option))}")
+                            }
+                        )
+                    }
+                }
+            }
+
+            Column {
+                Text(stringResource(R.string.gender_label), style = MaterialTheme.typography.labelMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -118,53 +172,23 @@ fun KidFormScreen(
 
             OutlinedTextField(
                 value = birthYear,
-                onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 4) birthYear = it },
-                label = { Text("Birth Year *") },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("e.g. 2015") },
-                singleLine = true
-            )
-
-            if (classGrades.isNotEmpty()) {
-                ExposedDropdownMenuBox(
-                    expanded = gradeExpanded,
-                    onExpandedChange = { gradeExpanded = it },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = grade,
-                        onValueChange = {},
-                        label = { Text("Grade / Class *") },
-                        readOnly = true,
-                        placeholder = { Text("Select class") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = gradeExpanded) },
-                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = gradeExpanded,
-                        onDismissRequest = { gradeExpanded = false }
-                    ) {
-                        classGrades.forEach { cg ->
-                            DropdownMenuItem(
-                                text = { Text(cg.name!!) },
-                                onClick = {
-                                    grade = cg.name!!
-                                    gradeExpanded = false
-                                }
-                            )
+                onValueChange = { input ->
+                    if (input.all { char -> char.isDigit() } && input.length <= 4) {
+                        birthYear = input
+                        // Pre-pick the class whose typical age matches the entered birth year.
+                        input.toIntOrNull()?.let { y ->
+                            if (grade.isBlank()) {
+                                val age = Calendar.getInstance().get(Calendar.YEAR) - y
+                                if (age in 3..15) grade = suggestedClassForAge(age)
+                            }
                         }
                     }
-                }
-            } else {
-                OutlinedTextField(
-                    value = grade,
-                    onValueChange = { grade = it },
-                    label = { Text("Grade / Class *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g. Grade 4") },
-                    singleLine = true
-                )
-            }
+                },
+                label = { Text(stringResource(R.string.birth_year)) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(R.string.birth_year_example)) },
+                singleLine = true
+            )
 
             // Date Picker
             var showDatePicker by remember { mutableStateOf(false) }
@@ -180,12 +204,12 @@ fun KidFormScreen(
                             dob = datePickerState.selectedDateMillis
                             showDatePicker = false
                         }) {
-                            Text("OK")
+                            Text(stringResource(R.string.ok))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDatePicker = false }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.cancel))
                         }
                     }
                 ) {
@@ -196,53 +220,56 @@ fun KidFormScreen(
             OutlinedTextField(
                 value = dob?.let { sdf.format(Date(it)) } ?: "",
                 onValueChange = { },
-                label = { Text("Birthday (Optional)") },
+                label = { Text(stringResource(R.string.birthday_optional)) },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                        Icon(Icons.Default.CalendarToday, contentDescription = null)
                     }
                 }
             )
 
-            // Syllabus Dropdown
-            val syllabusOptions = listOf("CBSE", "ICSE", "State Board", "International", "Other")
+            // Syllabus is only for updating an existing kid — on first add the board stays the backend
+            // default (board `ALL`), so parents are not asked board jargon up front.
+            if (kid != null) {
+                val syllabusOptions = listOf("CBSE", "ICSE", "State Board", "International", "Other")
 
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = selectedSyllabus,
-                    onValueChange = {},
-                    label = { Text("Syllabus (Optional)") },
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                )
-                ExposedDropdownMenu(
+                ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onExpandedChange = { expanded = it },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    syllabusOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                selectedSyllabus = option
-                                expanded = false
-                            }
-                        )
+                    OutlinedTextField(
+                        value = selectedSyllabus,
+                        onValueChange = {},
+                        label = { Text(stringResource(R.string.syllabus_optional)) },
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        syllabusOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    selectedSyllabus = option
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
 
             // Celebration mascot (shown on the TV completion screen after a quiz)
             Column {
-                Text("Celebration Mascot", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.celebration_mascot), style = MaterialTheme.typography.labelMedium)
                 Text(
-                    "This animated buddy celebrates your kid's score on the TV.",
+                    stringResource(R.string.mascot_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

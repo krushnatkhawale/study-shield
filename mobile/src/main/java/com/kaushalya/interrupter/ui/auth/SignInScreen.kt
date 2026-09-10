@@ -7,11 +7,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kaushalya.interrupter.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,14 +32,14 @@ fun SignInScreen(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
         Text(
-            text = "Welcome Back",
+            text = stringResource(R.string.signin_welcome_back),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFFFF6B00)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Sign in to your account",
+            text = stringResource(R.string.signin_subtitle),
             fontSize = 16.sp,
             color = Color.Gray
         )
@@ -46,7 +48,7 @@ fun SignInScreen(
         OutlinedTextField(
             value = loginId,
             onValueChange = { loginId = it },
-            label = { Text("Email or Username") },
+            label = { Text(stringResource(R.string.signin_email_username)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
@@ -56,7 +58,7 @@ fun SignInScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.signin_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
@@ -89,14 +91,14 @@ fun SignInScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Sign In", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.welcome_sign_in), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = onBack, enabled = !isLoading) {
-            Text("Back", color = Color.Gray)
+            Text(stringResource(R.string.signin_back), color = Color.Gray)
         }
     }
 }

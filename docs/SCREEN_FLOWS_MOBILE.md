@@ -19,7 +19,9 @@ Welcome ──"Create Account"──► Sign Up ──┐
                                         │
                                         ▼
    Main App ──(first quiz not started, SS-EXP-01)──► First-Run Stepper (Home shows 1·2·3)
-    │               └─(completed)──► Home (stats + "Start quiz" CTA)
+    │                 │
+    │                 └─(no app language chosen, SS-EXP-03)──► Language Picker ─► Stepper (in chosen locale)
+    │                 └─(completed)──► Home (stats + "Start quiz" CTA)
     ▼
  Main App (drawer)
 ```
@@ -95,6 +97,15 @@ Shown when auth responds `ParentSelectionRequired`. List of parent rows; "Add Ne
 | content | Select Content | `StudyScreens.kt` |
 | quiz_review | Quiz Review | `ui/quiz/QuizReviewScreen.kt` |
 
+### 3.0 Language Picker (SS-EXP-03)
+Shown **before** the First-Run Stepper on first setup when no app language has been chosen
+(`SessionManager.appLocale == null` and first quiz not started). Full-screen card list:
+English / हिन्दी / मराठी, each rendered in its own script. Picking persists `appLocale`
+(BCP-47 tag: `en`/`hi`/`mr`) and calls `AppCompatDelegate.setApplicationLocales`, recreating
+the activity in the chosen locale; every screen on the first-quiz path (auth, add child, find TV,
+start, results) renders via `strings.xml` + `values-hi/` + `values-mr/`. Missing strings fall back
+to English — setup is never blocked. TV greeting locale is untouched (still per-kid `greetingLanguage`).
+
 ### 3.0 First-Run Stepper (SS-EXP-01)
 Replaces the Home screen after auth until the parent starts the first quiz (sets `hasCompletedFirstQuiz` in `SessionManager`). A numbered **1 Add child → 2 Find TV → 3 Start quiz** wizard:
 - **Step 1 Add child:** lists existing kid profiles (the default "Kid 1" is always present); "Edit" opens the kid form. Next is enabled once a kid exists.
@@ -119,13 +130,13 @@ When at least one kid exists **and** a TV has been used before (`lastTvIp` set),
 │  Need help? (manual IP)  │  ← legacy, hidden
 │ Interruption Setup card  │
 │  (mode, message, etc.)   │
-│ [🚀 ACTIVATE INTERRUPTER]│──► alert (sends command to TV)
-│ [🔓 EMERGENCY UNLOCK]    │──► alert (sends command to TV)
+│ [🚀 Start on TV]         │──► alert (sends command to TV)
+│ [🔓 Unlock TV]           │──► alert (sends command to TV)
 └──────────────────────────┘
 ```
 
 ### 3.3 Select Content (`content`)
-Freemium packs in a **tabbed view — one tab per kid**; each tab shows only that kid's packs.
+Packs in a **tabbed view — one tab per kid**; each tab shows only that kid's packs (card subtitle = subject/category, never "Freemium …").
 ```
 ┌──────────────────────────┐
 │ ← Select Content         │
@@ -161,7 +172,7 @@ Pack loading is **cache-first** (`data/PackCache.kt`): packs are stored per logg
 Scan Now button; discovered TV list (name + 4-digit pairing code, SS-EXP-02); "Remember" toggle; "Or enter the TV's 4-digit pairing code" section connecting by code then saving the profile for the current network; History tab groups remembered TVs by Wi-Fi SSID.
 
 ### 3.5 Kids & Kid Form
-Kids: profile rows (name, grade); empty state "Click + to add your first child." Kid Form: add/edit fields, "Save Profile".
+Kids: profile rows (name, grade); empty state "Click + to add your first child." Kid Form: add/edit fields, "Save Profile". Class is chosen via **age-labelled chips** (SS-EXP-06) — canonical backend labels with the typical age ("Junior KG · age 4"); birth year pre-selects the matching class; syllabus is only offered when editing an existing kid (new kids default to board `ALL`); name + class required to save.
 
 ### 3.6 Results
 Session Results list → Result Details; Edit Kid entry.
@@ -228,3 +239,42 @@ per-answer timestamps (not stored today) — flagged to krushnat.
 ### Backlog
 Previously-deferred parent-config items (reveal/read-lock, TTS) are now implemented as above. See
 `docs/PLANS/MOBILE_PARENT_CONFIG_BACKLOG.md` for the design rationale.
+
+## 6. Plain-Words Performance (SS-EXP-04, 2026-09-10)
+
+- **Kid Detail** now leads with a plain-words hero sentence for the latest quiz — "Rohan did well — 8
+  out of 10" (bands: ≥80 "did well", 50–79 "did OK", <50 "needs practice"); phrases localized
+  EN/HI/MR via a shared `bandStringRes()` helper.
+- Charts (bar chart, score-distribution donut, fast-answer insight) are collapsed under a **See more**
+  toggle; the donut's band labels now reuse the same plain-words phrases instead of "Great/Good".
+- **Empty state** gained a "Start their first quiz" button → Content Selection (`onStartQuiz`).
+- **Kids list** card shows the same plain-words summary ("Latest: 8 out of 10 — did well") plus the
+  ⚠ fast flag, instead of only a %.
+- **Session Results** list row reads "8 out of 10 — did well" (same band phrases) instead of "8/10
+  correct".
+- TV `QuizResultsScreen` stays praise-only; fast-answer counts never reach the kid UI.
+- Band strategy unchanged (≥80 / 50–79 / <50); no new chart library, no percentiles.
+
+## 7. Jargon-free copy (SS-EXP-05, 2026-09-10)
+
+- Library Control card header → "⚙️ Set up a session"; **"🚀 Start on TV"** and **"🔓 Unlock TV"**
+  (was ACTIVATE INTERRUPTER / EMERGENCY UNLOCK); mode "Fill In The Blank" → "Fill in the blanks".
+  All four localized EN/HI/MR. Emergency unlock behaviour unchanged (one tap + confirm).
+- Select Content pack card subtitle shows the plain subject/category (`pack.category`, fallback
+  "Quiz") — no more "Freemium …" label. `QuizLoader` still strips a legacy "Freemium " prefix from
+  existing content-pack names for display.
+- TV-launcher `app_name` → "StudyShield"; NSD displays the device's own name while `_interrupter._tcp`
+  is unchanged (see SCREEN_FLOWS_TV.md §5).
+
+## 8. Age-based class picker (SS-EXP-06, 2026-09-10)
+
+- `KidFormScreen` class field is now a **chip grid** — "Nursery · age 3", "Junior KG · age 4",
+  "Sr KG · age 5", "Class N · age N+5" (1…10) — using the exact backend class-grades values
+  (`bandForClassName` normalises synonyms server-side). Field order: Name → Class → Gender →
+  Birth year → Birthday → Mascot.
+- Entering a **birth year pre-selects** the class whose typical age matches (same rule as backend
+  `classNameForAge`). Birth year is optional for saving; only **name + class are required**.
+- Syllabus/board is **omitted on first add** (editing an existing kid still shows it); the backend
+  board `ALL` default already drives the bank.
+- Default Kid 1 / Trial rename prompt already ships in the first-run stepper (SS-EXP-01: per-kid
+  "Edit" + `kid_rename_tip`), so no `KidProfileRepository` change was needed.

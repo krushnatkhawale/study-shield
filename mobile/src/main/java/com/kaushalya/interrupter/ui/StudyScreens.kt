@@ -258,6 +258,7 @@ fun MainScreen(
                             kidViewModel.editingKid = kid
                             navController.navigate(Screen.KidForm.route)
                         },
+                        onStartQuiz = { navController.navigate(Screen.ContentSelection.route) },
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -468,7 +469,7 @@ fun StatsDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text("Home - Statistics", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.home_statistics), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
 
         if (hasKid && hasTv) {
@@ -481,9 +482,9 @@ fun StatsDashboardScreen(
                         Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Start quiz", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.start_quiz), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                "Play ${kids.firstOrNull()?.name ?: "your child"}'s next quiz on the TV",
+                                stringResource(R.string.play_next_quiz_on_tv, kids.firstOrNull()?.name ?: stringResource(R.string.your_child)),
                                 color = Color.White.copy(alpha = 0.9f),
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -503,7 +504,7 @@ fun StatsDashboardScreen(
                     FilterChip(
                         selected = selectedKidFilter == null,
                         onClick = { selectedKidFilter = null },
-                        label = { Text("All") }
+                        label = { Text(stringResource(R.string.all)) }
                     )
                     kids.forEach { kid ->
                         FilterChip(
@@ -518,20 +519,20 @@ fun StatsDashboardScreen(
 
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                StatCard("Study Minutes", "$totalTimeMinutes", Icons.Default.Timer, Modifier.weight(1f), Color(0xFF1E88E5))
-                StatCard("Sessions", "$totalSessions", Icons.Default.CheckCircle, Modifier.weight(1f), Color(0xFF43A047))
+                StatCard(stringResource(R.string.study_minutes), "$totalTimeMinutes", Icons.Default.Timer, Modifier.weight(1f), Color(0xFF1E88E5))
+                StatCard(stringResource(R.string.sessions), "$totalSessions", Icons.Default.CheckCircle, Modifier.weight(1f), Color(0xFF43A047))
             }
         }
         item {
-            StatCard("Correct Answers", "$avgPercentage%", Icons.AutoMirrored.Filled.TrendingUp, Modifier.fillMaxWidth(), Color(0xFFFF6B00))
+            StatCard(stringResource(R.string.correct_answers), "$avgPercentage%", Icons.AutoMirrored.Filled.TrendingUp, Modifier.fillMaxWidth(), Color(0xFFFF6B00))
         }
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Recent Activity", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.recent_activity), fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     if (filteredResults.isEmpty()) {
-                        Text("No quiz sessions yet. Start a study session to see results here.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Text(stringResource(R.string.no_sessions_yet), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     } else {
                         filteredResults.take(5).forEach { result ->
                             val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -593,7 +594,11 @@ fun FirstRunStepper(
         else -> true
     }
 
-    val stepLabels = listOf("Add child", "Find TV", "Start quiz")
+    val stepLabels = listOf(
+        stringResource(R.string.step_add_child),
+        stringResource(R.string.step_find_tv),
+        stringResource(R.string.step_start_quiz)
+    )
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -608,7 +613,7 @@ fun FirstRunStepper(
                             OutlinedButton(
                                 onClick = { step -= 1 },
                                 modifier = Modifier.weight(1f)
-                            ) { Text("Back") }
+                            ) { Text(stringResource(R.string.back)) }
                         }
                         Button(
                             onClick = {
@@ -617,7 +622,7 @@ fun FirstRunStepper(
                             },
                             enabled = canProceed,
                             modifier = Modifier.weight(if (step > 1) 1f else 1f)
-                        ) { Text("Next") }
+                        ) { Text(stringResource(R.string.next)) }
                     }
                 }
             }
@@ -632,13 +637,13 @@ fun FirstRunStepper(
         ) {
             item {
                 Text(
-                    "Three steps to the first quiz",
+                    stringResource(R.string.first_quiz_three_steps),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Set this up once, then quiz your child on the TV whenever you like.",
+                    stringResource(R.string.first_quiz_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -679,9 +684,9 @@ fun FirstRunStepper(
                 }
                 3 -> item {
                     StepStartQuiz(
-                        selectedKidName = selectedKid?.name ?: "your child",
+                        selectedKidName = selectedKid?.name ?: stringResource(R.string.your_child),
                         selectedTvName = selectedTv?.serviceName
-                            ?: if (studyViewModel.manualIp.isNotBlank()) "Entered TV address" else "your TV",
+                            ?: if (studyViewModel.manualIp.isNotBlank()) stringResource(R.string.entered_tv_address) else stringResource(R.string.your_tv),
                         onStartQuiz = onStartQuiz
                     )
                 }
@@ -727,9 +732,9 @@ private fun StepNumberBadge(number: Int, label: String, active: Boolean, done: B
 private fun StepAddChild(kidProfiles: List<KidProfile>, onEditKid: (KidProfile) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("1. Add your child", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.step_add_child_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "This is who plays on the TV. You can edit the default child now, or do it later.",
+                stringResource(R.string.step_add_child_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
@@ -737,7 +742,7 @@ private fun StepAddChild(kidProfiles: List<KidProfile>, onEditKid: (KidProfile) 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Setting up your child…", color = Color.Gray)
+                    Text(stringResource(R.string.setting_up_child), color = Color.Gray)
                 }
             } else {
                 kidProfiles.forEach { kid ->
@@ -752,17 +757,17 @@ private fun StepAddChild(kidProfiles: List<KidProfile>, onEditKid: (KidProfile) 
                             Column(Modifier.weight(1f)) {
                                 Text(kid.name, fontWeight = FontWeight.Bold)
                                 Text(
-                                    if (kid.grade.isBlank()) "Class not set yet" else "Class: ${kid.grade}",
+                                    if (kid.grade.isBlank()) stringResource(R.string.class_not_set_yet) else stringResource(R.string.class_label, kid.grade),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.Gray
                                 )
                             }
-                            TextButton(onClick = { onEditKid(kid) }) { Text("Edit") }
+                            TextButton(onClick = { onEditKid(kid) }) { Text(stringResource(R.string.edit)) }
                         }
                     }
                 }
                 Text(
-                    "Tip: you can rename \"Kid 1\" to your child's real name.",
+                    stringResource(R.string.kid_rename_tip),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )
@@ -781,9 +786,9 @@ private fun StepFindTv(
     val context = LocalContext.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("2. Find your TV", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.step_find_tv_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Turn on the TV and keep StudyShield open on it. Tap your TV to connect.",
+                stringResource(R.string.step_find_tv_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
@@ -793,7 +798,7 @@ private fun StepFindTv(
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        if (viewModel.isDiscovering) "Searching for TVs…" else "Scan finished. Tap refresh to try again.",
+                        if (viewModel.isDiscovering) stringResource(R.string.searching_for_tvs) else stringResource(R.string.scan_finished_refresh),
                         color = Color.Gray
                     )
                 }
@@ -821,7 +826,7 @@ private fun StepFindTv(
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    StudyRepository.getInstance(context).pairCodeOf(tv)?.let { "Matching code: $it" } ?: "Same Wi-Fi network",
+                                    StudyRepository.getInstance(context).pairCodeOf(tv)?.let { stringResource(R.string.matching_code, it) } ?: stringResource(R.string.same_wifi_network),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.Gray
                                 )
@@ -836,22 +841,22 @@ private fun StepFindTv(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Still searching…", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(stringResource(R.string.still_searching), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            Text("Can't find your TV?", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.cant_find_tv), fontWeight = FontWeight.SemiBold)
             Text(
-                "Enter the 4-digit code shown on the TV screen.",
+                stringResource(R.string.enter_four_digit_code),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
             PairCodeEntryCard(viewModel, discoveredTvs)
 
             TextButton(onClick = onShowManualIp) {
-                Text(if (showManualIp) "Hide manual entry" else "Need help? Enter the TV address")
+                Text(if (showManualIp) stringResource(R.string.hide_manual_entry) else stringResource(R.string.need_help_tv_address))
             }
             if (showManualIp) {
                 OutlinedTextField(
@@ -860,7 +865,7 @@ private fun StepFindTv(
                         viewModel.manualIp = it
                         if (it.isNotBlank()) viewModel.selectedTvIp = null
                     },
-                    label = { Text("TV address (IP)") },
+                    label = { Text(stringResource(R.string.tv_address_ip)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -888,7 +893,7 @@ private fun PairCodeEntryCard(
                 if (digits.length <= 4) codeEntry = digits
                 lastResult = null
             },
-            label = { Text("4-digit TV code") },
+            label = { Text(stringResource(R.string.tv_4_digit_code)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
@@ -912,18 +917,18 @@ private fun PairCodeEntryCard(
             if (isConnecting) {
                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Connecting…")
+                Text(stringResource(R.string.connecting))
             } else {
-                Text("Connect with code")
+                Text(stringResource(R.string.connect_with_code))
             }
         }
         when (lastResult) {
             true -> {
                 val tvName = discoveredTvs.firstOrNull { it.host?.hostAddress == connectedIp }?.serviceName ?: "TV"
-                Text("Connected to $tvName", color = Color(0xFF2E7D32), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.connected_to, tvName), color = Color(0xFF2E7D32), style = MaterialTheme.typography.bodySmall)
             }
             false -> Text(
-                "No TV matched that code. Make sure the TV is on, on the same Wi-Fi, and showing StudyShield.",
+                stringResource(R.string.no_tv_match_code),
                 color = Color(0xFFC62828),
                 style = MaterialTheme.typography.bodySmall
             )
@@ -936,21 +941,21 @@ private fun PairCodeEntryCard(
 private fun StepStartQuiz(selectedKidName: String, selectedTvName: String, onStartQuiz: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("3. Start quiz", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.step_start_quiz_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Everything is set. Press start to pick a quiz.",
+                stringResource(R.string.step_start_quiz_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.ChildCare, null, tint = Color(0xFFFF6B00))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Child: $selectedKidName", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.child_label, selectedKidName), fontWeight = FontWeight.SemiBold)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Tv, null, tint = Color(0xFF1E88E5))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("TV: $selectedTvName", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.tv_label, selectedTvName), fontWeight = FontWeight.SemiBold)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(
@@ -959,7 +964,7 @@ private fun StepStartQuiz(selectedKidName: String, selectedTvName: String, onSta
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
             ) {
-                Text("Start quiz", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.start_quiz), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -1073,11 +1078,11 @@ fun ControlScreen(viewModel: StudyViewModel, onStartStudy: () -> Unit) {
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("⚙️ INTERRUPTION SETUP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.manual_setup_title), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text("Select Mode")
-                    val modes = listOf("Infinite Block", "Timed Break", "Quick Quiz (MCQ)", "Fill In The Blank")
+                    val modes = listOf("Infinite Block", "Timed Break", "Quick Quiz (MCQ)", stringResource(R.string.manual_fill_blank))
                     var expanded by remember { mutableStateOf(false) }
                     
                     Box {
@@ -1167,7 +1172,7 @@ fun ControlScreen(viewModel: StudyViewModel, onStartStudy: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("🚀 ACTIVATE INTERRUPTER", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.manual_activate), fontWeight = FontWeight.Bold)
             }
         }
 
@@ -1178,7 +1183,7 @@ fun ControlScreen(viewModel: StudyViewModel, onStartStudy: () -> Unit) {
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
             ) {
-                Text("🔓 EMERGENCY UNLOCK", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.manual_unlock), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -1508,9 +1513,12 @@ fun ContentSelectionScreen(
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 val quizShort = pack.name.split("·").lastOrNull()?.trim()?.takeIf { it.isNotBlank() } ?: pack.name
-                                                val bundleName = if (pack.category != null) "Freemium ${pack.category}" else "Freemium pack"
                                                 Text(quizShort, fontWeight = FontWeight.Bold)
-                                                Text(bundleName, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                                Text(
+                                                    pack.category ?: stringResource(R.string.pack_subtitle_quiz),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color.Gray
+                                                )
                                                 attempts?.let { (count, last, avg) ->
                                                     val pct = if (last.totalQuestions > 0) (last.score * 100 / last.totalQuestions) else 0
                                                     Text(

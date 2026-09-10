@@ -9,7 +9,6 @@ import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,10 +22,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.kaushalya.interrupter.R
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.kaushalya.interrupter.data.ConnectivityObserver
 import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.data.ToastHelper
@@ -39,7 +43,7 @@ import com.kaushalya.interrupter.ui.theme.InterrupterTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val studyViewModel: StudyViewModel by viewModels()
     private val sessionManager: SessionManager by lazy { SessionManager(applicationContext) }
@@ -60,6 +64,12 @@ class MainActivity : ComponentActivity() {
         RetrofitClient.init(sessionManager)
         ToastHelper.init(applicationContext)
         ConnectivityObserver.getInstance(applicationContext).start()
+
+        // SS-EXP-03: apply the parent's chosen app language (BCP-47 tag) before any UI is built.
+        // English ("en") or null falls back to the default values/ resources.
+        sessionManager.appLocale?.takeIf { it != "en" }?.let { tag ->
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+        }
 
         setContent {
             InterrupterTheme {
@@ -123,14 +133,14 @@ class MainActivity : ComponentActivity() {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "StudyShield",
+                    text = stringResource(R.string.app_name),
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF6B00)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Turn TV Ads into Learning Time",
+                    text = stringResource(R.string.app_tagline),
                     fontSize = 18.sp,
                     color = Color(0xFF1E88E5),
                     fontWeight = FontWeight.Medium
@@ -224,11 +234,26 @@ class MainActivity : ComponentActivity() {
                 })
             }
             "main" -> {
-                MainScreen(
-                    studyViewModel = studyViewModel,
-                    sessionManager = sessionManager,
-                    onSignOut = { authViewModel.signOut() }
-                )
+                // SS-EXP-03: first-run language choice, shown before the onboarding stepper so that
+                // every screen on the first-quiz path renders in the parent's chosen language.
+                // Once picked it is persisted and the activity is recreated in that locale.
+                if (sessionManager.appLocale == null && !sessionManager.hasCompletedFirstQuiz) {
+                    LanguagePickerScreen(
+                        onPick = { tag ->
+                            Log.d(TAG, "appLocale picked -> $tag")
+                            sessionManager.appLocale = tag
+                            // Always apply so the activity recreates and the picker unblocks,
+                            // even when the parent picks English.
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+                        }
+                    )
+                } else {
+                    MainScreen(
+                        studyViewModel = studyViewModel,
+                        sessionManager = sessionManager,
+                        onSignOut = { authViewModel.signOut() }
+                    )
+                }
             }
             "welcome" -> {
                 WelcomeNavigation(

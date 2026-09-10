@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.KidProfile
 import com.kaushalya.interrupter.data.KidProfileRepository
 import com.kaushalya.interrupter.data.QuizResult
@@ -81,9 +82,9 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
             _syncState.value = SyncState.Syncing
             try {
                 repository.retrySyncFailed()
-                _syncState.value = SyncState.Success("Results synced")
+                _syncState.value = SyncState.Success(getApplication<Application>().getString(R.string.results_synced))
             } catch (e: Exception) {
-                _syncState.value = SyncState.Error("Sync failed: ${e.message}")
+                _syncState.value = SyncState.Error(getApplication<Application>().getString(R.string.sync_failed, e.message))
             }
         }
     }
@@ -112,9 +113,9 @@ class SessionResultViewModel(application: Application) : AndroidViewModel(applic
     fun getMessageForScore(score: Int, total: Int): String {
         val ratio = if (total > 0) score.toDouble() / total else 0.0
         return when {
-            ratio >= 0.8 -> "Great effort! Keep it up!"
-            ratio >= 0.5 -> "Good try! A bit more practice will help."
-            else -> "Needs a bit more practice. Don't give up!"
+            ratio >= 0.8 -> getApplication<Application>().getString(R.string.result_msg_great)
+            ratio >= 0.5 -> getApplication<Application>().getString(R.string.result_msg_good)
+            else -> getApplication<Application>().getString(R.string.result_msg_practice)
         }
     }
 }

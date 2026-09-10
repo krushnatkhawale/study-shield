@@ -129,3 +129,12 @@ PAIR_CODE_CHECK ─► reply PairCodeMessage to mobileCallback ─► (no state 
 any active state ─[UNLOCK cmd]──► IDLE
 reboot with active lock ─► LockPersistenceManager re-applies previous state
 ```
+
+## 5. Jargon-free copy (SS-EXP-05, 2026-09-10)
+
+- Launcher label is **StudyShield** (was "Interrupter") — `tv/.../res/values/strings.xml` `app_name`.
+- NSD registration uses the device's own name as `serviceName` (was "Interrupter-\<device>"),
+  so the phone shows a clean TV name. The protocol `serviceType` stays `_interrupter._tcp`, so
+  discovery/pairing is unchanged (display name ≠ protocol name).
+- Idle screen already reads "Ready to play!" + 4-digit pairing code (SS-EXP-02); no
+  Interrupter/Activate/EMERGENCY wording remains in parent/kid-facing copy.

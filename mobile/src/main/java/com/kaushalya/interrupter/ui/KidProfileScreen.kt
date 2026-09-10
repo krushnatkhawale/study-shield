@@ -12,10 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.KidProfile
 import com.kaushalya.interrupter.data.QuizResult
 import java.text.SimpleDateFormat
@@ -147,7 +149,7 @@ fun KidItem(
                         )
                     }
                 }
-                Text("Grade: ${kid.grade}", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.kid_grade_label, kid.grade), style = MaterialTheme.typography.bodyMedium)
                 if (kid.birthYear > 0) {
                     Text(
                         "Born: ${kid.birthYear}${kid.dateOfBirth?.let { " (${sdf.format(Date(it))})" } ?: ""}",
@@ -157,7 +159,7 @@ fun KidItem(
                 }
                 if (kid.grade.equals("Trial", ignoreCase = true)) {
                     Text(
-                        "Starter profile — update info to unlock class-based tests",
+                        stringResource(R.string.kid_trial_upgrade),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFFF6B00)
                     )
@@ -167,7 +169,12 @@ fun KidItem(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Latest quiz: ${pct}%",
+                            stringResource(
+                                R.string.kid_card_latest,
+                                r.score,
+                                r.totalQuestions,
+                                stringResource(bandStringRes(pct))
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF2E7D32)
@@ -175,7 +182,7 @@ fun KidItem(
                         if (r.fastAnswerCount > 0) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "⚠ ${r.fastAnswerCount} fast",
+                                stringResource(R.string.kid_fast_flag, r.fastAnswerCount),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFFB26A00)
@@ -185,7 +192,7 @@ fun KidItem(
                 } ?: run {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        "No results yet",
+                        stringResource(R.string.kid_no_results),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
