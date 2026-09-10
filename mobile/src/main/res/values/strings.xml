@@ -23,15 +23,7 @@
     <string name="no_tv_connected">No TV connected</string>
     <string name="connect_now">Connect Now</string>
 
-    <!-- SS-EXP-03: App language -->
-    <string name="language_picker_title">Choose your language</string>
-    <string name="language_picker_subtitle">StudyShield shows setup screens in your language. Your child can still use any language on the TV.</string>
-    <string name="language_english">English</string>
-    <string name="language_hindi">हिन्दी (Hindi)</string>
-    <string name="language_marathi">मराठी (Marathi)</string>
-    <string name="language_continue">Continue</string>
-
-    <!-- SS-EXP-03: Auth / welcome (first-quiz path) -->
+    <!-- Auth / welcome (first-quiz path) -->
     <string name="app_tagline">Turn TV Ads into Learning Time</string>
     <string name="welcome_create_account">Create Account</string>
     <string name="welcome_sign_in">Sign In</string>

@@ -625,13 +625,7 @@ fun FirstRunStepper(
     var ttsReady by remember { mutableStateOf(false) }
     val tts = rememberSetupTts(onReady = { ttsReady = true })
     var lastSpokenStep by remember { mutableIntStateOf(0) }
-    val ttsLocale = remember(sessionManager.appLocale) {
-        when (sessionManager.appLocale) {
-            "hi" -> java.util.Locale("hi", "IN")
-            "mr" -> java.util.Locale("mr", "IN")
-            else -> java.util.Locale("en", "IN")
-        }
-    }
+    val ttsLocale = remember { java.util.Locale("en", "IN") }
 
     LaunchedEffect(step, speakEnabled, ttsReady) {
         if (speakEnabled && ttsReady && step != lastSpokenStep) {

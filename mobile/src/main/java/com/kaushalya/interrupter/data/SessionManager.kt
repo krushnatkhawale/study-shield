@@ -135,22 +135,6 @@ class SessionManager(context: Context) {
             prefs.edit().putBoolean(KEY_SEEN_CAROUSEL, value).apply()
         }
 
-    /**
-     * Parent-facing app language (SS-EXP-03): BCP-47 tag for the resource locale used by the
-     * mobile app chrome ("en", "hi", "mr"). Null = never chosen → English fallback. This is a
-     * **different** setting from [KidQuizConfig.greetingLanguage] (the per-kid TV greeting).
-     */
-    var appLocale: String?
-        get() = prefs.getString(KEY_APP_LOCALE, null)
-        set(value) {
-            Log.d(TAG, "set appLocale -> $value")
-            if (value == null) {
-                prefs.edit().remove(KEY_APP_LOCALE).apply()
-            } else {
-                prefs.edit().putString(KEY_APP_LOCALE, value).apply()
-            }
-        }
-
     /** SS-EXP-07: Optional TTS narration for the first-run stepper screens. */
     var speakSetupSteps: Boolean
         get() = prefs.getBoolean(KEY_SPEAK_SETUP_STEPS, false)
@@ -256,7 +240,6 @@ class SessionManager(context: Context) {
         private const val KEY_IS_GUEST = "is_guest"
         private const val KEY_IS_OFFLINE = "is_offline"
         private const val KEY_SEEN_CAROUSEL = "seen_carousel"
-        private const val KEY_APP_LOCALE = "app_locale"
         private const val KEY_SPEAK_SETUP_STEPS = "speak_setup_steps"
         private const val KEY_COMPLETED_FIRST_QUIZ = "completed_first_quiz"
         private const val KEY_SELECTED_KID = "selected_kid_id"
