@@ -151,6 +151,14 @@ class SessionManager(context: Context) {
             }
         }
 
+    /** SS-EXP-07: Optional TTS narration for the first-run stepper screens. */
+    var speakSetupSteps: Boolean
+        get() = prefs.getBoolean(KEY_SPEAK_SETUP_STEPS, false)
+        set(value) {
+            Log.d(TAG, "set speakSetupSteps -> $value")
+            prefs.edit().putBoolean(KEY_SPEAK_SETUP_STEPS, value).apply()
+        }
+
     var hasCompletedFirstQuiz: Boolean
         get() = prefs.getBoolean(KEY_COMPLETED_FIRST_QUIZ, false)
         set(value) {
@@ -249,6 +257,7 @@ class SessionManager(context: Context) {
         private const val KEY_IS_OFFLINE = "is_offline"
         private const val KEY_SEEN_CAROUSEL = "seen_carousel"
         private const val KEY_APP_LOCALE = "app_locale"
+        private const val KEY_SPEAK_SETUP_STEPS = "speak_setup_steps"
         private const val KEY_COMPLETED_FIRST_QUIZ = "completed_first_quiz"
         private const val KEY_SELECTED_KID = "selected_kid_id"
         private const val KEY_EXP_PROMPT_HANDLED = "exp_prompt_handled_kids"

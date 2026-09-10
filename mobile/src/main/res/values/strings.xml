@@ -189,4 +189,13 @@
     <string name="manual_fill_blank">Fill in the blanks</string>
     <string name="pack_subtitle_quiz">Quiz</string>
     <string name="class_age_hint">age %1$d</string>
+
+    <!-- SS-EXP-07: Voice walkthrough for setup -->
+    <string name="speak_setup_steps">Read steps aloud</string>
+    <string name="tts_step_add_child">Add your child\'s name and class. This is who plays on the TV.</string>
+    <string name="tts_step_find_tv">Turn on the TV and find it on the list. Tap to connect.</string>
+    <string name="tts_step_start_quiz">All set! Press start to pick a quiz for your child.</string>
+
+    <!-- SS-EXP-08: One-tap play again -->
+    <string name="play_again_for">Play again for %1$s</string>
 </resources>

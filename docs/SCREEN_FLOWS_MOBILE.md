@@ -108,6 +108,7 @@ to English — setup is never blocked. TV greeting locale is untouched (still pe
 
 ### 3.0 First-Run Stepper (SS-EXP-01)
 Replaces the Home screen after auth until the parent starts the first quiz (sets `hasCompletedFirstQuiz` in `SessionManager`). A numbered **1 Add child → 2 Find TV → 3 Start quiz** wizard:
+- **SS-EXP-07 TTS toggle** at the top of the stepper — "Read steps aloud" `Switch`. When enabled, on-device TTS (`SetupTts.kt`) speaks one short sentence per step in the chosen app locale (EN/HI/MR). Persisted in `SessionManager.speakSetupSteps`. Never blocks setup if TTS is unavailable.
 - **Step 1 Add child:** lists existing kid profiles (the default "Kid 1" is always present); "Edit" opens the kid form. Next is enabled once a kid exists.
 - **Step 2 Find TV:** auto-starts NSD discovery; parent taps a discovered TV name to select (`StudyViewModel.selectedTvIp`). Each row shows its advertised pairing code (SS-EXP-02). "Can't find your TV?" → 4-digit code entry (numeric keyboard) that matches the NSD `PAIR_CODE` attribute or verifies over TCP (`PAIR_CODE_CHECK`). "Need help? Enter the TV address" reveals the legacy manual-IP field behind it.
 - **Step 3 Start quiz:** confirms child + TV, then a big **"Start quiz"** button sets `hasCompletedFirstQuiz = true` and navigates to Select Content.
@@ -116,6 +117,7 @@ ProfData is removed from the drawer until the first quiz has been started.
 ### 3.1 Home — Stats Dashboard (after first quiz)
 Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity list; one-time Exp-upgrade prompt dialog.
 When at least one kid exists **and** a TV has been used before (`lastTvIp` set), a prominent orange **"Start quiz"** CTA card sits at the top → Select Content.
+When a result exists and a TV has been used before, a blue **"Play again for {name}"** card (SS-EXP-08) sits below it — one tap re-sends the last session's pack to the TV with shuffled options (`StudyViewModel.replayLastSession()`); if no TV is remembered it routes to Connected TVs instead of no-opping.
 
 ### 3.2 Library (Control)
 ```
@@ -175,7 +177,7 @@ Scan Now button; discovered TV list (name + 4-digit pairing code, SS-EXP-02); "R
 Kids: profile rows (name, grade); empty state "Click + to add your first child." Kid Form: add/edit fields, "Save Profile". Class is chosen via **age-labelled chips** (SS-EXP-06) — canonical backend labels with the typical age ("Junior KG · age 4"); birth year pre-selects the matching class; syllabus is only offered when editing an existing kid (new kids default to board `ALL`); name + class required to save.
 
 ### 3.6 Results
-Session Results list → Result Details; Edit Kid entry.
+Session Results list → Result Details; Edit Kid entry. Both the list (top card) and the detail view show a **"Play again for {name}"** button (SS-EXP-08): one tap re-sends the last session's pack to the TV with shuffled options; routes to Connected TVs if no TV is remembered.
 
 ### 3.7 Quiz Setup (non-guest)
 Per-kid quiz configuration; prompts to add a kid first if none exist.

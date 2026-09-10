@@ -155,4 +155,13 @@
     <string name="manual_fill_blank">रिक्त स्थान भरें</string>
     <string name="pack_subtitle_quiz">क्विज़</string>
     <string name="class_age_hint">आयु %1$d</string>
+
+    <!-- SS-EXP-07: Voice walkthrough for setup -->
+    <string name="speak_setup_steps">कदम ज़ोर से पढ़ें</string>
+    <string name="tts_step_add_child">अपने बच्चे का नाम और कक्षा जोड़ें। यही टीवी पर खेलता है।</string>
+    <string name="tts_step_find_tv">टीवी चालू करें और सूची में ढूंढें। जुड़ने के लिए टैप करें।</string>
+    <string name="tts_step_start_quiz">सब तैयार है! अपने बच्चे के लिए क्विज़ चुनने के लिए शुरू दबाएं।</string>
+
+    <!-- SS-EXP-08: One-tap play again -->
+    <string name="play_again_for">%1$s के लिए फिर से खेलें</string>
 </resources>

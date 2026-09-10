@@ -182,7 +182,12 @@ fun MainScreen(
                                 kidViewModel.editingKid = kid
                                 navController.navigate(Screen.KidForm.route)
                             },
-                            onStartQuiz = { navController.navigate(Screen.ContentSelection.route) }
+                            onStartQuiz = { navController.navigate(Screen.ContentSelection.route) },
+                            onPlayAgain = {
+                                if (!studyViewModel.replayLastSession()) {
+                                    navController.navigate(Screen.ConnectedTvs.route)
+                                }
+                            }
                         )
                     } else {
                         FirstRunStepper(
@@ -225,6 +230,11 @@ fun MainScreen(
                         onEditKid = { kid ->
                             kidViewModel.editingKid = kid
                             navController.navigate(Screen.KidForm.route)
+                        },
+                        onPlayAgain = {
+                            if (!studyViewModel.replayLastSession()) {
+                                navController.navigate(Screen.ConnectedTvs.route)
+                            }
                         },
                         onBack = { navController.popBackStack() }
                     )
@@ -419,7 +429,8 @@ fun DrawerHeader(sessionManager: SessionManager) {
 fun StatsDashboardScreen(
     sessionManager: SessionManager,
     onEditKid: (KidProfile) -> Unit = {},
-    onStartQuiz: () -> Unit = {}
+    onStartQuiz: () -> Unit = {},
+    onPlayAgain: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val resultViewModel: SessionResultViewModel = viewModel(
@@ -485,6 +496,36 @@ fun StatsDashboardScreen(
                             Text(stringResource(R.string.start_quiz), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                             Text(
                                 stringResource(R.string.play_next_quiz_on_tv, kids.firstOrNull()?.name ?: stringResource(R.string.your_child)),
+                                color = Color.White.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White)
+                    }
+                }
+            }
+        }
+
+        // SS-EXP-08: one-tap play again for the same child after a recent result
+        val lastPlayAgainName = recentResults.maxByOrNull { it.completedAt }?.childName
+        if (hasTv && lastPlayAgainName != null) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onPlayAgain),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E88E5))
+                ) {
+                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.play_again_for, lastPlayAgainName),
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                stringResource(R.string.play_next_quiz_on_tv, lastPlayAgainName),
                                 color = Color.White.copy(alpha = 0.9f),
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -579,6 +620,34 @@ fun FirstRunStepper(
     var step by remember { mutableIntStateOf(1) }
     var showManualIp by remember { mutableStateOf(false) }
 
+    // SS-EXP-07: on-device TTS for step narration
+    var speakEnabled by remember { mutableStateOf(sessionManager.speakSetupSteps) }
+    var ttsReady by remember { mutableStateOf(false) }
+    val tts = rememberSetupTts(onReady = { ttsReady = true })
+    var lastSpokenStep by remember { mutableIntStateOf(0) }
+    val ttsLocale = remember(sessionManager.appLocale) {
+        when (sessionManager.appLocale) {
+            "hi" -> java.util.Locale("hi", "IN")
+            "mr" -> java.util.Locale("mr", "IN")
+            else -> java.util.Locale("en", "IN")
+        }
+    }
+
+    LaunchedEffect(step, speakEnabled, ttsReady) {
+        if (speakEnabled && ttsReady && step != lastSpokenStep) {
+            val sentence = when (step) {
+                1 -> context.getString(R.string.tts_step_add_child)
+                2 -> context.getString(R.string.tts_step_find_tv)
+                3 -> context.getString(R.string.tts_step_start_quiz)
+                else -> null
+            }
+            if (sentence != null) {
+                tts.speak(sentence, ttsLocale)
+                lastSpokenStep = step
+            }
+        }
+    }
+
     // Start NSD discovery when the parent reaches step 2.
     LaunchedEffect(step) {
         if (step == 2) {
@@ -647,6 +716,26 @@ fun FirstRunStepper(
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
+                // SS-EXP-07: speak-setup toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        stringResource(R.string.speak_setup_steps),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                    Switch(
+                        checked = speakEnabled,
+                        onCheckedChange = { enabled ->
+                            speakEnabled = enabled
+                            sessionManager.speakSetupSteps = enabled
+                            if (!enabled) tts.stop()
+                        }
+                    )
+                }
             }
 
             item {

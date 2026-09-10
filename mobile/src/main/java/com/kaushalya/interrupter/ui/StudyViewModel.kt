@@ -56,6 +56,12 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     var manualMcqCorrectIndex by mutableIntStateOf(0)
     var manualFitbAnswer by mutableStateOf("")
 
+    // SS-EXP-08: last session context for one-tap replay
+    var lastContent: StudyContent? by mutableStateOf(null)
+        private set
+    var lastKidId: String? by mutableStateOf(null)
+        private set
+
     fun startDiscovery() {
         isDiscovering = true
         repository.startDiscovery()
@@ -186,6 +192,10 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
             Log.d("StudyViewModel", "Sending command: type=$commandType, questionsCount=${content.questions?.size ?: 0}")
+
+            // SS-EXP-08: remember last session context for one-tap replay
+            lastContent = content
+            lastKidId = kidId
 
             // Remember the TV this family uses, so the greeting-language picker can verify it.
             sessionManager.lastTvIp = ip
@@ -360,5 +370,36 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
     
     fun resetState() {
         _uiState.value = StudyUiState.Idle
+    }
+
+    /**
+     * SS-EXP-08: One-tap replay — reuses the last kid/TV/pack context to send a fresh
+     * shuffled quiz to the TV without going through content selection.
+     * If TV is missing, returns false so the caller can navigate to Find TV.
+     */
+    fun replayLastSession(): Boolean {
+        val sessionManager = SessionManager(getApplication())
+        val ip = selectedTvIp ?: manualIp ?: sessionManager.lastTvIp
+        if (ip.isNullOrEmpty()) return false
+
+        val content = lastContent
+        if (content == null) {
+            _uiState.value = StudyUiState.Error("No previous session to replay")
+            return false
+        }
+
+        // Re-shuffle options for a fresh quiz
+        val refreshed = content.copy(
+            questions = content.questions?.map { it.shuffledOptions() }
+        )
+
+        // Restore the selected TV IP and kid so startStudySession targets the same family
+        if (selectedTvIp == null && manualIp.isBlank()) {
+            selectedTvIp = ip
+        }
+        lastKidId?.let { sessionManager.selectedKidId = it }
+
+        startStudySession(contentOverride = refreshed)
+        return true
     }
 }

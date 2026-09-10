@@ -36,6 +36,7 @@ fun SessionResultScreen(
     kidViewModel: KidProfileViewModel,
     sessionManager: SessionManager,
     onEditKid: (KidProfile) -> Unit = {},
+    onPlayAgain: (QuizResult) -> Unit = {},
     onBack: () -> Unit
 ) {
     val recentResults by viewModel.recentResults.collectAsState()
@@ -100,6 +101,7 @@ fun SessionResultScreen(
             ResultDetailContent(
                 result = selectedResult!!,
                 viewModel = viewModel,
+                onPlayAgain = { onPlayAgain(selectedResult!!) },
                 onBack = { viewModel.clearSelection() },
                 modifier = Modifier.padding(padding)
             )
@@ -125,6 +127,7 @@ fun SessionResultScreen(
                     results = filteredResults,
                     viewModel = viewModel,
                     onSelectResult = { viewModel.selectResult(it) },
+                    onPlayAgain = { onPlayAgain(it) },
                     syncState = syncState,
                     modifier = Modifier.weight(1f)
                 )
@@ -138,6 +141,7 @@ private fun ResultListContent(
     results: List<QuizResult>,
     viewModel: SessionResultViewModel,
     onSelectResult: (QuizResult) -> Unit,
+    onPlayAgain: (QuizResult) -> Unit,
     syncState: SyncState,
     modifier: Modifier = Modifier
 ) {
@@ -230,6 +234,34 @@ private fun ResultListContent(
                 }
             }
         } else {
+            // SS-EXP-08: one-tap play again for the same child
+            val lastResult = results.maxByOrNull { it.completedAt }
+            if (lastResult != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFF6B00))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onPlayAgain(lastResult) }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                stringResource(R.string.play_again_for, lastResult.childName),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+
             val grouped = results.groupBy {
                 SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it.completedAt))
             }
@@ -329,6 +361,7 @@ private fun ResultCard(
 private fun ResultDetailContent(
     result: QuizResult,
     viewModel: SessionResultViewModel,
+    onPlayAgain: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -463,6 +496,26 @@ private fun ResultDetailContent(
                     Icon(syncIcon, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(syncStatusText, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                }
+            }
+
+            // SS-EXP-08: one-tap play again for the same child
+            item {
+                Button(
+                    onClick = onPlayAgain,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.play_again_for, result.childName),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
