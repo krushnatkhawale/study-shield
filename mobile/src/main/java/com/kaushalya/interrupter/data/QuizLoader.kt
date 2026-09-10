@@ -28,7 +28,7 @@ class QuizLoader(private val context: Context) {
 
     private suspend fun fetchQuizzesForGrade(grade: String): List<StudyContent> {
         val response = RetrofitClient.getApiService()
-            .issueQuizBundle(QuizBundleRequestDto(className = grade, deviceId = deviceId()))
+            .issueQuizBundle(QuizBundleRequestDto(className = grade, deviceId = DeviceIdentity.deviceId(context)))
         if (!response.isSuccessful) {
             Log.w("QuizLoader", "Quiz bundle request failed: HTTP ${response.code()} for grade $grade")
             return emptyList()
@@ -60,12 +60,5 @@ class QuizLoader(private val context: Context) {
         }
         Log.d("QuizLoader", "Loaded ${mapped.size} quizzes from backend for grade $grade")
         return mapped
-    }
-
-    private fun deviceId(): String {
-        val prefs = context.getSharedPreferences("device", Context.MODE_PRIVATE)
-        return prefs.getString("device_id", null) ?: java.util.UUID.randomUUID().toString().also {
-            prefs.edit().putString("device_id", it).apply()
-        }
     }
 }

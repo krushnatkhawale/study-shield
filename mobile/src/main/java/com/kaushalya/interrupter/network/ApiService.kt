@@ -14,6 +14,9 @@ interface ApiService {
     @POST("/api/auth/signin")
     suspend fun signIn(@Body request: SignInRequest): Response<AuthResponse>
 
+    @POST("/api/auth/guest")
+    suspend fun guestAuth(@Body request: GuestAuthRequest): Response<AuthResponse>
+
     @POST("/api/auth/validate")
     suspend fun validateSession(): Response<ValidationResponse>
 

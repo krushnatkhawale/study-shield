@@ -261,6 +261,11 @@ data class SignOutRequest(
 )
 
 @Serializable
+data class GuestAuthRequest(
+    val deviceId: String? = null
+)
+
+@Serializable
 data class AuthResponse(
     val accountId: String? = null,
     val loginId: String? = null,

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.kaushalya.interrupter.data.AccountDataGuard
 import com.kaushalya.interrupter.data.AuthRepository
 import com.kaushalya.interrupter.data.AuthResponse
+import com.kaushalya.interrupter.data.DeviceIdentity
 import com.kaushalya.interrupter.data.KidProfileRepository
 import com.kaushalya.interrupter.data.ParentSummary
 import com.kaushalya.interrupter.data.ProfileData
@@ -63,11 +64,15 @@ class AuthViewModel(
             _isCheckingSession.value = false
             return
         }
-        // Guest sessions skip API validation — trust local state
+        // Guest sessions skip API validation — trust local state, but refresh the
+        // short-lived guest token so quiz/quizzes keep working across app restarts.
         if (sessionManager.isGuest) {
-            Log.d(TAG, "checkExistingSession: guest session found, skipping API validation")
-            _isCheckingSession.value = false
-            _authState.value = AuthState.Success(sessionManager.sessionId!!)
+            Log.d(TAG, "checkExistingSession: guest session found, refreshing guest token")
+            viewModelScope.launch {
+                refreshGuestSession()
+                _isCheckingSession.value = false
+                _authState.value = AuthState.Success(sessionManager.sessionId!!)
+            }
             return
         }
         Log.d(TAG, "checkExistingSession: stored session found (id=${sessionManager.sessionId}), validating with server")
@@ -239,16 +244,38 @@ class AuthViewModel(
     }
 
     fun guestLogin() {
-        Log.d(TAG, "guestLogin: setting guest mode")
+        Log.d(TAG, "guestLogin: requesting guest session from backend")
         viewModelScope.launch {
             sessionManager.isGuest = true
             sessionManager.hasSeenCarousel = true
-            sessionManager.sessionId = "guest"
-            sessionManager.profile = ProfileData(account = "guest")
-            dataGuard.ensureOwner(OWNER_GUEST)
-            _authState.value = AuthState.Success("guest")
-            kidProfileRepository.ensureDefaultKid()
-            syncTrialContent()
+            refreshGuestSession()
+        }
+    }
+
+    /**
+     * Requests a backend-issued anonymous session. On success the real JWT is
+     * stored (handleAuthResponse clears local prefs, so guest flags are re-asserted
+     * after it). On failure, falls back to a local offline guest session only when
+     * there is no usable session yet — an existing guest session is kept as-is.
+     */
+    private suspend fun refreshGuestSession() {
+        val result = authRepository.guestLogin(DeviceIdentity.deviceId(appContext))
+        if (result.isSuccess) {
+            val response = result.getOrNull()!!
+            Log.d(TAG, "guestLogin: backend issued session (account=${response.accountId})")
+            handleAuthResponse(response)
+            sessionManager.isGuest = true
+            sessionManager.hasSeenCarousel = true
+        } else {
+            Log.w(TAG, "guestLogin: backend unavailable (${result.exceptionOrNull()?.message}), using offline guest session")
+            if (sessionManager.sessionId == null) {
+                sessionManager.sessionId = "guest"
+                sessionManager.profile = ProfileData(account = OWNER_GUEST)
+                dataGuard.ensureOwner(OWNER_GUEST)
+                _authState.value = AuthState.Success("guest")
+                kidProfileRepository.ensureDefaultKid()
+                syncTrialContent()
+            }
         }
     }
 

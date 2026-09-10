@@ -34,6 +34,21 @@ open class AuthRepository {
         }
     }
 
+    /** Requests a backend-issued anonymous session tied to this installation's deviceId. */
+    suspend fun guestLogin(deviceId: String): Result<AuthResponse> {
+        return try {
+            val response = api.guestAuth(GuestAuthRequest(deviceId))
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                Result.failure(Exception("Guest login failed: $errorBody"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     open suspend fun validateSession(): Result<ValidationResponse> {
         return try {
             val response = api.validateSession()
