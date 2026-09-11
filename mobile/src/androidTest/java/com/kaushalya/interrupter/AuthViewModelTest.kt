@@ -2,11 +2,14 @@ package com.kaushalya.interrupter
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.kaushalya.interrupter.data.AuthResponse
+import com.kaushalya.interrupter.data.ClaimGuestDataResponse
 import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.data.UnauthorizedException
 import com.kaushalya.interrupter.data.ValidationResponse
 import com.kaushalya.interrupter.ui.auth.AuthState
 import com.kaushalya.interrupter.ui.auth.AuthViewModel
+import com.kaushalya.interrupter.ui.auth.GuestSignUpState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -176,6 +179,96 @@ class AuthViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(vm.authState.value is AuthState.Idle)
+    }
+
+    @Test
+    fun guestLogout_clears_guest_session_but_keeps_carousel_and_local_data() = runTest(testDispatcher) {
+        sessionManager.sessionId = "guest-session"
+        sessionManager.isGuest = true
+        sessionManager.hasSeenCarousel = true
+
+        val vm = AuthViewModel(sessionManager, ctx)
+        vm.guestLogout()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(sessionManager.sessionId)
+        assertFalse(sessionManager.isGuest)
+        assertTrue(sessionManager.hasSeenCarousel)
+        assertTrue(vm.authState.value is AuthState.Idle)
+    }
+
+    @Test
+    fun signUpFromGuest_migrates_guest_data_and_switches_to_new_account() = runTest(testDispatcher) {
+        sessionManager.sessionId = "guest-session"
+        sessionManager.isGuest = true
+
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
+            signUpResult = Result.success(
+                AuthResponse(
+                    sessionId = "new-account-session",
+                    loginId = "newuser@test.test",
+                    accountId = "acc-42",
+                    parentName = "New User"
+                )
+            ),
+            claimResult = Result.success(
+                ClaimGuestDataResponse(success = true, resultsMoved = 3)
+            )
+        ))
+        vm.signUpFromGuest("newuser@test.test", "password123", "New User")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.guestSignUpState.value
+        assertTrue("expected Success but was $state", state is GuestSignUpState.Success)
+        assertEquals(true, (state as GuestSignUpState.Success).migrated)
+
+        // Session now owns the new account and guest mode is off.
+        assertEquals("new-account-session", sessionManager.sessionId)
+        assertEquals("acc-42", sessionManager.accountId)
+        assertFalse(sessionManager.isGuest)
+        assertTrue(vm.authState.value is AuthState.Success)
+    }
+
+    @Test
+    fun signUpFromGuest_still_completes_when_migration_fails() = runTest(testDispatcher) {
+        sessionManager.sessionId = "guest-session"
+        sessionManager.isGuest = true
+
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
+            signUpResult = Result.success(
+                AuthResponse(
+                    sessionId = "new-account-session",
+                    loginId = "newuser@test.test",
+                    accountId = "acc-42"
+                )
+            ),
+            claimResult = Result.failure(Exception("backend down"))
+        ))
+        vm.signUpFromGuest("newuser@test.test", "password123", "New User")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = vm.guestSignUpState.value
+        assertTrue("expected Success but was $state", state is GuestSignUpState.Success)
+        assertEquals(false, (state as GuestSignUpState.Success).migrated)
+        assertEquals("new-account-session", sessionManager.sessionId)
+        assertFalse(sessionManager.isGuest)
+    }
+
+    @Test
+    fun signUpFromGuest_surfaces_error_when_sign_up_fails() = runTest(testDispatcher) {
+        sessionManager.sessionId = "guest-session"
+        sessionManager.isGuest = true
+
+        val vm = AuthViewModel(sessionManager, ctx, FakeAuthRepository(
+            signUpResult = Result.failure(Exception("Email already registered"))
+        ))
+        vm.signUpFromGuest("taken@test.test", "password123", "Parent")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(vm.guestSignUpState.value is GuestSignUpState.Error)
+        // The guest session is untouched when sign-up fails.
+        assertTrue(sessionManager.isGuest)
+        assertEquals("guest-session", sessionManager.sessionId)
     }
 
     @Test

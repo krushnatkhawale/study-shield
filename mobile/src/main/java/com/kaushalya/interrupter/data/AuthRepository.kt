@@ -6,7 +6,7 @@ open class AuthRepository {
 
     private val api get() = RetrofitClient.getApiService()
 
-    suspend fun signUp(loginId: String, password: String, name: String? = null): Result<AuthResponse> {
+    open suspend fun signUp(loginId: String, password: String, name: String? = null): Result<AuthResponse> {
         return try {
             val response = api.signUp(SignUpRequest(loginId, password, name))
             if (response.isSuccessful && response.body() != null) {
@@ -43,6 +43,25 @@ open class AuthRepository {
             } else {
                 val errorBody = response.errorBody()?.string() ?: "Unknown error"
                 Result.failure(Exception("Guest login failed: $errorBody"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Moves the guest account's data (quiz results, kids, attempts) tied to this
+     * deviceId over to the currently-signed-in account. Requires the calling
+     * session to hold a real JWT for the target account.
+     */
+    open suspend fun claimGuestData(deviceId: String): Result<ClaimGuestDataResponse> {
+        return try {
+            val response = api.claimGuestData(ClaimGuestDataRequest(deviceId))
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                Result.failure(Exception("Guest data migration failed: $errorBody"))
             }
         } catch (e: Exception) {
             Result.failure(e)

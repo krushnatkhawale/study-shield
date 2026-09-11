@@ -23,6 +23,10 @@ interface ApiService {
     @POST("/api/auth/signout")
     suspend fun signOut(@Body request: SignOutRequest = SignOutRequest()): Response<AuthResponse>
 
+    // Guest data migration (transfers a guest account's data to a registered account)
+    @POST("/api/migrate/guest-data")
+    suspend fun claimGuestData(@Body request: ClaimGuestDataRequest): Response<ClaimGuestDataResponse>
+
     // Parents
     @GET("/api/parents")
     suspend fun listParents(): Response<List<ParentResponse>>

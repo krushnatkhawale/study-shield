@@ -21,7 +21,9 @@ fun SignUpScreen(
     onSignUp: (loginId: String, password: String, name: String) -> Unit,
     onBack: () -> Unit,
     isLoading: Boolean,
-    error: String?
+    error: String?,
+    notice: String? = null,
+    backLabel: String? = null
 ) {
     var loginId by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -50,6 +52,16 @@ fun SignUpScreen(
             fontSize = 16.sp,
             color = Color.Gray
         )
+        if (notice != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = notice,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         Spacer(modifier = Modifier.height(40.dp))
 
         OutlinedTextField(
@@ -141,7 +153,7 @@ fun SignUpScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = onBack, enabled = !isLoading) {
-            Text(stringResource(R.string.signup_already_account), color = Color.Gray)
+            Text(backLabel ?: stringResource(R.string.signup_already_account), color = Color.Gray)
         }
     }
 }

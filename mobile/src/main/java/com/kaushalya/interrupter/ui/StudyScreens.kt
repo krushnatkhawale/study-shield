@@ -30,6 +30,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.*
+import com.kaushalya.interrupter.ui.auth.AuthViewModel
+import com.kaushalya.interrupter.ui.auth.GuestSignUpState
+import com.kaushalya.interrupter.ui.auth.SignUpScreen
 import com.kaushalya.interrupter.ui.parents.ParentManagementScreen
 import com.kaushalya.interrupter.ui.quiz.QuizReviewScreen
 import com.kaushalya.interrupter.ui.quiz.QuizSetupScreen
@@ -63,6 +66,9 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object QuizReview : Screen("quiz_review", "Quiz Review", Icons.Default.Visibility)
 }
 
+// Guest-only flow (not in the drawer item list; reached from the guest drawer actions)
+private val GuestSignUpRoute = "guest_signup"
+
 /** Transient holder for the pack being reviewed, passed between nav destinations. */
 object QuizReviewTarget {
     var pack: StudyContent? = null
@@ -78,7 +84,8 @@ object KidDetailTarget {
 fun MainScreen(
     studyViewModel: StudyViewModel,
     sessionManager: SessionManager,
-    onSignOut: () -> Unit
+    onSignOut: () -> Unit,
+    onGuestLogout: () -> Unit
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -133,6 +140,32 @@ fun MainScreen(
                         onClick = {
                             scope.launch { drawerState.close() }
                             onSignOut()
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                } else {
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.PersonAdd, contentDescription = null) },
+                        label = { Text("Create Account") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            navController.navigate(GuestSignUpRoute) {
+                                popUpTo(Screen.Home.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
+                        label = { Text("Log Out") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onGuestLogout()
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
@@ -274,6 +307,34 @@ fun MainScreen(
                     composable(Screen.Parents.route) { ParentManagementScreen(sessionManager = sessionManager, onBack = { navController.popBackStack() }) }
                 }
                 composable(Screen.Settings.route) { SettingsScreen(studyViewModel) }
+                composable(GuestSignUpRoute) {
+                    val activity = LocalContext.current as androidx.activity.ComponentActivity
+                    val authViewModel: AuthViewModel = viewModel(viewModelStoreOwner = activity)
+                    val guestSignUpState by authViewModel.guestSignUpState.collectAsState()
+                    DisposableEffect(Unit) {
+                        onDispose { authViewModel.resetGuestSignUp() }
+                    }
+                    LaunchedEffect(guestSignUpState) {
+                        if (guestSignUpState is GuestSignUpState.Success) {
+                            authViewModel.resetGuestSignUp()
+                            navController.popBackStack()
+                        }
+                    }
+                    SignUpScreen(
+                        onSignUp = { loginId, password, name ->
+                            authViewModel.resetGuestSignUp()
+                            authViewModel.signUpFromGuest(loginId, password, name)
+                        },
+                        onBack = {
+                            authViewModel.resetGuestSignUp()
+                            navController.popBackStack()
+                        },
+                        isLoading = guestSignUpState is GuestSignUpState.Loading,
+                        error = (guestSignUpState as? GuestSignUpState.Error)?.message,
+                        notice = "Your guest progress (kids, scores, sessions) will be saved to your new account.",
+                        backLabel = "Cancel"
+                    )
+                }
                 composable(Screen.ProfData.route) { ProfDataScreen() }
 
                 // Study Flow

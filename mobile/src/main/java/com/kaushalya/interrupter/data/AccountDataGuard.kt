@@ -32,6 +32,21 @@ class AccountDataGuard(context: Context, private val sessionManager: SessionMana
         prefs.edit().putString(KEY_OWNER, ownerId).apply()
     }
 
+    /**
+     * Re-attributes the locally cached data to a new owner WITHOUT wiping it.
+     *
+     * Used by the guest-signup migration: the device's Room data (quiz results,
+     * study sessions, kid profiles) is the guest's work, and it must follow the
+     * user onto the newly created account instead of being deleted when the
+     * owner id changes.
+     */
+    suspend fun reown(ownerId: String) = withContext(Dispatchers.IO) {
+        val stored = prefs.getString(KEY_OWNER, null)
+        if (stored == ownerId) return@withContext
+        Log.i(TAG, "Re-owning local data ($stored -> $ownerId) without wiping")
+        prefs.edit().putString(KEY_OWNER, ownerId).apply()
+    }
+
     companion object {
         private const val TAG = "AccountDataGuard"
         private const val PREFS_NAME = "data_owner"

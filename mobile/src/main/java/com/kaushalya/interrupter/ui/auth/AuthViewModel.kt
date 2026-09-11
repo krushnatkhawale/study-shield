@@ -15,6 +15,7 @@ import com.kaushalya.interrupter.data.ProfileData
 import com.kaushalya.interrupter.data.ProfileKid
 import com.kaushalya.interrupter.data.ProfileParent
 import com.kaushalya.interrupter.data.ProfileTv
+import com.kaushalya.interrupter.data.QuizResultRepository
 import com.kaushalya.interrupter.data.SessionManager
 import com.kaushalya.interrupter.data.TrialContentDownloader
 import com.kaushalya.interrupter.data.UnauthorizedException
@@ -34,6 +35,18 @@ sealed class AuthState {
     ) : AuthState()
 }
 
+/**
+ * UI state for creating an account from inside Guest mode. Kept separate from
+ * [AuthState] so the guest sign-up screen can observe its own progress/errors
+ * without fighting the app-wide routing signal.
+ */
+sealed class GuestSignUpState {
+    data object Idle : GuestSignUpState()
+    data object Loading : GuestSignUpState()
+    data class Success(val migrated: Boolean) : GuestSignUpState()
+    data class Error(val message: String) : GuestSignUpState()
+}
+
 class AuthViewModel(
     private val sessionManager: SessionManager,
     context: Context,
@@ -42,6 +55,9 @@ class AuthViewModel(
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
+
+    private val _guestSignUpState = MutableStateFlow<GuestSignUpState>(GuestSignUpState.Idle)
+    val guestSignUpState: StateFlow<GuestSignUpState> = _guestSignUpState
 
     private val _isCheckingSession = MutableStateFlow(true)
     val isCheckingSession: StateFlow<Boolean> = _isCheckingSession
@@ -223,6 +239,102 @@ class AuthViewModel(
             _authState.value = AuthState.Idle
             Log.d(TAG, "signOut: complete, session and profile cleared")
         }
+    }
+
+    /**
+     * Ends a Guest session without wiping the local app data: the quiz results,
+     * study sessions, and kid profiles stay on the device so the user can still
+     * create an account and have that work carried over. Returns to the Welcome
+     * screen (keeps the carousel seen flag).
+     */
+    fun guestLogout() {
+        Log.d(TAG, "guestLogout: clearing guest session only")
+        viewModelScope.launch {
+            sessionManager.sessionId = null
+            sessionManager.isGuest = false
+            sessionManager.isOfflineMode = false
+            RetrofitClient.reset()
+            _authState.value = AuthState.Idle
+        }
+    }
+
+    /**
+     * Creates a real account from inside Guest mode and carries the guest's
+     * existing data (quiz results, kids, sessions) onto that account:
+     *
+     * 1. Signs up with the backend (new account + JWT).
+     * 2. Asks the backend to move the guest account's data to the new account
+     *    (same rows, same ids, no duplicates).
+     * 3. Re-owns the device's local Room data to the new account so the normal
+     *    account switch does not wipe it.
+     * 4. Switches the session to the new account and pushes anything that had
+     *    never been synced.
+     *
+     * The migration is best-effort: if the backend cannot be reached it still
+     * completes the sign-up, but reports [GuestSignUpState.Success.migrated]=false.
+     */
+    fun signUpFromGuest(loginId: String, password: String, name: String) {
+        Log.d(TAG, "signUpFromGuest: loginId=$loginId, name=$name")
+        viewModelScope.launch {
+            _guestSignUpState.value = GuestSignUpState.Loading
+            val result = authRepository.signUp(loginId, password, name.ifBlank { null })
+            if (result.isSuccess) {
+                val response = result.getOrNull()!!
+                Log.d(TAG, "signUpFromGuest: sign up ok, sessionId=${response.sessionId}, migrating guest data")
+
+                // Interim: point the session at the new account so the migration
+                // call (and the re-syncs below) carry the new account's JWT.
+                sessionManager.sessionId = response.sessionId
+                val migrated = try {
+                    authRepository.claimGuestData(DeviceIdentity.deviceId(appContext)).isSuccess
+                } catch (e: Exception) {
+                    Log.w(TAG, "signUpFromGuest: guest data migration failed: ${e.message}")
+                    false
+                }
+
+                // Re-own local Room data BEFORE the session switch so the owner
+                // change does not trigger the account-scoped data wipe.
+                dataGuard.reown(targetOwnerId(response))
+
+                // Standard post-auth handling (saves session, validates owner = no wipe).
+                handleAuthResponse(response)
+
+                // Push anything that was never synced to the new account.
+                retryPendingSyncs()
+
+                if (migrated) {
+                    Log.d(TAG, "signUpFromGuest: complete, guest data moved to new account")
+                } else {
+                    Log.w(TAG, "signUpFromGuest: complete but guest data migration did not run; local data kept")
+                }
+                _guestSignUpState.value = GuestSignUpState.Success(migrated = migrated)
+            } else {
+                Log.d(TAG, "signUpFromGuest: failed - ${result.exceptionOrNull()?.message}")
+                _guestSignUpState.value = GuestSignUpState.Error(
+                    result.exceptionOrNull()?.message ?: "Sign up failed"
+                )
+            }
+        }
+    }
+
+    /** Resets the guest sign-up screen state (e.g. when leaving the screen). */
+    fun resetGuestSignUp() {
+        _guestSignUpState.value = GuestSignUpState.Idle
+    }
+
+    /** Owner id the session switch will assign; must match [handleAuthResponse]. */
+    private fun targetOwnerId(response: AuthResponse): String =
+        response.accountId
+            ?: response.loginId
+            ?: sessionManager.profile.account
+            ?: OWNER_UNKNOWN
+
+    /** Re-pushes pending local rows so guest work lands on the new account. */
+    private suspend fun retryPendingSyncs() {
+        runCatching { QuizResultRepository.getInstance(appContext).retrySyncFailed() }
+            .onFailure { Log.w(TAG, "retryPendingSyncs: quiz result re-sync failed: ${it.message}") }
+        runCatching { KidProfileRepository.getInstance(appContext).retrySyncFailed() }
+            .onFailure { Log.w(TAG, "retryPendingSyncs: kid re-sync failed: ${it.message}") }
     }
 
     /**

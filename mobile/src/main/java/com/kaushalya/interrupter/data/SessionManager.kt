@@ -3,6 +3,7 @@ package com.kaushalya.interrupter.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
@@ -114,11 +115,18 @@ class SessionManager(context: Context) {
         return updated
     }
 
+    private val _isGuest = mutableStateOf(prefs.getBoolean(KEY_IS_GUEST, false))
+
+    /**
+     * Compose-observable so UIs (e.g. the drawer) recompose when the guest
+     * flag flips (guest logout, guest sign-up) without an app restart.
+     */
     var isGuest: Boolean
-        get() = prefs.getBoolean(KEY_IS_GUEST, false)
+        get() = _isGuest.value
         set(value) {
             Log.d(TAG, "set isGuest -> $value")
             prefs.edit().putBoolean(KEY_IS_GUEST, value).apply()
+            _isGuest.value = value
         }
 
     var isOfflineMode: Boolean
@@ -200,6 +208,9 @@ class SessionManager(context: Context) {
     fun clear() {
         Log.d(TAG, "clear: wiping all SharedPreferences")
         prefs.edit().clear().apply()
+        // isGuest is Compose-observable and backed by prefs; clear() bypasses the
+        // setter, so the in-memory value must be reset too for observers to see no guest.
+        isGuest = false
     }
 
     // --- Profile ---

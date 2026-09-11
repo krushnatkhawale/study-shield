@@ -227,7 +227,8 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     studyViewModel = studyViewModel,
                     sessionManager = sessionManager,
-                    onSignOut = { authViewModel.signOut() }
+                    onSignOut = { authViewModel.signOut() },
+                    onGuestLogout = { authViewModel.guestLogout() }
                 )
             }
             "welcome" -> {

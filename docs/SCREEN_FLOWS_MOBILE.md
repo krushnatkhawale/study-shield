@@ -12,14 +12,17 @@ Splash ──► Validating ──► Main App
    └─(returning)──────────────────────► Welcome
 
 Welcome ──"Create Account"──► Sign Up ──┐
-        ──"Sign In"───────► Sign In ────┤
-        ──"Continue as Guest"───────────┤
-                                        ▼
-                            [Parent Selection overlay]
-                                        │
-                                        ▼
-Main App (drawer)
-```
+         ──"Sign In"───────► Sign In ────┤
+         ──"Continue as Guest"───────────┤
+                                         ▼
+                             [Parent Selection overlay]
+                                         │
+                                         ▼
+ Main App (drawer)
+                                    (Guest mode only)
+ Guest drawer ──"Create Account"──► Sign Up ──► (migrates guest data) ──► Home (signed in)
+ Guest drawer ──"Log Out"──────────► Welcome
+ ```
 
 ### Main App (drawer navigation)
 
@@ -29,8 +32,11 @@ Main App (drawer)
                  │ Kids · Results · Quiz Setup*   │
                  │ Parents* · Settings · ProfData │
                  │ Sign Out*                      │
+                 │ (Guest mode) Create Account ±  │
+                 │             Log Out ∓          │
                  └────────────────────────────────┘
                  (* hidden in Guest mode)
+                 (± shown only in Guest mode, replacing Sign Out)
 
  Library ─"START STUDY NOW"─┬─(no TV selected)─► Start Study ─"Next: Select Content"─► Select Content
                             └─(TV already selected)───────────────────────────────────► Select Content
@@ -91,6 +97,7 @@ Shown when auth responds `ParentSelectionRequired`. List of parent rows; "Add Ne
 | profdata | Debug data | `ui/ProfDataScreen.kt` |
 | content | Select Content | `StudyScreens.kt` |
 | quiz_review | Quiz Review | `ui/quiz/QuizReviewScreen.kt` |
+| guest_signup | Guest → Create Account (guest mode only) | `StudyScreens.kt` + `ui/auth/SignUpScreen.kt` |
 
 ### 3.1 Home — Stats Dashboard
 Kid filter chips; cards: Study Minutes / Sessions / Correct %; Recent Activity list; one-time Exp-upgrade prompt dialog.
@@ -145,7 +152,7 @@ Empty states: no kid profiles / no packs for a grade (a kid tab with no packs sh
 Pack loading is **cache-first** (`data/PackCache.kt`): packs are stored per logged-in user + grade in app-private files; the backend is only fetched on the first download or cache miss, and cache hits are logged (`PackCache: Cache hit ... skipping backend fetch`). Attempt counts and last scores come from the local `quiz_results` Room table, matched by kid name + pack name.
 
 ### 3.4 Connected TVs
-Scan Now button, discovered TV list, Remember toggle.
+Opens on the **Current Network** tab and **auto-scans immediately** (`TvManagementViewModel.startDiscovery`) so the discovered-TV list reflects what is on the network without waiting for a manual tap. Scan Now button (spinner while scanning), discovered TV list, Remember toggle, plus previously-connected TVs for the current SSID below.
 
 ### 3.5 Kids & Kid Form
 Kids: profile rows (name, grade); empty state "Click + to add your first child." Kid Form: add/edit fields, "Save Profile". Class is chosen via **age-labelled chips** (SS-EXP-06) — canonical backend labels with the typical age ("Junior KG · age 4"); birth year pre-selects the matching class; syllabus is only offered when editing an existing kid (new kids default to board `ALL`); name + class required to save.
@@ -165,6 +172,16 @@ TV connection selection + General settings (Parental PIN, Auto-Discovery).
 ### 3.10 ProfData (dev/debug)
 Internal data inspection screen.
 
+### 3.11 Guest-mode controls (in the drawer when in Guest mode)
+In Guest mode the drawer replaces "Sign Out" with two actions:
+- **Create Account** — navigates to the `guest_signup` route (reuses the standard Sign Up form, plus a notice that guest progress is saved to the new account, and a "Cancel" back label). Submitting calls `AuthViewModel.signUpFromGuest(...)` which:
+  1. signs up with the backend (new account + JWT),
+  2. calls `POST /api/migrate/guest-data {deviceId}` with the new JWT so the backend moves the guest account's quiz results/kids/attempts to the new account (same rows — no duplicates),
+  3. re-owns the local Room data to the new account (`AccountDataGuard.reown`) so the account switch does not wipe it,
+  4. switches the session to the new account and re-pushes anything that was never synced.
+  The migration is best-effort: if the backend is unreachable the sign-up still completes (guest mode turns off, local data stays on-device) and the UI reflects that migration did not run.
+- **Log Out** — ends the Guest session and returns to Welcome while keeping local progress on the device (`AuthViewModel.guestLogout()`); the carousel-seen flag is preserved.
+
 ## 4. Edge Summary
 
 ```
@@ -177,6 +194,8 @@ kid_detail ─[Delete]──► (confirm) ─► back to kids
 results ─[tap]──► result detail ─[back]──► results
 drawer item ─► target route (popUpTo home)
 Sign Out ─► welcome
+Guest drawer Log Out ─► welcome (keeps local data + carousel-seen flag)
+Guest drawer Create Account ─► guest_signup ─► (backend moves guest data → re-own local Room → session switch) ─► Home
 ```
 
 ## 5. Quiz Learning Countermeasures
@@ -239,8 +258,8 @@ Previously-deferred parent-config items (reveal/read-lock, TTS) are now implemen
 - Select Content pack card subtitle shows the plain subject/category (`pack.category`, fallback
   "Quiz") — no more "Freemium …" label. `QuizLoader` still strips a legacy "Freemium " prefix from
   existing content-pack names for display.
-- TV-launcher `app_name` → "StudyShield"; NSD displays the device's own name while `_interrupter._tcp`
-  is unchanged (see SCREEN_FLOWS_TV.md §5).
+- TV-launcher `app_name` → "StudyShield"; NSD lists the `Interrupter-<device>` instance name under
+  `_interrupter._tcp` (see SCREEN_FLOWS_TV.md §5).
 
 ## 8. Age-based class picker (SS-EXP-06, 2026-09-10)
 

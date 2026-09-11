@@ -260,6 +260,21 @@ data class GuestAuthRequest(
 )
 
 @Serializable
+data class ClaimGuestDataRequest(
+    val deviceId: String? = null
+)
+
+@Serializable
+data class ClaimGuestDataResponse(
+    val success: Boolean = false,
+    val resultsMoved: Int = 0,
+    val childrenMoved: Int = 0,
+    val attemptsMoved: Int = 0,
+    val message: String? = null,
+    val errorCode: String? = null
+)
+
+@Serializable
 data class AuthResponse(
     val accountId: String? = null,
     val loginId: String? = null,
