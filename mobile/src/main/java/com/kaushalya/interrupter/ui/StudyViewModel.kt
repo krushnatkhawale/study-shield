@@ -80,44 +80,6 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         discoveryJob = null
     }
 
-    /**
-     * Selects a TV by its 4-digit pairing code (SS-EXP-02): match against the codes advertised in
-     * NSD TXT records first, then verify over TCP against each discovered TV. Returns true when one
-     * matched; sets both `selectedTvIp` and `manualIp` so every downstream path finds it.
-     */
-    suspend fun connectByPairCode(code: String): Boolean {
-        val trimmed = code.trim()
-        if (trimmed.length != 4) return false
-
-        val discovered = repository.discoveredTvs.value
-
-        val advertised = discovered.firstOrNull { repository.pairCodeOf(it) == trimmed }
-        if (advertised != null) {
-            val ip = advertised.host?.hostAddress ?: ""
-            if (ip.isNotEmpty()) {
-                selectedTvIp = ip
-                manualIp = ip
-                Log.d("StudyViewModel", "TV matched by advertised pair code: $ip")
-                return true
-            }
-        }
-
-        for (tv in discovered) {
-            val ip = tv.host?.hostAddress ?: continue
-            val verified = repository.verifyPairCode(ip, trimmed).getOrNull()
-            if (verified == true) {
-                selectedTvIp = ip
-                manualIp = ip
-                saveToHistory(ip)
-                Log.d("StudyViewModel", "TV verified by pair-code probe: $ip")
-                return true
-            }
-        }
-
-        Log.w("StudyViewModel", "No TV matched pair code $trimmed")
-        return false
-    }
-
     fun setDuration(minutes: Int) {
         sessionDuration = minutes
     }

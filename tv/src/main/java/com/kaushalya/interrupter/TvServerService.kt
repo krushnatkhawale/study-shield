@@ -27,24 +27,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-/**
- * Backs the 4-digit TV pairing code (SS-EXP-02). Generated once and persisted so the same code
- * survives app restarts and TV reboots. Advertised in the NSD TXT record and answered by the
- * `PAIR_CODE_CHECK` probe; never a lock.
- */
-object PairCodeStore {
-    private const val PREFS = "tv_server_prefs"
-    private const val KEY_PAIR_CODE = "pair_code"
-
-    fun get(context: Context): String {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.getString(KEY_PAIR_CODE, null)?.let { return it }
-        val code = String.format("%04d", kotlin.random.Random.nextInt(10000))
-        prefs.edit().putString(KEY_PAIR_CODE, code).apply()
-        return code
-    }
-}
-
 class TvServerService : Service() {
 
     private var serverSocket: ServerSocket? = null
@@ -97,14 +79,6 @@ class TvServerService : Service() {
             serviceName = deviceName
             serviceType = "_interrupter._tcp"
             setPort(port)
-            // Advertise the 4-digit pairing code in the TXT record so phones can match by code
-            // without a round trip. Deprecated in API 30+ but still honoured on DNS-SD there;
-            // the PAIR_CODE_CHECK command is the reliable fallback for hosts that drop TXT.
-            try {
-                setAttribute("PAIR_CODE", PairCodeStore.get(this@TvServerService))
-            } catch (e: Exception) {
-                Log.w("TvServerService", "setAttribute(PAIR_CODE) failed", e)
-            }
         }
 
         registrationListener = object : NsdManager.RegistrationListener {
@@ -201,18 +175,14 @@ class TvServerService : Service() {
         if (save) {
             if (command.type == "UNLOCK") {
                 persistenceManager.clearLockCommand()
-            } else if (command.type != "TTS_CAP_CHECK" && command.type != "PAIR_CODE_CHECK") {
+            } else if (command.type != "TTS_CAP_CHECK") {
                 persistenceManager.saveLockCommand(command)
             }
         }
 
-        // Probes — answered directly, never persisted, no UI.
+        // TTS capability probe — answered directly, no UI.
         if (command.type == "TTS_CAP_CHECK") {
             respondTtsCapabilities(command)
-            return
-        }
-        if (command.type == "PAIR_CODE_CHECK") {
-            respondPairCode(command)
             return
         }
 
@@ -290,28 +260,6 @@ class TvServerService : Service() {
                 Log.d("TvServerService", "TTS_CAP_CHECK reply sent: ${locales.size} locales")
             } catch (e: Exception) {
                 Log.e("TvServerService", "TTS_CAP_CHECK reply failed", e)
-            }
-        }
-    }
-
-    /** Answers a mobile `PAIR_CODE_CHECK` with the TV's current 4-digit pairing code (SS-EXP-02). */
-    private fun respondPairCode(command: InterruptionCommand) {
-        val mobileIp = command.mobileIp
-        val port = command.resultCallbackPort
-        if (mobileIp.isNullOrBlank() || port == null || port <= 0) {
-            Log.w("TvServerService", "PAIR_CODE_CHECK ignored: missing mobileIp/resultCallbackPort")
-            return
-        }
-        thread {
-            try {
-                val reply = PairCodeMessage(pairCode = PairCodeStore.get(this))
-                val socket = Socket(mobileIp, port)
-                val out = java.io.PrintWriter(socket.getOutputStream(), true)
-                out.println(json.encodeToString(PairCodeMessage.serializer(), reply))
-                socket.close()
-                Log.d("TvServerService", "PAIR_CODE_CHECK reply sent")
-            } catch (e: Exception) {
-                Log.e("TvServerService", "PAIR_CODE_CHECK reply failed", e)
             }
         }
     }

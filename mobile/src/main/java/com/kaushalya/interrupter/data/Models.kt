@@ -101,12 +101,6 @@ data class TtsCapabilitiesMessage(
     val supportedLanguages: List<String> = emptyList()
 )
 
-/** Reply to the TV's `PAIR_CODE_CHECK` probe: the TV's current 4-digit pairing code (SS-EXP-02). */
-@Serializable
-data class PairCodeMessage(
-    val pairCode: String
-)
-
 @Serializable
 @Entity(tableName = "study_sessions")
 data class StudySession(

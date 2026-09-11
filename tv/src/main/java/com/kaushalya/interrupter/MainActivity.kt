@@ -46,7 +46,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -481,36 +480,11 @@ fun MainContent(
             "FITB" ->                 QuizSession(type, questionsList, onWrongAnswer, onExitQuiz, isPaused, onTogglePause, showExitConfirm, contentName, category, mobileIp, resultCallbackPort, kidName, revealReadLock, autoDictation, fastAnswerThresholdMs, textToSpeech, greetingLanguage, avatarId, ttsReady)
             "STUDY_SESSION" -> StudySessionUI(contentName, category, duration)
             else -> {
-                val context = LocalContext.current
-                val pairCode = remember(context) { PairCodeStore.get(context) }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = deviceName, fontSize = 56.sp, color = Color.Yellow, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "Ready to play!", fontSize = 44.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Box(
-                        modifier = Modifier.background(
-                            Color.White.copy(alpha = 0.15f),
-                            RoundedCornerShape(24.dp)
-                        ).padding(horizontal = 40.dp, vertical = 16.dp)
-                    ) {
-                        Text(
-                            text = pairCode,
-                            fontSize = 120.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 20.sp
-                        )
-                    }
-                    Text(text = "Pairing code", fontSize = 24.sp, color = Color.White.copy(alpha = 0.7f))
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        text = "On your phone, tap this TV or enter the code above",
-                        fontSize = 26.sp,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(text = "IP: $ip", fontSize = 22.sp, color = Color.White.copy(alpha = 0.4f))
+                    Text(text = deviceName, fontSize = 60.sp, color = Color.Yellow, fontWeight = FontWeight.Bold)
+                    Text(text = "Interrupter Ready! 🚀", fontSize = 48.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(text = "Connect using IP: $ip", fontSize = 32.sp, color = Color.White.copy(alpha = 0.7f))
                 }
             }
         }

@@ -1,7 +1,6 @@
 package com.kaushalya.interrupter.ui
 
 import android.app.Application
-import android.net.nsd.NsdServiceInfo
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,8 +30,6 @@ class TvManagementViewModel(application: Application) : AndroidViewModel(applica
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val discoveredTvs = studyRepository.discoveredTvs
-
-    fun pairCodeOf(tv: NsdServiceInfo): String? = studyRepository.pairCodeOf(tv)
 
     var isDiscovering by mutableStateOf(false)
     private var discoveryJob: Job? = null
@@ -70,36 +67,6 @@ class TvManagementViewModel(application: Application) : AndroidViewModel(applica
             // Visual feedback for the parent
             Toast.makeText(getApplication(), "TV profile remembered for ${currentSsid.value}", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    /**
-     * Matches a 4-digit pairing code to a discovered TV (SS-EXP-02): checks advertised NSD codes
-     * first, then verifies over TCP. On a match the TV is remembered for the current network.
-     * Returns the connected TV (name, ip) or null when nothing matches.
-     */
-    suspend fun connectByPairCode(code: String): Pair<String, String>? {
-        val trimmed = code.trim()
-        if (trimmed.length != 4) return null
-
-        val discovered = studyRepository.discoveredTvs.value
-
-        val advertised = discovered.firstOrNull { studyRepository.pairCodeOf(it) == trimmed }
-        if (advertised != null) {
-            val ip = advertised.host?.hostAddress ?: ""
-            if (ip.isNotEmpty()) {
-                saveConnection(advertised.serviceName, ip)
-                return advertised.serviceName to ip
-            }
-        }
-
-        for (discoveredTv in discovered) {
-            val ip = discoveredTv.host?.hostAddress ?: continue
-            if (studyRepository.verifyPairCode(ip, trimmed).getOrNull() == true) {
-                saveConnection(discoveredTv.serviceName, ip)
-                return discoveredTv.serviceName to ip
-            }
-        }
-        return null
     }
 
     fun toggleFavorite(tv: ConnectedTV) {

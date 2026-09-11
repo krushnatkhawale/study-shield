@@ -143,12 +143,6 @@ class SessionManager(context: Context) {
             prefs.edit().putBoolean(KEY_SPEAK_SETUP_STEPS, value).apply()
         }
 
-    var hasCompletedFirstQuiz: Boolean
-        get() = prefs.getBoolean(KEY_COMPLETED_FIRST_QUIZ, false)
-        set(value) {
-            Log.d(TAG, "set hasCompletedFirstQuiz -> $value")
-            prefs.edit().putBoolean(KEY_COMPLETED_FIRST_QUIZ, value).apply()
-        }
 
     var selectedKidId: String?
         get() = prefs.getString(KEY_SELECTED_KID, null)
@@ -241,7 +235,6 @@ class SessionManager(context: Context) {
         private const val KEY_IS_OFFLINE = "is_offline"
         private const val KEY_SEEN_CAROUSEL = "seen_carousel"
         private const val KEY_SPEAK_SETUP_STEPS = "speak_setup_steps"
-        private const val KEY_COMPLETED_FIRST_QUIZ = "completed_first_quiz"
         private const val KEY_SELECTED_KID = "selected_kid_id"
         private const val KEY_EXP_PROMPT_HANDLED = "exp_prompt_handled_kids"
         private const val KEY_KID_CONFIG_PREFIX = "kid_quiz_config_"
