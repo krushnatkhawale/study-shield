@@ -30,7 +30,8 @@ class AuthExpiryInterceptor(
                 hasBearerToken = hasBearerToken,
                 isGuest = sessionManager.isGuest,
                 isLoginRequest = isLoginRequest,
-                code = response.code
+                code = response.code,
+                url = request.url.toString()
             )
             && sessionManager.sessionId != null
         ) {
@@ -52,5 +53,6 @@ internal fun shouldForceRelogin(
     hasBearerToken: Boolean,
     isGuest: Boolean,
     isLoginRequest: Boolean,
-    code: Int
-): Boolean = !isGuest && hasBearerToken && !isLoginRequest && (code == 401 || code == 403)
+    code: Int,
+    url: String
+): Boolean = !isGuest && hasBearerToken && !isLoginRequest && !url.contains("/api/auth/validate") && (code == 401 || code == 403)

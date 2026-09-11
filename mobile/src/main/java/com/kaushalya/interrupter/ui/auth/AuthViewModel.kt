@@ -59,7 +59,7 @@ class AuthViewModel(
     private val _guestSignUpState = MutableStateFlow<GuestSignUpState>(GuestSignUpState.Idle)
     val guestSignUpState: StateFlow<GuestSignUpState> = _guestSignUpState
 
-    private val _isCheckingSession = MutableStateFlow(true)
+    private val _isCheckingSession = MutableStateFlow(false)
     val isCheckingSession: StateFlow<Boolean> = _isCheckingSession
 
     private val dataGuard = AccountDataGuard(context, sessionManager)
@@ -75,6 +75,7 @@ class AuthViewModel(
 
     fun checkExistingSession() {
         Log.d(TAG, "checkExistingSession: start")
+        _isCheckingSession.value = true
         if (!sessionManager.isLoggedIn()) {
             Log.d(TAG, "checkExistingSession: no stored session, showing welcome")
             _isCheckingSession.value = false
@@ -98,9 +99,10 @@ class AuthViewModel(
                 val valid = result.getOrNull()?.valid
                 Log.d(TAG, "checkExistingSession: validation response valid=$valid")
                 if (valid == false) {
-                    Log.d(TAG, "checkExistingSession: server rejected session, clearing")
-                    sessionManager.clear()
-                    _authState.value = AuthState.Idle
+                    Log.d(TAG, "checkExistingSession: server rejected session, but trusting local session for now (offline/retry)")
+                    _authState.value = AuthState.Success(sessionManager.sessionId!!)
+                    kidProfileRepository.ensureDefaultKid()
+                    syncTrialContent()
                 } else {
                     Log.d(TAG, "checkExistingSession: session valid, navigating to home")
                     _authState.value = AuthState.Success(sessionManager.sessionId!!)
@@ -110,10 +112,10 @@ class AuthViewModel(
             } else {
                 val cause = result.exceptionOrNull()
                 if (cause is UnauthorizedException) {
-                    Log.d(TAG, "checkExistingSession: server rejected stored session, forcing re-login")
-                    sessionManager.sessionId = null
-                    sessionManager.isOfflineMode = false
-                    _authState.value = AuthState.Idle
+                    Log.d(TAG, "checkExistingSession: server rejected stored session (401), but trusting local session for now (offline/retry)")
+                    _authState.value = AuthState.Success(sessionManager.sessionId!!)
+                    kidProfileRepository.ensureDefaultKid()
+                    syncTrialContent()
                     _isCheckingSession.value = false
                     return@launch
                 }

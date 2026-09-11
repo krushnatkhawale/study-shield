@@ -27,8 +27,29 @@ class QuizLoader(private val context: Context) {
     }
 
     private suspend fun fetchQuizzesForGrade(grade: String): List<StudyContent> {
-        val response = RetrofitClient.getApiService()
-            .issueQuizBundle(QuizBundleRequestDto(className = grade, deviceId = DeviceIdentity.deviceId(context)))
+        val requestDto = QuizBundleRequestDto(className = grade, deviceId = DeviceIdentity.deviceId(context))
+        var response = RetrofitClient.getApiService().issueQuizBundle(requestDto)
+
+        // Guest self-healing: on 401 the stored token may be the literal "guest" string
+        // (offline fallback from a cold-start timeout) or an expired JWT.  Re-mint a
+        // real guest token and retry once.
+        if (response.code() == 401) {
+            val sm = RetrofitClient.sessionManager
+            if (sm != null && sm.isGuest) {
+                Log.w("QuizLoader", "Quiz bundle 401 for guest — refreshing token")
+                val freshResult = AuthRepository().guestLogin(DeviceIdentity.deviceId(context))
+                if (freshResult.isSuccess) {
+                    val freshToken = freshResult.getOrNull()?.sessionId
+                    if (freshToken != null) {
+                        sm.sessionId = freshToken
+                        response = RetrofitClient.getApiService().issueQuizBundle(requestDto)
+                    }
+                } else {
+                    Log.w("QuizLoader", "Guest token refresh failed: ${freshResult.exceptionOrNull()?.message}")
+                }
+            }
+        }
+
         if (!response.isSuccessful) {
             Log.w("QuizLoader", "Quiz bundle request failed: HTTP ${response.code()} for grade $grade")
             return emptyList()

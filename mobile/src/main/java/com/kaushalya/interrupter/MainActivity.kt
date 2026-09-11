@@ -149,7 +149,7 @@ class MainActivity : ComponentActivity() {
         val isCheckingSession by authViewModel.isCheckingSession.collectAsState()
 
         // Single synchronous routing decision from persisted SharedPreferences
-        var screen by remember { mutableStateOf(
+        var screen by rememberSaveable { mutableStateOf(
             when {
                 sessionManager.isLoggedIn() -> "validating"
                 !sessionManager.hasSeenCarousel -> "carousel"

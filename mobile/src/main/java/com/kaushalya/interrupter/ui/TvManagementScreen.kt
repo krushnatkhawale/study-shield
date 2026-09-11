@@ -32,6 +32,9 @@ fun TvManagementScreen(
 
     LaunchedEffect(Unit) {
         viewModel.refreshCurrentSsid()
+        // Scan immediately on entry so the list reflects what is on the network right away,
+        // instead of sitting on "No TVs found" until the parent taps Scan Now.
+        viewModel.startDiscovery()
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

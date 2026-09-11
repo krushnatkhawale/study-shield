@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Interrupter"
+rootProject.name = "study-shield"
 include ':mobile'
 include ':tv'

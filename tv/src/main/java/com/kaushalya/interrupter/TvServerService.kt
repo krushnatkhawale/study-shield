@@ -74,9 +74,12 @@ class TvServerService : Service() {
     private fun registerService(port: Int) {
         val deviceName = getDeviceName()
         val serviceInfo = NsdServiceInfo().apply {
-            // Display name is the device name, not "Interrupter-…". The protocol type stays
-            // "_interrupter._tcp" (internal); only the human-facing name changes.
-            serviceName = deviceName
+            // Instance name uses the "Interrupter-…" prefix exactly as the original working build
+            // did. Changing it to the bare device name broke phone-side NSD resolution on some
+            // networks (scan saw the service but resolveService failed, so nothing listed).
+            // The protocol type stays "_interrupter._tcp" (internal); the readable name shown in
+            // the phone UI is the raw instance name, so the prefix keeps it predictable.
+            serviceName = "Interrupter-$deviceName"
             serviceType = "_interrupter._tcp"
             setPort(port)
         }

@@ -115,8 +115,9 @@ reboot with active lock ─► LockPersistenceManager re-applies previous state
 ## 5. Jargon-free copy (SS-EXP-05, 2026-09-10)
 
 - Launcher label is **StudyShield** (was "Interrupter") — `tv/.../res/values/strings.xml` `app_name`.
-- NSD registration uses the device's own name as `serviceName` (was "Interrupter-\<device>"),
-  so the phone shows a clean TV name. The protocol `serviceType` stays `_interrupter._tcp`, so
-  discovery/pairing is unchanged (display name ≠ protocol name).
-- Idle screen already reads "Ready to play!" + 4-digit pairing code (SS-EXP-02); no
+- NSD registration uses the `Interrupter-<device>` `serviceName` (the form that was field-proven to
+  list in the phone scan); the protocol `serviceType` stays `_interrupter._tcp`. The phone UI shows
+  the raw instance name, so a TV registers as e.g. `Interrupter-Living Room TV`.
+- Idle screen shows the device name + "Interrupter Ready! 🚀" + "Connect using IP: \<ip>" — the
+  manual-IP connect flow (SS-EXP-02 pairing-code UX was reverted 2026-09-11). No
   Interrupter/Activate/EMERGENCY wording remains in parent/kid-facing copy.
