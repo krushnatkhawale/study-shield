@@ -25,7 +25,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
     var showAddDialog by mutableStateOf(false)
     var editingKid by mutableStateOf<KidProfile?>(null)
 
-    fun saveKid(name: String, gender: String, birthYear: Int, dob: Long?, grade: String, syllabus: String?, avatar: String = "hero") {
+    fun saveKid(name: String, gender: String, birthYear: Int, dob: Long?, grade: String, syllabus: String?, avatar: String = "hero", photoUri: String? = null) {
         viewModelScope.launch {
             val kid = editingKid?.copy(
                 name = name,
@@ -35,6 +35,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
                 grade = grade,
                 syllabus = syllabus,
                 avatar = avatar,
+                photoUri = photoUri,
                 lastModified = System.currentTimeMillis(),
                 syncStatus = 2 // Mark as modified
             ) ?: KidProfile(
@@ -45,6 +46,7 @@ class KidProfileViewModel(application: Application) : AndroidViewModel(applicati
                 grade = grade,
                 syllabus = syllabus,
                 avatar = avatar,
+                photoUri = photoUri,
                 syncStatus = 0 // New local record
             )
             

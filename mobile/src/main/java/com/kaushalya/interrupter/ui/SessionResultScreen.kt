@@ -1,5 +1,6 @@
 package com.kaushalya.interrupter.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -98,9 +99,14 @@ fun SessionResultScreen(
         }
     ) { padding ->
         if (selectedResult != null) {
+            // System back closes the in-place detail instead of leaving the screen.
+            BackHandler { viewModel.clearSelection() }
             ResultDetailContent(
                 result = selectedResult!!,
                 viewModel = viewModel,
+                photoUri = remember(kidProfiles, selectedResult) {
+                    kidProfiles.firstOrNull { it.name == selectedResult!!.childName }?.photoUri
+                },
                 onPlayAgain = { onPlayAgain(selectedResult!!) },
                 onBack = { viewModel.clearSelection() },
                 modifier = Modifier.padding(padding)
@@ -117,7 +123,18 @@ fun SessionResultScreen(
                             Tab(
                                 selected = selectedKidIndex == index,
                                 onClick = { selectedKidIndex = index },
-                                text = { Text(name) }
+                                text = {
+                                    if (index == 0) {
+                                        Text(name)
+                                    } else {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            val p = kidProfiles.getOrNull(index - 1)
+                                            KidAvatar(photoUri = p?.photoUri, name = name, size = 24.dp)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(name)
+                                        }
+                                    }
+                                }
                             )
                         }
                     }
@@ -126,6 +143,7 @@ fun SessionResultScreen(
                 ResultListContent(
                     results = filteredResults,
                     viewModel = viewModel,
+                    photos = remember(kidProfiles) { kidProfiles.associate { it.name to it.photoUri } },
                     onSelectResult = { viewModel.selectResult(it) },
                     onPlayAgain = { onPlayAgain(it) },
                     syncState = syncState,
@@ -140,6 +158,7 @@ fun SessionResultScreen(
 private fun ResultListContent(
     results: List<QuizResult>,
     viewModel: SessionResultViewModel,
+    photos: Map<String, String?> = emptyMap(),
     onSelectResult: (QuizResult) -> Unit,
     onPlayAgain: (QuizResult) -> Unit,
     syncState: SyncState,
@@ -276,7 +295,7 @@ private fun ResultListContent(
                     )
                 }
                 items(groupResults) { result ->
-                    ResultCard(result = result, viewModel = viewModel, onClick = { onSelectResult(result) })
+                    ResultCard(result = result, viewModel = viewModel, photoUri = photos[result.childName], onClick = { onSelectResult(result) })
                 }
             }
         }
@@ -287,6 +306,7 @@ private fun ResultListContent(
 private fun ResultCard(
     result: QuizResult,
     viewModel: SessionResultViewModel,
+    photoUri: String? = null,
     onClick: () -> Unit
 ) {
     val percentage = if (result.totalQuestions > 0) (result.score * 100 / result.totalQuestions) else 0
@@ -307,37 +327,32 @@ private fun ResultCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (percentage >= 80) Color(0xFF38A169)
-                        else if (percentage >= 50) Color(0xFFFFA000)
-                        else Color(0xFFE53935)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "$percentage%",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
+            KidAvatar(photoUri = photoUri, name = result.childName, size = 48.dp)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(quizTitle, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
-                Text(
-                    stringResource(
-                        R.string.result_row_summary,
-                        result.score,
-                        result.totalQuestions,
-                        stringResource(bandStringRes(percentage))
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(
+                            R.string.result_row_summary,
+                            result.score,
+                            result.totalQuestions,
+                            stringResource(bandStringRes(percentage))
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "$percentage%",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = if (percentage >= 80) Color(0xFF38A169)
+                        else if (percentage >= 50) Color(0xFFFFA000)
+                        else Color(0xFFE53935)
+                    )
+                }
                 if (result.fastAnswerCount > 0) {
                     Text(
                         stringResource(R.string.fast_answers, result.fastAnswerCount),
@@ -361,6 +376,7 @@ private fun ResultCard(
 private fun ResultDetailContent(
     result: QuizResult,
     viewModel: SessionResultViewModel,
+    photoUri: String? = null,
     onPlayAgain: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -411,11 +427,15 @@ private fun ResultDetailContent(
             }
 
             item {
-                Text(
-                    result.childName,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    KidAvatar(photoUri = photoUri, name = result.childName, size = 48.dp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        result.childName,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             item {

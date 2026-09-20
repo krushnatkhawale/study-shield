@@ -158,7 +158,9 @@ data class KidProfile(
     // See Avatars.IDS for the shared set (defaults to "hero").
     // @ColumnInfo defaultValue must match MIGRATION_12_13's ALTER ... DEFAULT 'hero'.
     @ColumnInfo(defaultValue = "'hero'")
-    val avatar: String = "hero"
+    val avatar: String = "hero",
+    // Local-only uploaded photo (content URI string); never sent to backend.
+    val photoUri: String? = null
 )
 
 /**
@@ -398,6 +400,36 @@ data class ClassGradeDto(
     val description: String? = null,
     val boardId: Long? = null,
     val boardName: String? = null
+)
+
+@Serializable
+data class BoardDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val code: String? = null,
+    val description: String? = null
+)
+
+@Serializable
+data class BoardClassDto(
+    val id: Long? = null,
+    val boardId: Long? = null,
+    val classLevelId: Long? = null,
+    val displayName: String? = null,
+    val ordinal: Int? = null,
+    val boardCode: String? = null,
+    val boardName: String? = null
+)
+
+// --- Goals progress (GET /api/v1/goals/progress) ---
+
+@Serializable
+data class GoalProgressDto(
+    val goalId: Long,
+    val type: String,
+    val target: Int,
+    val current: Int,
+    val achieved: Boolean
 )
 
 // --- Application Profile ---

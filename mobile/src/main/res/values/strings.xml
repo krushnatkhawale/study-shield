@@ -157,6 +157,7 @@
     <string name="band_did_well">did well</string>
     <string name="band_ok">did OK</string>
     <string name="band_needs_practice">needs practice</string>
+    <string name="band_attention">needs attention</string>
     <string name="kid_perf_hero">%1$s %2$s — %3$d out of %4$d</string>
     <string name="kid_card_latest">Latest: %1$d out of %2$d — %3$s</string>
     <string name="result_row_summary">%1$d out of %2$d — %3$s</string>

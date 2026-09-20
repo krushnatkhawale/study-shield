@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 class KidProfileRepository private constructor(context: Context) {
     private val database = AppDatabase.getDatabase(context)
     private val kidProfileDao = database.kidProfileDao()
+    private val pendingOpDao = database.pendingOpDao()
     private val sessionManager = SessionManager(context)
 
     fun getAllKids(): Flow<List<KidProfile>> = kidProfileDao.getAllKids()
@@ -22,8 +23,37 @@ class KidProfileRepository private constructor(context: Context) {
         syncKidToBackend(finalKid)
     }
 
-    suspend fun deleteKid(kid: KidProfile) {
+    suspend fun deleteKid(kid: KidProfile) = withContext(Dispatchers.IO) {
         kidProfileDao.deleteKid(kid)
+        val remoteId = kid.remoteId ?: return@withContext
+        if (sessionManager.isGuest) return@withContext
+        try {
+            val response = RetrofitClient.getApiService().deleteKid(remoteId)
+            if (response.isSuccessful || response.code() == 404) return@withContext
+            pendingOpDao.insert(PendingOp(opType = PendingOp.DELETE_KID, targetRemoteId = remoteId))
+        } catch (e: Exception) {
+            pendingOpDao.insert(PendingOp(opType = PendingOp.DELETE_KID, targetRemoteId = remoteId))
+            Log.w(TAG, "Kid delete queued: ${e.message}")
+        }
+    }
+
+    suspend fun drainPendingOps() = withContext(Dispatchers.IO) {
+        if (sessionManager.isGuest) return@withContext
+        try {
+            val api = RetrofitClient.getApiService()
+            pendingOpDao.getByType(PendingOp.DELETE_KID).forEach { op ->
+                try {
+                    val response = api.deleteKid(op.targetRemoteId)
+                    if (response.isSuccessful || response.code() == 404) {
+                        pendingOpDao.deleteById(op.id)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Pending delete retry failed: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "drainPendingOps error: ${e.message}")
+        }
     }
 
     private suspend fun syncKidToBackend(kid: KidProfile) = withContext(Dispatchers.IO) {
@@ -78,8 +108,11 @@ class KidProfileRepository private constructor(context: Context) {
                 Log.w(TAG, "Student sync failed: ${response.code()}")
                 return@withContext
             }
+            val pendingDeleteIds = pendingOpDao.getByType(PendingOp.DELETE_KID)
+                .map { it.targetRemoteId }.toSet()
             response.body()?.forEach { student ->
                 val remoteId = student.studentId ?: return@forEach
+                if (pendingDeleteIds.contains(remoteId)) return@forEach
                 if (kidProfileDao.getByRemoteId(remoteId) == null) {
                     kidProfileDao.insertKid(
                         KidProfile(
@@ -96,6 +129,7 @@ class KidProfileRepository private constructor(context: Context) {
         } catch (e: Exception) {
             Log.w(TAG, "Student sync error: ${e.message}")
         }
+        drainPendingOps()
     }
 
     /**
@@ -118,6 +152,7 @@ class KidProfileRepository private constructor(context: Context) {
         sessionManager.updateProfile {
             copy(kids = kids.map { ProfileKid(id = it.id, name = it.name, gender = it.gender.ifBlank { null }) })
         }
+        drainPendingOps()
     }
 
     companion object {

@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,8 +21,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,18 +35,25 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.kaushalya.interrupter.R
 import com.kaushalya.interrupter.data.*
+import com.kaushalya.interrupter.network.RetrofitClient
 import com.kaushalya.interrupter.ui.auth.AuthViewModel
 import com.kaushalya.interrupter.ui.auth.GuestSignUpState
 import com.kaushalya.interrupter.ui.auth.SignUpScreen
 import com.kaushalya.interrupter.ui.parents.ParentManagementScreen
 import com.kaushalya.interrupter.ui.quiz.QuizReviewScreen
 import com.kaushalya.interrupter.ui.quiz.QuizSetupScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Home", Icons.Default.Home)
+    object Home2 : Screen("home2", "Home2 (experimental)", Icons.Default.Science)
+    object QuickActions : Screen("quick_actions", "Quick Actions", Icons.Default.Bolt)
     object Option1 : Screen("control", "Library", Icons.AutoMirrored.Filled.LibraryBooks)
     object ConnectedTvs : Screen("connected_tvs", "Connected TVs", Icons.Default.Tv)
     object Kids : Screen("kids", "Kids", Icons.Default.ChildCare)
@@ -64,6 +76,8 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
 
     // Quiz Review (not in drawer)
     object QuizReview : Screen("quiz_review", "Quiz Review", Icons.Default.Visibility)
+
+    object QuizAnalytics : Screen("quiz_analytics", "Quiz Stats", Icons.AutoMirrored.Filled.TrendingUp)
 }
 
 // Guest-only flow (not in the drawer item list; reached from the guest drawer actions)
@@ -77,6 +91,13 @@ object QuizReviewTarget {
 /** Transient holder for the kid whose full profile/detail page is being viewed. */
 object KidDetailTarget {
     var kid: KidProfile? = null
+}
+
+/** Transient holder for the quiz + kid whose analytics screen is being viewed. */
+object QuizAnalyticsTarget {
+    var packName: String? = null
+    var kidName: String? = null
+    var kidPhotoUri: String? = null
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,6 +118,8 @@ fun MainScreen(
 
     val items = buildList {
         add(Screen.Home)
+        add(Screen.Home2)
+        add(Screen.QuickActions)
         add(Screen.Option1)
         add(Screen.ConnectedTvs)
         add(Screen.Kids)
@@ -123,7 +146,12 @@ fun MainScreen(
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate(screen.route) {
-                                popUpTo(Screen.Home.route) { saveState = true }
+                                // Only reset the stack when going Home; otherwise
+                                // preserve history so system/app back returns
+                                // to the previous screen, not Home.
+                                if (screen.route == Screen.Home.route) {
+                                    popUpTo(Screen.Home.route) { saveState = true }
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -215,6 +243,20 @@ fun MainScreen(
                             }
                         }
                     )
+                }
+                composable(Screen.Home2.route) {
+                    val kidViewModel: KidProfileViewModel = viewModel(
+                        viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
+                    )
+                    Home2Screen(
+                        sessionManager = sessionManager,
+                        studyViewModel = studyViewModel,
+                        kidViewModel = kidViewModel,
+                        navController = navController
+                    )
+                }
+                composable(Screen.QuickActions.route) {
+                    QuickActionsScreen(studyViewModel = studyViewModel)
                 }
                 composable(Screen.Option1.route) {
                     // Start Study Now always goes straight to Select Content —
@@ -350,6 +392,12 @@ fun MainScreen(
                             QuizReviewTarget.pack = pack
                             navController.navigate(Screen.QuizReview.route)
                         },
+                        onOpenAnalytics = { packName, kidName, kidPhotoUri ->
+                            QuizAnalyticsTarget.packName = packName
+                            QuizAnalyticsTarget.kidName = kidName
+                            QuizAnalyticsTarget.kidPhotoUri = kidPhotoUri
+                            navController.navigate(Screen.QuizAnalytics.route)
+                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -359,7 +407,475 @@ fun MainScreen(
                         onBack = { navController.popBackStack() }
                     )
                 }
+                composable(Screen.QuizAnalytics.route) {
+                    val packName = QuizAnalyticsTarget.packName
+                    val kidName = QuizAnalyticsTarget.kidName
+                    if (packName == null || kidName == null) {
+                        LaunchedEffect(Unit) { navController.popBackStack() }
+                    } else {
+                        QuizAnalyticsScreen(
+                            packName = packName,
+                            kidName = kidName,
+                            kidPhotoUri = QuizAnalyticsTarget.kidPhotoUri,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                }
             }
+        }
+    }
+}
+
+/** Parent-hub home: greeting + kid switcher, then dynamic cards only + top-3 parent jobs. */
+private val Home2Accent = Color(0xFFFF6B00)
+
+@Composable
+fun Home2Screen(
+    sessionManager: SessionManager,
+    studyViewModel: StudyViewModel,
+    kidViewModel: KidProfileViewModel,
+    navController: NavController
+) {
+    val context = LocalContext.current
+    val resultViewModel: SessionResultViewModel = viewModel(
+        viewModelStoreOwner = context as androidx.activity.ComponentActivity
+    )
+    val kidProfiles by kidViewModel.kidProfiles.collectAsState()
+    val recentResults by resultViewModel.recentResults.collectAsState()
+    var activeKidTick by remember { mutableStateOf(0) }
+
+    val activeKid = remember(kidProfiles, sessionManager.selectedKidId, activeKidTick) {
+        kidProfiles.firstOrNull { it.id == sessionManager.selectedKidId } ?: kidProfiles.firstOrNull()
+    }
+    val kidResults = remember(recentResults, activeKid) {
+        if (activeKid == null) emptyList() else recentResults.filter { it.childName == activeKid.name }
+    }
+    val lastResult = remember(kidResults) { kidResults.maxByOrNull { it.completedAt } }
+    val attentionItems = remember(kidResults) {
+        kidResults.filter {
+            val t = it.totalQuestions
+            t > 0 && (it.score * 100 / t) < 30
+        }.distinctBy { it.contentName ?: "" }.take(3)
+    }
+    val greetingWord = remember {
+        when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+            in 0..11 -> "Good morning"
+            in 12..16 -> "Good afternoon"
+            else -> "Good evening"
+        }
+    }
+    val parentDisplayName = if (sessionManager.isGuest) null
+        else sessionManager.parentName ?: sessionManager.loginId
+    val greeting = if (parentDisplayName.isNullOrBlank()) greetingWord
+        else "$greetingWord, $parentDisplayName"
+
+    var goalProgress by remember { mutableStateOf<List<GoalProgressDto>>(emptyList()) }
+    LaunchedEffect(activeKid?.name) {
+        val kidName = activeKid?.name
+        if (kidName.isNullOrBlank()) {
+            goalProgress = emptyList()
+        } else {
+            goalProgress = try {
+                withContext(Dispatchers.IO) {
+                    val resp = RetrofitClient.getApiService().getGoalsProgress(kidName)
+                    if (resp.isSuccessful) resp.body() ?: emptyList() else emptyList()
+                }
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+    }
+
+    fun playAgain() {
+        if (!studyViewModel.replayLastSession()) {
+            navController.navigate(Screen.ConnectedTvs.route)
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(greeting, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        }
+
+        if (kidProfiles.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable { navController.navigate(Screen.Kids.route) },
+                    colors = CardDefaults.cardColors(containerColor = Home2Accent)
+                ) {
+                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.ChildCare, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Add your first kid", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Create a kid profile to get started", color = Color.White.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White)
+                    }
+                }
+            }
+        } else {
+            item {
+                if (activeKid != null) {
+                    Text(
+                        "Showing for ${activeKid.name}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
+        }
+
+        if (lastResult != null) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Home2Accent)
+                ) {
+                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Continue learning", color = Color.White.copy(alpha = 0.9f), style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                lastResult.contentName ?: "Last quiz",
+                                color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Button(
+                            onClick = { playAgain() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Home2Accent)
+                        ) { Text("Resume", fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
+        }
+
+        if (attentionItems.isNotEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFDECEA))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Needs attention", fontWeight = FontWeight.Bold, color = Color(0xFFC62828))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        attentionItems.forEach { r ->
+                            val pct = if (r.totalQuestions > 0) (r.score * 100 / r.totalQuestions) else 0
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    QuizAnalyticsTarget.packName = r.contentName
+                                    QuizAnalyticsTarget.kidName = r.childName
+                                    QuizAnalyticsTarget.kidPhotoUri = activeKid?.photoUri
+                                    navController.navigate(Screen.QuizAnalytics.route)
+                                }.padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFC62828))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "${r.contentName ?: "Quiz"} · $pct%",
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFC62828))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (activeKid != null && goalProgress.isNotEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Goals", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        goalProgress.forEach { goal ->
+                            if (goal.achieved) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Home2Accent.copy(alpha = 0.12f))
+                                ) {
+                                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Home2Accent, modifier = Modifier.size(28.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "${activeKid.name} hit ${goal.target} ${goalTypeLabel(goal.type)} this week!",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            } else {
+                                val remaining = (goal.target - goal.current).coerceAtLeast(0)
+                                val fraction = if (goal.target > 0) (goal.current.toFloat() / goal.target).coerceIn(0f, 1f) else 0f
+                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                    Text(
+                                        "${goal.current} of ${goal.target} ${goalTypeLabel(goal.type)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        "$remaining more to go",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (activeKid != null) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Recent activity", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val recent = kidResults.sortedByDescending { it.completedAt }.take(5)
+                        if (recent.isEmpty()) {
+                            Text("No quizzes yet — start one to see progress here.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        } else {
+                            recent.forEach { result ->
+                                val percentage = if (result.totalQuestions > 0) (result.score * 100 / result.totalQuestions) else 0
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    KidAvatar(photoUri = activeKid.photoUri, name = result.childName, size = 24.dp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "• ${result.score}/${result.totalQuestions} ($percentage%) · ${friendlyDay(result.completedAt)}, ${friendlyTime(result.completedAt)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Home2JobCard("Start Quiz", Icons.Default.PlayArrow, Modifier.weight(1f)) {
+                        navController.navigate(Screen.ContentSelection.route)
+                    }
+                    Home2JobCard("Results", Icons.Default.Assessment, Modifier.weight(1f)) {
+                        navController.navigate(Screen.SessionResults.route)
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Home2JobCard("Kids", Icons.Default.ChildCare, Modifier.weight(1f)) {
+                        navController.navigate(Screen.Kids.route)
+                    }
+                    Home2JobCard("Quick Actions", Icons.Default.Bolt, Modifier.weight(1f)) {
+                        navController.navigate(Screen.QuickActions.route)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun goalTypeLabel(type: String): String = when (type) {
+    "WEEKLY_BEST" -> "Best-score quizzes"
+    else -> type.lowercase().replace('_', ' ')
+}
+
+@Composable
+fun QuickActionsScreen(studyViewModel: StudyViewModel) {
+    val uiState by studyViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+    var triggerType by remember { mutableStateOf(0) } // 0 infinite block, 1 timed break, 2 scheduled
+    var durationSecs by remember { mutableStateOf("15") }
+    var pendingJob by remember { mutableStateOf<Job?>(null) }
+    var pendingInfo by remember { mutableStateOf<String?>(null) }
+    var tvExpanded by remember { mutableStateOf(false) }
+    val discoveredTvs by studyViewModel.discoveredTvs.collectAsState()
+    val selectedTv = discoveredTvs.find { it.host?.hostAddress == studyViewModel.selectedTvIp }
+
+    fun fireNow() {
+        when (triggerType) {
+            0 -> { studyViewModel.manualMode = 0; studyViewModel.sendManualCommand() }
+            1 -> {
+                studyViewModel.manualMode = 1
+                studyViewModel.manualUnit = "Seconds"
+                studyViewModel.manualDuration = durationSecs.ifBlank { "10" }
+                studyViewModel.sendManualCommand()
+            }
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            val msg = when (val s = uiState) {
+                is StudyUiState.Success -> s.message
+                is StudyUiState.Error -> s.message
+                else -> null
+            }
+            if (msg != null) {
+                Text(
+                    msg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (uiState is StudyUiState.Error) Color(0xFFC62828) else Color(0xFF2E7D32)
+                )
+            }
+        }
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("TV", fontWeight = FontWeight.Bold, color = Home2Accent)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedButton(
+                                onClick = { tvExpanded = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    selectedTv?.serviceName
+                                        ?: selectedTv?.host?.hostAddress
+                                        ?: "No TV selected",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Icon(Icons.Default.ArrowDropDown, null)
+                            }
+                            DropdownMenu(expanded = tvExpanded, onDismissRequest = { tvExpanded = false }) {
+                                if (discoveredTvs.isEmpty()) {
+                                    DropdownMenuItem(
+                                        text = { Text("No TVs found — tap refresh", color = Color.Gray) },
+                                        onClick = { tvExpanded = false }
+                                    )
+                                } else {
+                                    discoveredTvs.forEach { tv ->
+                                        val ip = tv.host?.hostAddress
+                                        DropdownMenuItem(
+                                            text = { Text(tv.serviceName ?: ip ?: "Unknown TV") },
+                                            trailingIcon = {
+                                                if (ip != null && ip == studyViewModel.selectedTvIp) {
+                                                    Icon(Icons.Default.CheckCircle, null, tint = Home2Accent)
+                                                }
+                                            },
+                                            onClick = {
+                                                studyViewModel.selectedTvIp = ip
+                                                tvExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(onClick = { studyViewModel.startDiscovery() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Find TVs")
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Action", fontWeight = FontWeight.Bold, color = Home2Accent)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val types = listOf("Infinite block", "Timed break", "Scheduled message")
+                    types.forEachIndexed { index, label ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().clickable { triggerType = index }
+                        ) {
+                            RadioButton(selected = triggerType == index, onClick = { triggerType = index })
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = studyViewModel.manualMessage,
+                        onValueChange = { studyViewModel.manualMessage = it },
+                        label = { Text("Message") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (triggerType != 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = durationSecs,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) durationSecs = it },
+                            label = { Text(if (triggerType == 1) "Break length (seconds)" else "Delay (seconds)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Button(
+                            onClick = {
+                                if (triggerType == 2) {
+                                    val secs = durationSecs.toLongOrNull() ?: 15L
+                                    pendingJob?.cancel()
+                                    pendingJob = scope.launch {
+                                        pendingInfo = "Sending in ${secs}s…"
+                                        delay(secs * 1000)
+                                        studyViewModel.manualMode = 0
+                                        studyViewModel.sendManualCommand()
+                                        pendingInfo = null
+                                        pendingJob = null
+                                    }
+                                } else {
+                                    fireNow()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Home2Accent),
+                            enabled = pendingJob == null
+                        ) {
+                            Text(
+                                when (triggerType) {
+                                    0 -> "Block now"
+                                    1 -> "Start break"
+                                    else -> "Schedule"
+                                }
+                            )
+                        }
+                        OutlinedButton(onClick = { studyViewModel.sendManualCommand(isUnlock = true) }) {
+                            Text("Unblock")
+                        }
+                        if (pendingJob != null) {
+                            Text(pendingInfo ?: "pending…", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            TextButton(onClick = { pendingJob?.cancel(); pendingJob = null; pendingInfo = null }) {
+                                Text("Cancel")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Home2JobCard(label: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(modifier = modifier.clickable(onClick = onClick)) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, contentDescription = null, tint = Home2Accent)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
     }
 }
@@ -495,6 +1011,14 @@ fun StatsDashboardScreen(
     val totalTimeMinutes = filteredResults.sumOf { it.timeSpentSeconds } / 60
 
     val kids = sessionManager.profile.kids
+    // Local photo map (name -> photoUri) for avatars; ProfileKid has no photo field.
+    var kidPhotos by remember { mutableStateOf<Map<String, String?>>(emptyMap()) }
+    LaunchedEffect(Unit) {
+        try {
+            val dao = com.kaushalya.interrupter.data.AppDatabase.getDatabase(context).kidProfileDao()
+            kidPhotos = dao.getAllKidsOnce().associate { it.name to it.photoUri }
+        } catch (_: Exception) {}
+    }
     val hasKid = kids.isNotEmpty()
     val hasTv = sessionManager.lastTvIp != null
 
@@ -591,6 +1115,7 @@ if (hasKid && hasTv) {
                         FilterChip(
                             selected = selectedKidFilter == kid.name,
                             onClick = { selectedKidFilter = kid.name },
+                            leadingIcon = { KidAvatar(photoUri = kidPhotos[kid.name], name = kid.name, size = 24.dp) },
                             label = { Text(kid.name) }
                         )
                     }
@@ -616,12 +1141,20 @@ if (hasKid && hasTv) {
                         Text(stringResource(R.string.no_sessions_yet), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     } else {
                         filteredResults.take(5).forEach { result ->
-                            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
                             val percentage = if (result.totalQuestions > 0) (result.score * 100 / result.totalQuestions) else 0
-                            Text(
-                                "• ${result.childName} - ${result.score}/${result.totalQuestions} ($percentage%) at ${sdf.format(Date(result.completedAt))}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                KidAvatar(photoUri = kidPhotos[result.childName], name = result.childName, size = 24.dp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "• ${result.score}/${result.totalQuestions} ($percentage%) · ${friendlyDay(result.completedAt)}, ${friendlyTime(result.completedAt)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                 }
@@ -929,13 +1462,14 @@ fun SettingsScreen(viewModel: StudyViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun ContentSelectionScreen(
     viewModel: StudyViewModel,
     sessionManager: SessionManager,
     kidViewModel: KidProfileViewModel,
     onReviewPack: (StudyContent) -> Unit,
+    onOpenAnalytics: (String, String, String?) -> Unit = { _, _, _ -> },
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -1101,11 +1635,15 @@ fun ContentSelectionScreen(
                                         selected = selectedTab == index,
                                         onClick = { selectedTab = index },
                                         text = {
-                                            Text(
-                                                kid.name,
-                                                maxLines = 1,
-                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                KidAvatar(photoUri = kid.photoUri, name = kid.name, size = 24.dp)
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    kid.name,
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                )
+                                            }
                                         }
                                     )
                                 }
@@ -1177,6 +1715,16 @@ fun ContentSelectionScreen(
 
                                             if (isSelected) {
                                                 Icon(Icons.Default.CheckCircle, null, tint = Color(0xFFFF6B00))
+                                            }
+                                            IconButton(
+                                                onClick = { onOpenAnalytics(pack.name, kid.name, kid.photoUri) },
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.AutoMirrored.Filled.TrendingUp,
+                                                    contentDescription = "Quiz stats",
+                                                    tint = Color(0xFFFF6B00)
+                                                )
                                             }
                                             IconButton(
                                                 onClick = { onReviewPack(pack) },

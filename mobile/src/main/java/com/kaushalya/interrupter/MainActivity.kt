@@ -14,14 +14,24 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -87,16 +97,26 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                var splashDone by remember { mutableStateOf(false) }
+                // Splash stays until BOTH the minimum show-time elapsed AND routing
+                // resolved (main/welcome/carousel) — logged-in users never see a
+                // flash of sign-in/sign-up/guest options while validating.
+                var splashMinDone by remember { mutableStateOf(false) }
+                var routingResolved by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(1800)
+                    splashMinDone = true
+                }
 
-                if (!splashDone) {
-                    SplashScreen(onFinished = { splashDone = true })
-                } else {
+                Box(modifier = Modifier.fillMaxSize()) {
                     AppNavigation(
                         sessionManager = sessionManager,
                         authViewModel = authViewModel,
-                        studyViewModel = studyViewModel
+                        studyViewModel = studyViewModel,
+                        onRoutingResolved = { routingResolved = true }
                     )
+                    if (!splashMinDone || !routingResolved) {
+                        SplashScreen()
+                    }
                 }
             }
         }
@@ -109,29 +129,69 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SplashScreen(onFinished: () -> Unit) {
-        LaunchedEffect(Unit) {
-            Log.d(TAG, "SplashScreen: showing for 2s")
-            delay(2000)
-            Log.d(TAG, "SplashScreen: done")
-            onFinished()
-        }
+    fun SplashScreen() {
+        val pulse = rememberInfiniteTransition(label = "splash")
+        val scale by pulse.animateFloat(
+            initialValue = 0.92f,
+            targetValue = 1.06f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "shield-scale"
+        )
+        val glow by pulse.animateFloat(
+            initialValue = 0.55f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "shield-glow"
+        )
 
         Box(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = Color(0xFFFF6B00).copy(alpha = 0.18f * glow),
+                        modifier = Modifier.size(148.dp).graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                    )
+                    Icon(
+                        Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = Color(0xFFFF6B00),
+                        modifier = Modifier.size(96.dp).graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                    )
+                    Icon(
+                        Icons.AutoMirrored.Filled.MenuBook,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = "StudyShield",
-                    fontSize = 48.sp,
+                    fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF6B00)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Turn TV Ads into Learning Time",
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     color = Color(0xFF1E88E5),
                     fontWeight = FontWeight.Medium
                 )
@@ -143,7 +203,8 @@ class MainActivity : ComponentActivity() {
     fun AppNavigation(
         sessionManager: SessionManager,
         authViewModel: AuthViewModel,
-        studyViewModel: StudyViewModel
+        studyViewModel: StudyViewModel,
+        onRoutingResolved: () -> Unit = {}
     ) {
         val authState by authViewModel.authState.collectAsState()
         val isCheckingSession by authViewModel.isCheckingSession.collectAsState()
@@ -172,6 +233,10 @@ class MainActivity : ComponentActivity() {
                     if (!hasInternet) {
                         Toast.makeText(context, "No network connection. Using offline mode.", Toast.LENGTH_LONG).show()
                         authViewModel.skipSessionValidation()
+                        // Stay in the app: the account is valid locally, only the
+                        // network check was skipped. Routing to welcome here would
+                        // flash sign-in options at a logged-in user.
+                        screen = "main"
                         return@LaunchedEffect
                     }
                     Toast.makeText(context, "Validating session...", Toast.LENGTH_SHORT).show()
@@ -189,10 +254,18 @@ class MainActivity : ComponentActivity() {
                     Log.d(TAG, "AppNavigation: navigating to main")
                     screen = "main"
                 }
-                !isCheckingSession && authState is AuthState.Idle && (screen == "validating" || screen == "main") -> {
+                !isCheckingSession && authState is AuthState.Idle && screen == "validating" -> {
                     Log.d(TAG, "AppNavigation: navigating to welcome")
                     screen = "welcome"
                 }
+            }
+        }
+
+        // Tell the splash overlay it can lift once routing landed somewhere final.
+        // "validating" is intentionally excluded so auth options never flash.
+        LaunchedEffect(screen) {
+            if (screen == "main" || screen == "welcome" || screen == "carousel") {
+                onRoutingResolved()
             }
         }
 
@@ -203,6 +276,7 @@ class MainActivity : ComponentActivity() {
                 if (count > 0) {
                     Log.d(TAG, "AppNavigation: session expired signal received")
                     authViewModel.forceReLogin()
+                    screen = "welcome"
                 }
             }
         }
@@ -215,8 +289,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     CircularProgressIndicator()
                 }
-            }
-            "carousel" -> {
+            }"carousel" -> {
                 FeatureCarouselScreen(onFinished = {
                     Log.d(TAG, "AppNavigation: carousel finished")
                     sessionManager.hasSeenCarousel = true
@@ -227,7 +300,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     studyViewModel = studyViewModel,
                     sessionManager = sessionManager,
-                    onSignOut = { authViewModel.signOut() },
+                    onSignOut = { authViewModel.signOut(); screen = "welcome" },
                     onGuestLogout = { authViewModel.guestLogout() }
                 )
             }

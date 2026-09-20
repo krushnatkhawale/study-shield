@@ -53,6 +53,9 @@ interface ApiService {
         @Body request: KidRequest
     ): Response<KidResponse>
 
+    @DELETE("/api/students/{id}")
+    suspend fun deleteKid(@Path("id") id: String): Response<Unit>
+
     // Config
     @GET("/api/config/classes")
     suspend fun getClassConfig(): Response<JsonObject>
@@ -68,6 +71,16 @@ interface ApiService {
     @GET("/api/v1/class-grades")
     suspend fun getClassGrades(): Response<List<ClassGradeDto>>
 
+    // Boards + board classes (syllabus / class offering per board)
+    @GET("/api/v1/boards")
+    suspend fun getBoards(): Response<List<BoardDto>>
+
+    @GET("/api/v1/board-classes")
+    suspend fun getBoardClasses(): Response<List<BoardClassDto>>
+
+    @GET("/api/v1/board-classes/board/{boardId}")
+    suspend fun getBoardClassesForBoard(@Path("boardId") boardId: Long): Response<List<BoardClassDto>>
+
     // Quiz Bundles (server-issued quizzes)
     @POST("/api/v1/quiz-bundles")
     suspend fun issueQuizBundle(@Body request: QuizBundleRequestDto): Response<QuizBundleResponseDto>
@@ -81,6 +94,10 @@ interface ApiService {
 
     @GET("/api/v1/questions/{id}/feedback")
     suspend fun getQuestionFeedback(@Path("id") id: Long): Response<QuestionFeedbackResponse>
+
+    // Goals progress
+    @GET("/api/v1/goals/progress")
+    suspend fun getGoalsProgress(@Query("childName") childName: String): Response<List<GoalProgressDto>>
 
     // Question Bank Load (seed content on demand)
     @POST("/api/v1/questions/load")

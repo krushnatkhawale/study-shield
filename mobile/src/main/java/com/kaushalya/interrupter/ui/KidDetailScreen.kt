@@ -87,6 +87,25 @@ fun KidDetailScreen(
                     }
                 }
             )
+        },
+        // Delete lives in a sticky bottom bar so it is reachable on every screen
+        // size without scrolling to the end of a long detail page.
+        bottomBar = {
+            Surface(shadowElevation = 8.dp) {
+                Button(
+                    onClick = { confirmDelete = true },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).height(52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete ${kid.name}'s profile", fontWeight = FontWeight.Bold)
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -186,21 +205,6 @@ fun KidDetailScreen(
             SectionCard(title = "Quiz presentation", accent = accent) {
                 QuizPresentationConfigCard(kid = kid, sessionManager = sessionManager)
             }
-
-            // Danger zone
-            Button(
-                onClick = { confirmDelete = true },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Delete ${kid.name}'s profile", fontWeight = FontWeight.Bold)
-            }
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -260,20 +264,7 @@ private fun ProfileHeaderCard(kid: KidProfile, accent: Color, onEditProfile: () 
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = CircleShape,
-                    color = accent.copy(alpha = 0.15f),
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            if (kid.gender == "Girl") Icons.Default.Face5 else Icons.Default.Face,
-                            contentDescription = null,
-                            modifier = Modifier.size(36.dp),
-                            tint = accent
-                        )
-                    }
-                }
+                KidAvatar(photoUri = kid.photoUri, name = kid.name, size = 64.dp)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(kid.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -334,7 +325,8 @@ private fun PerfHeroCard(text: String, accent: Color) {
 fun bandStringRes(pct: Int): Int = when {
     pct >= 80 -> R.string.band_did_well
     pct >= 50 -> R.string.band_ok
-    else -> R.string.band_needs_practice
+    pct >= 30 -> R.string.band_needs_practice
+    else -> R.string.band_attention
 }
 
 /** Vertical bar chart of quiz % across the most recent attempts. */
@@ -367,6 +359,7 @@ private fun QuizScoreBarChart(results: List<QuizResult>, accent: Color) {
                             color = when {
                                 pct >= 80f -> Color(0xFF2E7D32)
                                 pct >= 50f -> accent
+                                pct >= 30f -> Color(0xFF1E88E5)
                                 else -> Color(0xFFC62828)
                             },
                             topLeft = Offset(0f, size.height - barHeightPx),
@@ -403,7 +396,8 @@ private fun ScoreDistribution(results: List<QuizResult>, accent: Color) {
 
     val highLabel = stringResource(R.string.band_did_well) + " (≥80%)"
     val midLabel = stringResource(R.string.band_ok) + " (50–79%)"
-    val lowLabel = stringResource(R.string.band_needs_practice) + " (<50%)"
+    val lowLabel = stringResource(R.string.band_needs_practice) + " (30–49%)"
+    val alarmLabel = stringResource(R.string.band_attention) + " (<30%)"
 
     val all = results.map { r ->
         if (r.totalQuestions > 0) r.score * 100f / r.totalQuestions else 0f
@@ -411,13 +405,15 @@ private fun ScoreDistribution(results: List<QuizResult>, accent: Color) {
     val bands = listOf(
         Band(highLabel, Color(0xFF2E7D32)),
         Band(midLabel, accent),
-        Band(lowLabel, Color(0xFFC62828))
+        Band(lowLabel, Color(0xFF1E88E5)),
+        Band(alarmLabel, Color(0xFFC62828))
     )
     val counts = bands.map { b ->
         when (b.label) {
             highLabel -> all.count { it >= 80f }
             midLabel -> all.count { it >= 50f && it < 80f }
-            else -> all.count { it < 50f }
+            lowLabel -> all.count { it >= 30f && it < 50f }
+            else -> all.count { it < 30f }
         }
     }
     val total = counts.sum().coerceAtLeast(1)
