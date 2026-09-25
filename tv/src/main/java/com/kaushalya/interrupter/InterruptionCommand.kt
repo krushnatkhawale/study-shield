@@ -32,7 +32,10 @@ data class InterruptionCommand(
     // Parent-selected locale tag for the post-quiz greeting message + TTS (default: English).
     val greetingLanguage: String? = null,
     // Mascot avatar id for the completion screen (defaults to "hero").
-    val avatarId: String? = null
+    val avatarId: String? = null,
+    // Wall-clock ms when the mobile (re)sent this command. Null = legacy sender, accept.
+    // The TV drops block/quiz commands older than STALE_COMMAND_MAX_AGE_MS (residue guard).
+    val sentAt: Long? = null
 )
 
 @Serializable

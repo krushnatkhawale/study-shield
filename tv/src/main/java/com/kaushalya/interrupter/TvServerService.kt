@@ -55,7 +55,29 @@ class TvServerService : Service() {
         )
     }
 
+    companion object {
+        /** Commands older than this are treated as stale residue and ignored. */
+        const val STALE_COMMAND_MAX_AGE_MS: Long = 10L * 60L * 1000L
+        const val ACTION_RELEASE_HOLD = "com.kaushalya.interrupter.RELEASE_BLOCK_HOLD"
+    }
+
+    private fun isStale(command: InterruptionCommand): Boolean {
+        val sentAt = command.sentAt ?: return false // legacy sender without timestamp: accept
+        return System.currentTimeMillis() - sentAt > STALE_COMMAND_MAX_AGE_MS
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // MainActivity calls this when a block ends so the "Block active" hold
+        // notification downgrades back to the passive listener notification.
+        if (intent?.action == ACTION_RELEASE_HOLD) {
+            val notification = createNotification("Listening for commands...")
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.notify(NOTIFICATION_ID + 1, notification)
+            try {
+                startForeground(NOTIFICATION_ID, notification)
+            } catch (_: Exception) {}
+            return START_STICKY
+        }
         if (!isRunning) {
             isRunning = true
             startServer()
@@ -108,6 +130,14 @@ class TvServerService : Service() {
     private fun checkSavedLock() {
         val savedCommand = persistenceManager.getSavedLockCommand()
         if (savedCommand != null && savedCommand.type != "UNLOCK") {
+            // Residue guard: a persisted lock older than the max age (e.g. a test quiz from
+            // 10+ min ago, or a lock saved before a reboot long after it expired) must not
+            // retrigger. Drop it instead of replaying.
+            if (isStale(savedCommand)) {
+                Log.w("TvServerService", "Dropping stale persisted lock (${savedCommand.type}), skipping replay")
+                persistenceManager.clearLockCommand()
+                return
+            }
             // Replaying a persisted command: there is no live mobile waiting on this callback.
             // The saved mobileIp/resultCallbackPort are from the device that last sent it and may
             // be stale (e.g. after the account switched on the mobile). Strip them so the TV does
@@ -175,6 +205,13 @@ class TvServerService : Service() {
     }
 
     private fun handleCommand(command: InterruptionCommand, save: Boolean) {
+        // Stale-command guard: ignore block/quiz commands sent >10 min ago (delayed
+        // redelivery, replayed socket bytes, or residue retriggering a test quiz).
+        // TTS_CAP_CHECK and UNLOCK are never dropped.
+        if (command.type != "UNLOCK" && command.type != "TTS_CAP_CHECK" && isStale(command)) {
+            Log.w("TvServerService", "Ignoring stale ${command.type} command (sentAt=${command.sentAt})")
+            return
+        }
         if (save) {
             if (command.type == "UNLOCK") {
                 persistenceManager.clearLockCommand()
@@ -210,6 +247,7 @@ class TvServerService : Service() {
             putExtra("REVEAL_READ_LOCK", command.revealReadLock ?: false)
             putExtra("AUTO_DICTATION", command.autoDictation ?: false)
             putExtra("FAST_ANSWER_THRESHOLD_MS", command.fastAnswerThresholdMs ?: 1500L)
+            command.sentAt?.let { putExtra("SENT_AT", it) }
             
             // Pass all questions as JSON for multi-question support
             val questions = command.questions
@@ -235,7 +273,33 @@ class TvServerService : Service() {
         )
         
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID + 1, createNotification("Incoming: ${command.type}", pendingIntent))
+        if (command.type == "UNLOCK") {
+            notificationManager.notify(NOTIFICATION_ID + 1, createNotification("Listening for commands..."))
+        } else {
+            // Block hold: ongoing + full-screen intent so the system ranks our task
+            // highest and the re-foreground in MainActivity wins the race against
+            // HOME / Netflix / YouTube shortcut launches more reliably.
+            val holdText = when (command.type) {
+                "MCQ", "FITB" -> "Quiz in progress — StudyShield block active"
+                "TIMER" -> "Timer block active"
+                "STUDY_SESSION" -> "Study session active"
+                else -> "StudyShield block active"
+            }
+            val hold = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("StudyShield Block Active")
+                .setContentText(holdText)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOngoing(true)
+                .setFullScreenIntent(pendingIntent, true)
+                .build()
+            notificationManager.notify(NOTIFICATION_ID + 1, hold)
+            try {
+                startForeground(NOTIFICATION_ID, hold)
+            } catch (_: Exception) {}
+        }
         
         try {
             startActivity(intent)

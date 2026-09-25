@@ -50,7 +50,10 @@ data class InterruptionCommand(
     // Mirrors KidQuizConfig.greetingLanguage.
     val greetingLanguage: String? = null,
     // Which mascot avatar the TV completion screen should celebrate with (Avatars.IDS).
-    val avatarId: String? = null
+    val avatarId: String? = null,
+    // Wall-clock ms when the command was (re)sent. Stamped in sendCommand so the TV can
+    // drop stale replays/residue (e.g. a 10-min-old quiz retriggered from a persisted lock).
+    val sentAt: Long? = null
 )
 
 /** Per-kid quiz presentation configuration, persisted per kid and pushed to the TV on session start. */

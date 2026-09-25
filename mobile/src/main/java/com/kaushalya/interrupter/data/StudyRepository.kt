@@ -121,21 +121,24 @@ class StudyRepository private constructor(private val context: Context) {
 
     suspend fun sendCommand(ip: String, command: InterruptionCommand): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val isQuiz = command.type == "MCQ" || command.type == "FITB"
+            // Fresh send timestamp on every (re)send so the TV can drop stale replays.
+            // Scheduled-worker retries re-stamp here instead of carrying the enqueue time.
+            val stamped = command.copy(sentAt = System.currentTimeMillis())
+            val isQuiz = stamped.type == "MCQ" || stamped.type == "FITB"
             val finalCommand = if (isQuiz) {
                 try {
                     val callbackSocket = ServerSocket(0)
                     resultCallbackSocket = callbackSocket
                     val mobileIp = getWifiIpAddress()
                     Log.d("StudyRepository", "Quiz callback listener on $mobileIp:${callbackSocket.localPort}")
-                    listenForQuizResult(callbackSocket, command.contentName, command.category)
-                    command.copy(mobileIp = mobileIp, resultCallbackPort = callbackSocket.localPort)
+                    listenForQuizResult(callbackSocket, stamped.contentName, stamped.category)
+                    stamped.copy(mobileIp = mobileIp, resultCallbackPort = callbackSocket.localPort)
                 } catch (e: Exception) {
                     Log.e("StudyRepository", "Failed to start result listener", e)
-                    command
+                    stamped
                 }
             } else {
-                command
+                stamped
             }
 
             val socket = Socket().apply { connect(java.net.InetSocketAddress(ip, 8888), 2000) }

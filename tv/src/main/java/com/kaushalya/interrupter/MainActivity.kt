@@ -221,7 +221,54 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun isBlocked(): Boolean = commandType != null && commandType != "UNLOCK"
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // HOME pressed while a block screen is active: immediately bring the task back
+        // to front so the block cannot be dismissed. (True HOME interception needs
+        // lock-task/kiosk provisioning; this re-foreground is the best non-owner option.)
+        if (isBlocked()) {
+            try {
+                val bringBack = Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                startActivity(bringBack)
+            } catch (_: Exception) {}
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Covers recents-switch / task-switch away from the block screen.
+        if (isBlocked() && !isFinishing) {
+            try {
+                val bringBack = Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                startActivity(bringBack)
+            } catch (_: Exception) {}
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Losing focus while blocked (e.g. Netflix/YouTube shortcut launched another
+        // app on top): re-assert our task to the front so the block wins back focus.
+        // The TvServerService block-hold notification (ongoing + full-screen intent)
+        // backs this up at the system ranking level.
+        if (!hasFocus && isBlocked() && !isFinishing) {
+            try {
+                val bringBack = Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                startActivity(bringBack)
+            } catch (_: Exception) {}
+        }
+    }
+
     private fun exitApp() {
+        // Tell the service to downgrade the "Block active" hold notification.
+        try {
+            startService(Intent(this, TvServerService::class.java).setAction(TvServerService.ACTION_RELEASE_HOLD))
+        } catch (_: Exception) {}
         persistenceManager.clearLockCommand()
         moveTaskToBack(true)
         resetState()
@@ -301,6 +348,15 @@ class MainActivity : ComponentActivity() {
         Log.d("InterrupterTV", "Handling intent with type: $type")
         
         if (type != null) {
+            // Residue guard (defense in depth — the service already drops stale
+            // commands): ignore block/quiz intents sent >10 min ago.
+            if (type != "UNLOCK" && intent.hasExtra("SENT_AT")) {
+                val age = System.currentTimeMillis() - intent.getLongExtra("SENT_AT", 0L)
+                if (age > 10L * 60L * 1000L) {
+                    Log.w("InterrupterTV", "Ignoring stale $type intent (age=${age}ms)")
+                    return
+                }
+            }
             commandType = type
             message = intent.getStringExtra("MESSAGE")
             duration = intent.getLongExtra("DURATION", 10L)
