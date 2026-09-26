@@ -20,7 +20,14 @@ class KidProfileRepository private constructor(context: Context) {
     suspend fun saveKid(kid: KidProfile) {
         val finalKid = if (sessionManager.isOfflineMode) kid.copy(mode = "offline") else kid
         kidProfileDao.insertKid(finalKid)
+        // Push latest server-known quiz config alongside the profile so
+        // lock-answers/read-aloud survive reinstalls and new sign-ins.
         syncKidToBackend(finalKid)
+    }
+
+    /** Pushes locally edited quiz config (lock/TTS/threshold/language) to the server. */
+    suspend fun syncQuizConfig(kid: KidProfile) = withContext(Dispatchers.IO) {
+        syncKidToBackend(kid)
     }
 
     suspend fun deleteKid(kid: KidProfile) = withContext(Dispatchers.IO) {
@@ -60,11 +67,16 @@ class KidProfileRepository private constructor(context: Context) {
         if (sessionManager.isGuest) return@withContext
         try {
             val api = RetrofitClient.getApiService()
+            val cfg = try { sessionManager.getKidQuizConfig(kid.id) } catch (e: Exception) { null }
             val request = KidRequest(
                 name = kid.name,
                 gender = kid.gender,
                 birthYear = kid.birthYear,
-                studentClass = kid.grade
+                studentClass = kid.grade,
+                revealReadLock = cfg?.revealReadLock,
+                autoDictation = cfg?.autoDictation,
+                fastAnswerThresholdMs = cfg?.fastAnswerThresholdMs,
+                greetingLanguage = cfg?.greetingLanguage
             )
 
             val response = if (kid.remoteId != null) {
@@ -122,6 +134,21 @@ class KidProfileRepository private constructor(context: Context) {
                             grade = student.studentClass ?: "",
                             syncStatus = 1,
                             remoteId = remoteId
+                        )
+                    )
+                }
+                // Server wins for personalized quiz settings; cache locally keyed by local id.
+                val local = kidProfileDao.getByRemoteId(remoteId)
+                if (local != null && (student.revealReadLock != null || student.autoDictation != null ||
+                            student.fastAnswerThresholdMs != null || student.greetingLanguage != null)) {
+                    val prev = try { sessionManager.getKidQuizConfig(local.id) } catch (e: Exception) { null }
+                    sessionManager.setKidQuizConfig(
+                        local.id,
+                        KidQuizConfig(
+                            revealReadLock = student.revealReadLock ?: prev?.revealReadLock ?: false,
+                            autoDictation = student.autoDictation ?: prev?.autoDictation ?: false,
+                            fastAnswerThresholdMs = student.fastAnswerThresholdMs ?: prev?.fastAnswerThresholdMs ?: 1500L,
+                            greetingLanguage = student.greetingLanguage ?: prev?.greetingLanguage ?: "en"
                         )
                     )
                 }

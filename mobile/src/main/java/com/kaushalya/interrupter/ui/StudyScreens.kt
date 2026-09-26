@@ -1816,16 +1816,18 @@ fun QuizPresentationConfigCard(
     kid: KidProfile,
     sessionManager: SessionManager
 ) {
+    val context = LocalContext.current
+    val repository = remember { StudyRepository.getInstance(context) }
+    val kidRepo = remember { KidProfileRepository.getInstance(context) }
+    val scope = rememberCoroutineScope()
     var config by remember(kid.id) { mutableStateOf(sessionManager.getKidQuizConfig(kid.id)) }
     fun persist(updated: KidQuizConfig) {
         config = updated
         sessionManager.setKidQuizConfig(kid.id, updated)
+        scope.launch { kidRepo.syncQuizConfig(kid) }
     }
 
     // Quick TTS support check against the family TV (the last one used) after picking a language.
-    val context = LocalContext.current
-    val repository = remember { StudyRepository.getInstance(context) }
-    val scope = rememberCoroutineScope()
     var verifyingLanguage by remember { mutableStateOf(false) }
     var greetingNotice by remember { mutableStateOf<String?>(null) }
 

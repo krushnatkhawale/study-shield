@@ -335,7 +335,11 @@ data class KidRequest(
     val name: String,
     val gender: String? = null,
     val birthYear: Int? = null,
-    val studentClass: String? = null
+    val studentClass: String? = null,
+    val revealReadLock: Boolean? = null,
+    val autoDictation: Boolean? = null,
+    val fastAnswerThresholdMs: Long? = null,
+    val greetingLanguage: String? = null
 )
 
 @Serializable
@@ -345,7 +349,11 @@ data class KidResponse(
     val name: String? = null,
     val gender: String? = null,
     val birthYear: Int? = null,
-    val studentClass: String? = null
+    val studentClass: String? = null,
+    val revealReadLock: Boolean? = null,
+    val autoDictation: Boolean? = null,
+    val fastAnswerThresholdMs: Long? = null,
+    val greetingLanguage: String? = null
 )
 
 // --- Quiz Result Models ---
