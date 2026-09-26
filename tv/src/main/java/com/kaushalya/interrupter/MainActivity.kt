@@ -1042,7 +1042,7 @@ fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
         if (card.isNotBlank()) {
             Text(
                 text = card,
-                fontSize = 72.sp,
+                fontSize = 120.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -1054,7 +1054,7 @@ fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
         }
         Text(
             text = description,
-            fontSize = 26.sp,
+            fontSize = 20.sp,
             color = Color.White.copy(alpha = 0.92f),
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
