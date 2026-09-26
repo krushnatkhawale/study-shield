@@ -1013,13 +1013,13 @@ private fun remainingReadLockMs(readLockMs: Long): Long {
 
 /**
  * Question header shared by all quiz layouts. Plain text questions render exactly as
- * before; picture questions (dictation in [description]) render the picture card big
- * with the dictation smaller underneath. Auto-dictation speaks the description.
+ * before; picture questions render a two-column header: big picture left (~60%),
+ * small dictation right (~40%, vertically centered). Auto-dictation speaks the description.
  */
 @Composable
 fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
     // Picture cards carry answer-revealing metadata in brackets ("🖼️ [🐶 picture: कुत्ता]").
-    // Never show the bracket — display only the picture card; the dictation goes underneath.
+    // Never show the bracket — display only the picture card; the dictation goes beside it.
     val card = displayQuestionCard(question)
     if (description == null) {
         val questionFontSize = when {
@@ -1040,28 +1040,44 @@ fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
         )
     } else {
         if (card.isNotBlank()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = card,
+                    fontSize = 120.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(0.6f)
+                )
+                Text(
+                    text = description,
+                    fontSize = 20.sp,
+                    color = Color.White.copy(alpha = 0.92f),
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Start,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(0.4f)
+                )
+            }
+        } else {
             Text(
-                text = card,
-                fontSize = 120.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
+                text = description,
+                fontSize = 20.sp,
+                color = Color.White.copy(alpha = 0.92f),
+                fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
-        Text(
-            text = description,
-            fontSize = 20.sp,
-            color = Color.White.copy(alpha = 0.92f),
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
