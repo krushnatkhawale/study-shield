@@ -353,7 +353,11 @@ class MainActivity : ComponentActivity() {
                     },
                     onBack = { screen = "welcome"; authViewModel.resetError() },
                     isLoading = authState is AuthState.Loading,
-                    error = (authState as? AuthState.Error)?.message
+                    error = (authState as? AuthState.Error)?.message,
+                    // Last-used login survives expiry wipes (only session_id is
+                    // nulled) and reinstall restores, so returning users only
+                    // re-type their password instead of the full login.
+                    initialLoginId = sessionManager.loginId
                 )
             }
         }

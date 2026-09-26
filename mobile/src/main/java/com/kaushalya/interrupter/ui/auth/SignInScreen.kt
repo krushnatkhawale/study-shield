@@ -22,9 +22,10 @@ fun SignInScreen(
     onSignIn: (loginId: String, password: String) -> Unit,
     onBack: () -> Unit,
     isLoading: Boolean,
-    error: String?
+    error: String?,
+    initialLoginId: String? = null
 ) {
-    var loginId by remember { mutableStateOf("") }
+    var loginId by remember(initialLoginId) { mutableStateOf(initialLoginId.orEmpty()) }
     var password by remember { mutableStateOf("") }
 
     Column(
