@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -30,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
@@ -664,7 +666,7 @@ fun isHindiQuiz(questions: List<QuizQuestion>, category: String?): Boolean {
     return hindiCount * 2 >= questions.size
 }
 
-fun applyQuizVoice(tts: TextToSpeech, hindi: Boolean) {
+fun applyQuizVoice(tts: TextToSpeech, hindi: Boolean): Boolean {
     try {
         if (hindi) {
             val hiIn = Locale.forLanguageTag("hi-IN")
@@ -676,13 +678,17 @@ fun applyQuizVoice(tts: TextToSpeech, hindi: Boolean) {
                     it.locale.language == "hi" && it.name.contains("female", ignoreCase = true)
                 } ?: tts.voices?.firstOrNull { it.locale.language == "hi" }
                 voice?.let { tts.voice = it }
-                return
+                return true
             }
+            return false
         }
         tts.language = Locale.UK
         tts.setSpeechRate(0.8f)
         tts.setPitch(1.0f)
-    } catch (_: Exception) {}
+        return true
+    } catch (_: Exception) {
+        return false
+    }
 }
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -733,6 +739,9 @@ fun QuizSession(
         QuizResultsScreen(score, questions.size, contentName, category, mobileIp, resultCallbackPort, fastAnswerCount, kidName, greetingLanguage, textToSpeech, avatarId, onExit)
     } else if (currentIndex < questions.size) {
         val q = questions[currentIndex]
+        val hindiQuiz = remember(questions, category) { isHindiQuiz(questions, category) }
+        var hindiVoiceMissing by remember(questions, category) { mutableStateOf(false) }
+        val context = LocalContext.current
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -772,6 +781,16 @@ fun QuizSession(
                                 .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(3.dp))
                         )
                     }
+                    if (hindiVoiceMissing) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Hindi voice missing on this TV — sound may be English. Fix: TV Settings > System > Text-to-Speech > Install voice data > Hindi. Full steps in the mobile app: TV Voice Help.",
+                            color = Color.Yellow.copy(alpha = 0.9f),
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 val advance: (Boolean) -> Unit = { isCorrect ->
@@ -790,9 +809,19 @@ fun QuizSession(
                 // Whole quiz uses one voice (per owner decision): Hindi quiz -> hi-IN, else en-GB.
                 // Gated on ttsReady so the very first question isn't dropped while the speech
                 // engine is still initialising (it re-fires the moment the engine is ready).
-                val hindiQuiz = remember(questions, category) { isHindiQuiz(questions, category) }
                 LaunchedEffect(hindiQuiz, textToSpeech, ttsReady) {
-                    if (ttsReady && textToSpeech != null) applyQuizVoice(textToSpeech, hindiQuiz)
+                    if (ttsReady && textToSpeech != null) {
+                        val ok = applyQuizVoice(textToSpeech, hindiQuiz)
+                        hindiVoiceMissing = hindiQuiz && !ok
+                        if (hindiVoiceMissing) {
+                            Toast.makeText(
+                                context,
+                                "Hindi voice not found on this TV — questions will sound English. " +
+                                    "Install Hindi: TV Settings > System > Text-to-Speech > Google TTS > Install voice data > Hindi.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 }
                 LaunchedEffect(currentIndex, autoDictation, textToSpeech, ttsReady) {
                     if (autoDictation) {

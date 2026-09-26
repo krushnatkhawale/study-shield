@@ -56,6 +56,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object QuickActions : Screen("quick_actions", "Quick Actions", Icons.Default.Bolt)
     object Option1 : Screen("control", "Library", Icons.AutoMirrored.Filled.LibraryBooks)
     object ConnectedTvs : Screen("connected_tvs", "Connected TVs", Icons.Default.Tv)
+    object TvVoiceHelp : Screen("tv_voice_help", "TV Voice Help", Icons.Default.RecordVoiceOver)
     object Kids : Screen("kids", "Kids", Icons.Default.ChildCare)
     object QuizSetup : Screen("quiz_setup", "Quiz Setup", Icons.Default.Quiz)
     object Parents : Screen("parents", "Parents", Icons.Default.People)
@@ -122,6 +123,7 @@ fun MainScreen(
         add(Screen.QuickActions)
         add(Screen.Option1)
         add(Screen.ConnectedTvs)
+        add(Screen.TvVoiceHelp)
         add(Screen.Kids)
         add(Screen.SessionResults)
         if (!isGuest) {
@@ -270,6 +272,7 @@ fun MainScreen(
                     )
                 }
                 composable(Screen.ConnectedTvs.route) { TvManagementScreen() }
+                composable(Screen.TvVoiceHelp.route) { TvVoiceHelpScreen() }
                 composable(Screen.SessionResults.route) {
                     val resultViewModel: SessionResultViewModel = viewModel(
                         viewModelStoreOwner = LocalContext.current as androidx.activity.ComponentActivity
