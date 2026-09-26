@@ -293,29 +293,35 @@ class MainActivity : ComponentActivity() {
     // default greeting) is always spoken with a British accent (en-GB); only an explicit
     // non-English parent choice (e.g. mr-IN / hi-IN) switches the voice. Male/female depends
     // on the engine's available voices — we best-effort pick a female voice in the target locale.
+    // Note: quiz dictation re-configures per quiz (see applyQuizVoice) — this is only the default.
     private fun configureKidTts(tts: TextToSpeech?) {
         if (tts == null) return
         try {
-            tts.setSpeechRate(0.8f)
             val chosen = runCatching { Locale.forLanguageTag(greetingLanguage) }.getOrNull()
             val target = if (chosen == null || chosen.language == "en") Locale.UK else chosen
-            val usable = arrayOf(target, Locale.UK, Locale.getDefault())
-                .firstOrNull {
-                    it != null && tts.isLanguageAvailable(it) >= TextToSpeech.LANG_AVAILABLE
-                }
-                ?: Locale.getDefault()
-            tts.language = usable
-            val localeVoices = tts.voices?.filter { v ->
-                v.locale.language == usable.language &&
-                    (usable.country.isBlank() || v.locale.country == usable.country)
-            }
-            val preferredVoice = localeVoices?.firstOrNull {
-                it.name.contains("female", ignoreCase = true)
-            } ?: localeVoices?.firstOrNull()
-            preferredVoice?.let { tts.voice = it }
+            applyTtsVoice(tts, target, 0.8f)
         } catch (e: Exception) {
             Log.e("InterrupterTV", "TTS configuration failed", e)
         }
+    }
+
+    private fun applyTtsVoice(tts: TextToSpeech, target: Locale, rate: Float) {
+        tts.setSpeechRate(rate)
+        tts.setPitch(1.0f)
+        val usable = arrayOf(target, Locale.UK, Locale.getDefault())
+            .firstOrNull {
+                it != null && tts.isLanguageAvailable(it) >= TextToSpeech.LANG_AVAILABLE
+            }
+            ?: Locale.getDefault()
+        tts.language = usable
+        val localeVoices = tts.voices?.filter { v ->
+            v.locale.language == usable.language &&
+                (usable.country.isBlank() || v.locale.country == usable.country)
+        }
+        val preferredVoice = localeVoices?.firstOrNull {
+            it.name.contains("female", ignoreCase = true)
+        } ?: localeVoices?.firstOrNull()
+        preferredVoice?.let { tts.voice = it }
     }
 
     private fun checkAndRequestPermissions() {
@@ -636,6 +642,49 @@ object CompletionMessages {
     }
 }
 
+/** True when the text contains Devanagari (Hindi/Marathi) characters. */
+fun containsDevanagari(text: String?): Boolean =
+    text?.any { it in '\u0900'..'\u097F' } == true
+
+/**
+ * Strip tokens the speech engine should never read aloud: [pic: ...] markers,
+ * emoji/pictographs, and collapsed whitespace.
+ */
+fun sanitizeForSpeech(text: String): String =
+    text.replace(Regex("\\[pic:[^\\]]*\\]"), " ")
+        .replace(Regex("[\\u2190-\\u2BFF\\u2600-\\u27BF\\u2B00-\\u2BFF\\uD83C-\\uDBFF\\uDC00-\\uDFFF]+"), " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+
+/** Whole quiz uses one voice: Hindi quiz -> hi-IN at 0.7 rate, else en-GB at 0.8. */
+fun isHindiQuiz(questions: List<QuizQuestion>, category: String?): Boolean {
+    if (category != null && (category.contains("hindi", ignoreCase = true) || category.contains("marathi", ignoreCase = true))) return true
+    if (questions.isEmpty()) return false
+    val hindiCount = questions.count { containsDevanagari(it.description ?: it.question) }
+    return hindiCount * 2 >= questions.size
+}
+
+fun applyQuizVoice(tts: TextToSpeech, hindi: Boolean) {
+    try {
+        if (hindi) {
+            val hiIn = Locale.forLanguageTag("hi-IN")
+            if (tts.isLanguageAvailable(hiIn) >= TextToSpeech.LANG_AVAILABLE) {
+                tts.language = hiIn
+                tts.setSpeechRate(0.7f)
+                tts.setPitch(0.95f)
+                val voice = tts.voices?.firstOrNull {
+                    it.locale.language == "hi" && it.name.contains("female", ignoreCase = true)
+                } ?: tts.voices?.firstOrNull { it.locale.language == "hi" }
+                voice?.let { tts.voice = it }
+                return
+            }
+        }
+        tts.language = Locale.UK
+        tts.setSpeechRate(0.8f)
+        tts.setPitch(1.0f)
+    } catch (_: Exception) {}
+}
+
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun QuizSession(
@@ -738,13 +787,19 @@ fun QuizSession(
                 }
                 // Feature 5: auto-dictation — read the current question aloud when enabled.
                 // For picture questions the dictation (description) is spoken, not the picture card.
+                // Whole quiz uses one voice (per owner decision): Hindi quiz -> hi-IN, else en-GB.
                 // Gated on ttsReady so the very first question isn't dropped while the speech
                 // engine is still initialising (it re-fires the moment the engine is ready).
+                val hindiQuiz = remember(questions, category) { isHindiQuiz(questions, category) }
+                LaunchedEffect(hindiQuiz, textToSpeech, ttsReady) {
+                    if (ttsReady && textToSpeech != null) applyQuizVoice(textToSpeech, hindiQuiz)
+                }
                 LaunchedEffect(currentIndex, autoDictation, textToSpeech, ttsReady) {
                     if (autoDictation) {
                         val tts = textToSpeech
                         val currentQ = questions.getOrNull(currentIndex)
-                        val speakText = currentQ?.description ?: currentQ?.question
+                        val raw = currentQ?.description ?: currentQ?.question
+                        val speakText = raw?.let { sanitizeForSpeech(it) }?.takeIf { it.isNotBlank() }
                         if (tts != null && speakText != null) {
                             try {
                                 tts.speak(speakText, TextToSpeech.QUEUE_FLUSH, null, "question_$currentIndex")
