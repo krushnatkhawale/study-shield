@@ -2043,7 +2043,15 @@ fun QuizPreviewDialog(
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F9FC))
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text(q.question, fontWeight = FontWeight.Medium)
+                                // Picture cards carry answer-revealing metadata in brackets —
+                                // never show the bracket; show the card + dictation instead.
+                                val card = q.question.replace(Regex("\\[[^\\]]*\\]"), " ")
+                                    .replace(Regex("\\s+"), " ").trim()
+                                Text(
+                                    if (q.description != null && card.isNotBlank()) "$card\n${q.description}"
+                                    else q.description ?: card.ifBlank { q.question },
+                                    fontWeight = FontWeight.Medium
+                                )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 q.options.forEachIndexed { index, option ->
                                     val isCorrect = q.answer == index.toString() ||

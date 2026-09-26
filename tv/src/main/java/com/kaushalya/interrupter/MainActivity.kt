@@ -649,12 +649,24 @@ fun containsDevanagari(text: String?): Boolean =
     text?.any { it in '\u0900'..'\u097F' } == true
 
 /**
- * Strip tokens the speech engine should never read aloud: [pic: ...] markers,
+ * Strip tokens the speech engine should never read aloud: [...] bracket metadata
+ * (e.g. [pic: ...], [🐶 picture: कुत्ता] — the bracket names the answer),
  * emoji/pictographs, and collapsed whitespace.
  */
 fun sanitizeForSpeech(text: String): String =
-    text.replace(Regex("\\[pic:[^\\]]*\\]"), " ")
+    text.replace(Regex("\\[[^\\]]*\\]"), " ")
         .replace(Regex("[\\u2190-\\u2BFF\\u2600-\\u27BF\\u2B00-\\u2BFF\\uD83C-\\uDBFF\\uDC00-\\uDFFF]+"), " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+
+/**
+ * Display form of a question card: strip [...] bracket metadata (object name /
+ * description that would give away the answer) but keep the picture emoji so
+ * the card still reads as a picture question. Falls back to "" when nothing
+ * but metadata remains — callers then render the description alone.
+ */
+fun displayQuestionCard(question: String): String =
+    question.replace(Regex("\\[[^\\]]*\\]"), " ")
         .replace(Regex("\\s+"), " ")
         .trim()
 
@@ -995,6 +1007,9 @@ private fun remainingReadLockMs(readLockMs: Long): Long {
  */
 @Composable
 fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
+    // Picture cards carry answer-revealing metadata in brackets ("🖼️ [🐶 picture: कुत्ता]").
+    // Never show the bracket — display only the picture card; the dictation goes underneath.
+    val card = displayQuestionCard(question)
     if (description == null) {
         val questionFontSize = when {
             question.length <= 20 -> 48.sp
@@ -1013,20 +1028,22 @@ fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         )
     } else {
-        Text(
-            text = question,
-            fontSize = 72.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        if (card.isNotBlank()) {
+            Text(
+                text = card,
+                fontSize = 72.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         Text(
             text = description,
-            fontSize = 30.sp,
+            fontSize = 26.sp,
             color = Color.White.copy(alpha = 0.92f),
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
