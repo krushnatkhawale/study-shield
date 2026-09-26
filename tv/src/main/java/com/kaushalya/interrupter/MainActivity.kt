@@ -660,15 +660,26 @@ fun sanitizeForSpeech(text: String): String =
         .trim()
 
 /**
- * Display form of a question card: strip [...] bracket metadata (object name /
- * description that would give away the answer) but keep the picture emoji so
- * the card still reads as a picture question. Falls back to "" when nothing
- * but metadata remains — callers then render the description alone.
+ * Display form of a question card: the bank stores picture questions as
+ * "🖼️ [🐶 picture: name]" where the REAL picture (🐶) is inside the bracket
+ * and 🖼️ is just a generic frame. Show the inner picture emoji big; never
+ * show the bracket metadata (object name that gives away the answer).
+ * Falls back to stripped outer text when no bracket picture is found.
  */
-fun displayQuestionCard(question: String): String =
-    question.replace(Regex("\\[[^\\]]*\\]"), " ")
+fun displayQuestionCard(question: String): String {
+    val bracket = Regex("\\[([^\\]]*)\\]").find(question)?.groupValues?.getOrNull(1)
+    if (bracket != null) {
+        // Bracket looks like "🐶 picture: कुत्ता" — picture emoji is the part before "picture:".
+        val inner = bracket.substringBefore("picture:", bracket).trim()
+        // Keep only non-ASCII picture content (emoji), drop any latin helper words.
+        val emojiOnly = inner.filter { it.code > 127 || it.isWhitespace() }.trim()
+        if (emojiOnly.isNotBlank()) return emojiOnly
+        if (inner.isNotBlank()) return inner
+    }
+    return question.replace(Regex("\\[[^\\]]*\\]"), " ")
         .replace(Regex("\\s+"), " ")
         .trim()
+}
 
 /** Whole quiz uses one voice: Hindi quiz -> hi-IN at 0.7 rate, else en-GB at 0.8. */
 fun isHindiQuiz(questions: List<QuizQuestion>, category: String?): Boolean {
