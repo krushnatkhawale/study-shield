@@ -259,11 +259,13 @@ class TvServerService : Service() {
                 putExtra("QUESTION", firstQ.question)
                 putStringArrayListExtra("OPTIONS", ArrayList(firstQ.options))
                 putExtra("ANSWER", firstQ.answer)
+                firstQ.description?.let { putExtra("DESCRIPTION", it) }
             } else {
                 // Fallback for manual commands
                 putExtra("QUESTION", command.question)
                 command.options?.let { putStringArrayListExtra("OPTIONS", ArrayList(it)) }
                 putExtra("ANSWER", command.answer)
+                command.description?.let { putExtra("DESCRIPTION", it) }
             }
         }
         

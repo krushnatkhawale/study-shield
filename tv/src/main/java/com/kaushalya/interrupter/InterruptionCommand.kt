@@ -6,7 +6,10 @@ import kotlinx.serialization.Serializable
 data class QuizQuestion(
     val question: String,
     val options: List<String>,
-    val answer: String
+    val answer: String,
+    // Read-aloud dictation for picture questions; TV renders `question` (the picture
+    // card) big and speaks/shows this text smaller. Null = plain text question.
+    val description: String? = null
 )
 
 @Serializable
@@ -21,6 +24,8 @@ data class InterruptionCommand(
     val question: String? = null,
     val options: List<String>? = null,
     val answer: String? = null,
+    // Dictation for the legacy single-question path.
+    val description: String? = null,
     val mobileIp: String? = null,
     val resultCallbackPort: Int? = null,
     // Per-kid quiz presentation configuration (Features 4/5 + configurable threshold).

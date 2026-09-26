@@ -145,6 +145,7 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
                     question = firstQ?.question ?: content.question,
                     options = firstQ?.options ?: content.options,
                     answer = firstQ?.answer ?: content.answer,
+                    description = firstQ?.description,
                     revealReadLock = kidConfig.revealReadLock,
                     autoDictation = kidConfig.autoDictation,
                     fastAnswerThresholdMs = kidConfig.fastAnswerThresholdMs,

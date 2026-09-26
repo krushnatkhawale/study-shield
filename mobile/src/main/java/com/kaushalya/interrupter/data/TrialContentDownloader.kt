@@ -112,7 +112,7 @@ object TrialContentDownloader {
         mcq("Hindi", "Who teaches us in school?", "Teacher", listOf("Doctor", "Postman", "Cook"))
         mcq("Hindi", "What colour is grass?", "Green", listOf("Red", "Blue", "Black"))
         mcq("Hindi", "Which vehicle flies in the sky?", "Aeroplane", listOf("Bus", "Ship", "Car"))
-        mcq("Hindi", "How many colours are in a rainbow?", "7", listOf("3", "5", "10"))
+        mcq("Hindi", "A rainbow appears when it is…", "Rainy and sunny", listOf("Night time", "Snowy", "Windy"))
         mcq("Hindi", "What colour is a banana?", "Yellow", listOf("Blue", "Purple", "Black"))
         mcq("Hindi", "Which animal lives in water?", "Fish", listOf("Cow", "Hen", "Monkey"))
         mcq("Hindi", "Who brings us letters?", "Postman", listOf("Pilot", "Chef", "Tailor"))

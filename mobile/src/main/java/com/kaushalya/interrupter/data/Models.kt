@@ -15,7 +15,10 @@ data class QuizQuestion(
     val question: String,
     val options: List<String>,
     val answer: String,
-    val id: Long? = null
+    val id: Long? = null,
+    /** Read-aloud dictation for picture questions (backend `explanation`); TV renders the
+     *  picture big and speaks/shows this text smaller. Null for plain text questions. */
+    val description: String? = null
 )
 
 /** Shuffle option order so the correct answer is not always the first option. */
@@ -37,6 +40,8 @@ data class InterruptionCommand(
     val question: String? = null,
     val options: List<String>? = null,
     val answer: String? = null,
+    // Dictation for the legacy single-question path (mirrors firstQ?.description).
+    val description: String? = null,
     val mobileIp: String? = null,
     val resultCallbackPort: Int? = null,
     // Per-kid quiz presentation configuration (Features 4/5 + configurable threshold).
@@ -582,6 +587,8 @@ data class QuestionBankLoadItem(
     val questionType: String? = null, // SINGLE_CHOICE / MULTIPLE_CHOICE / TRUE_FALSE / FITB; derived by backend if absent
     val correctAnswer: String,
     val options: List<String> = emptyList(),
+    // Read-aloud dictation for picture questions; stored on the backend as `explanation`.
+    val explanation: String? = null,
     val orderIndex: Int? = null
 )
 

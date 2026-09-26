@@ -64,7 +64,8 @@ class QuizLoader(private val context: Context) {
                 val answer = q.options.firstOrNull { it.id == correctId }?.text
                     ?: correctId
                     ?: ""
-                QuizQuestion(question = text, options = optionTexts, answer = answer, id = q.id).shuffledOptions()
+                QuizQuestion(question = text, options = optionTexts, answer = answer, id = q.id,
+                    description = q.explanation).shuffledOptions()
             }
             if (questions.isEmpty()) return@mapNotNull null
             val subject = quiz.title?.split("·")?.firstOrNull()?.trim()

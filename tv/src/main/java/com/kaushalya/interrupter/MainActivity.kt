@@ -395,8 +395,9 @@ class MainActivity : ComponentActivity() {
                 val q = intent.getStringExtra("QUESTION")
                 val opts = intent.getStringArrayListExtra("OPTIONS")
                 val ans = intent.getStringExtra("ANSWER")
+                val desc = intent.getStringExtra("DESCRIPTION")
                 if (q != null) {
-                    questionsList = listOf(QuizQuestion(q, opts ?: emptyList(), ans ?: ""))
+                    questionsList = listOf(QuizQuestion(q, opts ?: emptyList(), ans ?: "", desc))
                     currentQuestionIndex = 0
                     score = 0
                     quizCompleted = false
@@ -736,15 +737,17 @@ fun QuizSession(
                     questionShownAt = System.currentTimeMillis()
                 }
                 // Feature 5: auto-dictation — read the current question aloud when enabled.
+                // For picture questions the dictation (description) is spoken, not the picture card.
                 // Gated on ttsReady so the very first question isn't dropped while the speech
                 // engine is still initialising (it re-fires the moment the engine is ready).
                 LaunchedEffect(currentIndex, autoDictation, textToSpeech, ttsReady) {
                     if (autoDictation) {
                         val tts = textToSpeech
-                        val questionText = questions.getOrNull(currentIndex)?.question
-                        if (tts != null && questionText != null) {
+                        val currentQ = questions.getOrNull(currentIndex)
+                        val speakText = currentQ?.description ?: currentQ?.question
+                        if (tts != null && speakText != null) {
                             try {
-                                tts.speak(questionText, TextToSpeech.QUEUE_FLUSH, null, "question_$currentIndex")
+                                tts.speak(speakText, TextToSpeech.QUEUE_FLUSH, null, "question_$currentIndex")
                             } catch (_: Exception) {}
                         }
                     }
@@ -756,6 +759,7 @@ fun QuizSession(
                             question = q.question,
                             options = q.options,
                             correctAnswer = q.answer,
+                            description = q.description,
                             onAnswer = advance,
                             onWrongAnswer = onWrong,
                             readLockMs = readLockMs
@@ -765,6 +769,7 @@ fun QuizSession(
                             question = q.question,
                             options = q.options,
                             correctAnswer = q.answer,
+                            description = q.description,
                             onAnswer = advance,
                             onWrongAnswer = onWrong,
                             readLockMs = readLockMs
@@ -774,6 +779,7 @@ fun QuizSession(
                     FitbUI(
                         question = q.question,
                         answer = q.answer,
+                        description = q.description,
                         onAnswer = advance,
                         onWrongAnswer = onWrong,
                         readLockMs = readLockMs
@@ -898,8 +904,57 @@ private fun remainingReadLockMs(readLockMs: Long): Long {
     return remaining
 }
 
+/**
+ * Question header shared by all quiz layouts. Plain text questions render exactly as
+ * before; picture questions (dictation in [description]) render the picture card big
+ * with the dictation smaller underneath. Auto-dictation speaks the description.
+ */
 @Composable
-fun QuizUI(question: String, options: List<String>, correctAnswer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit, readLockMs: Long = 0L) {
+fun QuestionHeader(question: String, description: String?, maxLines: Int = 3) {
+    if (description == null) {
+        val questionFontSize = when {
+            question.length <= 20 -> 48.sp
+            question.length <= 40 -> 38.sp
+            question.length <= 80 -> 30.sp
+            else -> 24.sp
+        }
+        Text(
+            text = question,
+            fontSize = questionFontSize,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+    } else {
+        Text(
+            text = question,
+            fontSize = 72.sp,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = description,
+            fontSize = 30.sp,
+            color = Color.White.copy(alpha = 0.92f),
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+fun QuizUI(question: String, options: List<String>, correctAnswer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit, readLockMs: Long = 0L, description: String? = null) {
     val focusRequester = remember { FocusRequester() }
     // Accept both legacy numeric-index answers ("2") and option-text answers ("Mango")
     val correctIndex = correctAnswer.toIntOrNull()
@@ -920,29 +975,13 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onAns
         animationSpec = tween(100), label = "flash"
     )
 
-    val questionFontSize = when {
-        question.length <= 20 -> 48.sp
-        question.length <= 40 -> 38.sp
-        question.length <= 80 -> 30.sp
-        else -> 24.sp
-    }
-
     Box(modifier = Modifier.fillMaxSize().background(flashColor)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp).offset(x = shakeOffset),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = question,
-                fontSize = questionFontSize,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            )
+            QuestionHeader(question = question, description = description, maxLines = 3)
             if (lockRemaining > 0) {
                 Text(
                     text = "📖 Read the question — answers unlock in ${(lockRemaining / 1000).coerceAtLeast(1)}s",
@@ -1012,7 +1051,7 @@ fun QuizUI(question: String, options: List<String>, correctAnswer: String, onAns
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit, readLockMs: Long = 0L) {
+fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit, readLockMs: Long = 0L, description: String? = null) {
     val focusRequester = remember { FocusRequester() }
     var wrongAnswerTrigger by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -1029,29 +1068,13 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
         animationSpec = tween(100), label = "flash"
     )
 
-    val questionFontSize = when {
-        question.length <= 20 -> 48.sp
-        question.length <= 40 -> 38.sp
-        question.length <= 80 -> 30.sp
-        else -> 24.sp
-    }
-
     Box(modifier = Modifier.fillMaxSize().background(flashColor)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp).offset(x = shakeOffset),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = question,
-                fontSize = questionFontSize,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            )
+            QuestionHeader(question = question, description = description, maxLines = 3)
             if (lockRemaining > 0) {
                 Text(
                     text = "📖 Read the question — answers unlock in ${(lockRemaining / 1000).coerceAtLeast(1)}s",
@@ -1107,7 +1130,7 @@ fun TrueFalseUI(question: String, options: List<String>, correctAnswer: String, 
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-fun FitbUI(question: String, answer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit, readLockMs: Long = 0L) {
+fun FitbUI(question: String, answer: String, onAnswer: (Boolean) -> Unit, onWrongAnswer: () -> Unit, readLockMs: Long = 0L, description: String? = null) {
     val characters = ('A'..'Z').toList() + ('0'..'9').toList()
     val focusRequester = remember { FocusRequester() }
     var currentInput by remember { mutableStateOf("") }
@@ -1121,28 +1144,12 @@ fun FitbUI(question: String, answer: String, onAnswer: (Boolean) -> Unit, onWron
         label = "shake"
     )
 
-    val questionFontSize = when {
-        question.length <= 20 -> 48.sp
-        question.length <= 40 -> 38.sp
-        question.length <= 80 -> 30.sp
-        else -> 24.sp
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 16.dp).offset(x = shakeOffset),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = question,
-            fontSize = questionFontSize,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
-        )
+        QuestionHeader(question = question, description = description, maxLines = 2)
         Text(
             text = currentInput.ifEmpty { "______" },
             fontSize = when {
