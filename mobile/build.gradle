@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    id 'jacoco'
 }
 
 android {
@@ -36,6 +37,47 @@ android {
     buildFeatures {
         compose true
     }
+    testOptions {
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']
+            }
+        }
+    }
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn 'testDebugUnitTest'
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    def excluded = [
+        '**/R.class',
+        '**/R$*.class',
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/*Test*.*',
+        '**/*_Factory*.*',
+        '**/*Direction*.*',
+        '**/*Directions*.*',
+        'android/**/*.*'
+    ]
+    classDirectories.from = fileTree(
+        dir: layout.buildDirectory.dir('tmp/kotlin-classes/debug'),
+        excludes: excluded
+    )
+    sourceDirectories.from = files('src/main/java')
+    executionData.from = fileTree(
+        dir: layout.buildDirectory.get().asFile,
+        includes: [
+            'jacoco/testDebugUnitTest.exec',
+            'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec'
+        ]
+    )
 }
 
 dependencies {
