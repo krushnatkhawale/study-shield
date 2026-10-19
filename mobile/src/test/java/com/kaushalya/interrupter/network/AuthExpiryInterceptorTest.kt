@@ -14,6 +14,8 @@ import org.junit.Test
  */
 class AuthExpiryInterceptorTest {
 
+    private val ordinaryCall = "https://api.example.com/api/quiz"
+
     @Test
     fun rejectedTokenOnAuthenticatedCall_forcesRelogin() {
         assertTrue(
@@ -21,7 +23,8 @@ class AuthExpiryInterceptorTest {
                 hasBearerToken = true,
                 isGuest = false,
                 isLoginRequest = false,
-                code = 401
+                code = 401,
+                url = ordinaryCall
             )
         )
     }
@@ -33,7 +36,8 @@ class AuthExpiryInterceptorTest {
                 hasBearerToken = true,
                 isGuest = false,
                 isLoginRequest = false,
-                code = 403
+                code = 403,
+                url = ordinaryCall
             )
         )
     }
@@ -45,7 +49,8 @@ class AuthExpiryInterceptorTest {
                 hasBearerToken = true,
                 isGuest = false,
                 isLoginRequest = true,
-                code = 401
+                code = 401,
+                url = "https://api.example.com/api/auth/signin"
             )
         )
     }
@@ -57,7 +62,8 @@ class AuthExpiryInterceptorTest {
                 hasBearerToken = true,
                 isGuest = true,
                 isLoginRequest = false,
-                code = 401
+                code = 401,
+                url = ordinaryCall
             )
         )
     }
@@ -69,7 +75,8 @@ class AuthExpiryInterceptorTest {
                 hasBearerToken = false,
                 isGuest = false,
                 isLoginRequest = false,
-                code = 401
+                code = 401,
+                url = ordinaryCall
             )
         )
     }
@@ -81,7 +88,21 @@ class AuthExpiryInterceptorTest {
                 hasBearerToken = true,
                 isGuest = false,
                 isLoginRequest = false,
-                code = 500
+                code = 500,
+                url = ordinaryCall
+            )
+        )
+    }
+
+    @Test
+    fun sessionValidationCall_isNotTreatedAsExpiredSession() {
+        assertFalse(
+            shouldForceRelogin(
+                hasBearerToken = true,
+                isGuest = false,
+                isLoginRequest = false,
+                code = 401,
+                url = "https://api.example.com/api/auth/validate"
             )
         )
     }
